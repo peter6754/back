@@ -1,0 +1,12 @@
+stages:
+  - deploy
+
+deploy_to_production:
+  stage: deploy
+  script:
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh root@94.131.121.166 "cd /root/tinderone/admin-panel && git pull origin main && ./admin_panel_update.sh"
+  only:
+    - main
