@@ -17,3 +17,4 @@ yarn-error.log
 /.zed
 admin_panel_update.sh
 /node_modules
+.gitlab-ci.yml
