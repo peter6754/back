@@ -3,3 +3,4 @@
 
 <x-backpack::menu-item title="Пользователи" icon="la la-question" :link="backpack_url('secondaryuser')" />
 <x-backpack::menu-item title="Администраторы" icon="la la-question" :link="backpack_url('user')" />
+
