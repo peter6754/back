@@ -16,3 +16,4 @@ yarn-error.log
 /.vscode
 /.zed
 admin_panel_update.sh
+/node_modules
