@@ -53,7 +53,7 @@
             ->value($totalNewUsers)
             ->description('Новых пользователей за 7 дней.')
             ->progress($totalPercentage)
-            ->hint(1000 - $totalNewUsers .' до следующего этапа.'),
+            ->hint(5000 - $totalNewUsers .' до следующего этапа.'),
 
             Widget::make()
             ->type('progress')
