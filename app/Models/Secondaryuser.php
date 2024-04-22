@@ -44,4 +44,9 @@ class Secondaryuser extends Model
         'long' => 'decimal:8',
         'is_online' => 'boolean',
     ];
+
+    public function images()
+    {
+        return $this->hasMany(UserImage::class, 'user_id');
+    }
 }
