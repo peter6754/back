@@ -31,7 +31,7 @@ class SecondaryuserCrudController extends CrudController
         CRUD::setEntityNameStrings('Пользователь', 'Пользователи');
 
         // Для отображения в таблице (списке)
-        CRUD::column('id')->label('ID');
+//        CRUD::column('id')->label('ID');
         CRUD::column('name')->label('Имя');
         $this->crud->addColumn([
             'name' => 'random_image',
