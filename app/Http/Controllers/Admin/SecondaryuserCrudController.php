@@ -42,7 +42,34 @@ class SecondaryuserCrudController extends CrudController
                 $images = $entry->images;
                 if ($images->isNotEmpty()) {
                     $randomImage = $images->random();
-                    return '<img src="' . $randomImage->image_url . '" height="60px" width="60px">';
+                    $imageUrl = $randomImage->image_url;
+                    return '
+                <img src="' . $imageUrl . '" height="80px" width="60px" style="cursor: pointer;" onclick="openModal(\'' . $imageUrl . '\')">
+
+                <!-- Модальное окно -->
+                <div id="imageModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center;">
+                    <span onclick="closeModal()" style="position: absolute; top: 20px; right: 30px; font-size: 30px; color: white; cursor: pointer;">&times;</span>
+                    <img id="modalImage" src="" style="max-width: 90%; max-height: 90%; border-radius: 5px;">
+                </div>
+
+                <script>
+                    function openModal(imageUrl) {
+                        document.getElementById("imageModal").style.display = "flex";
+                        document.getElementById("modalImage").src = imageUrl;
+                    }
+
+                    function closeModal() {
+                        document.getElementById("imageModal").style.display = "none";
+                    }
+
+                    // Закрытие модального окна при клике вне изображения
+                    document.getElementById("imageModal").addEventListener("click", function(event) {
+                        if (event.target === this) {
+                            closeModal();
+                        }
+                    });
+                </script>
+            ';
                 }
                 return 'Нет фото';
             },
@@ -183,8 +210,30 @@ class SecondaryuserCrudController extends CrudController
                 // Собираем все изображения пользователя
                 $imagesHtml = '';
                 foreach ($entry->images as $image) {
-                    $imagesHtml .= '<img src="' . $image->image_url . '" height="60px" width="60px" style="margin-right: 5px;">';
+                    $imagesHtml .= '
+                <img src="' . $image->image_url . '" height="80px" width="60px" style="margin-right: 5px; cursor: pointer;" onclick="openModal(\'' . $image->image_url . '\')">
+            ';
                 }
+
+                // Добавляем HTML для модального окна
+                $imagesHtml .= '
+            <div id="imageModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center;">
+                <span onclick="closeModal()" style="position: absolute; top: 20px; right: 30px; font-size: 30px; color: white; cursor: pointer;">&times;</span>
+                <img id="modalImage" src="" style="max-width: 90%; max-height: 90%; border-radius: 5px;">
+            </div>
+
+            <script>
+                function openModal(imageUrl) {
+                    document.getElementById("imageModal").style.display = "flex";
+                    document.getElementById("modalImage").src = imageUrl;
+                }
+
+                function closeModal() {
+                    document.getElementById("imageModal").style.display = "none";
+                }
+            </script>
+        ';
+
                 return $imagesHtml;
             },
         ]);
