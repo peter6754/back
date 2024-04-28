@@ -54,6 +54,7 @@
         $deletedUsersOneDay = DeletedUser::where('date', '>=', Carbon::now()->subDay())
     ->count();
         $deletedUsersOneDayPercentage = $totalUsers > 0 ? (100 * $deletedUsersOneDay / $totalUsers) : 0;
+        $deletedUsersTotal = DeletedUser::count();
 
 
         Widget::add()
@@ -156,6 +157,26 @@
             ->description('Пользователи удалено за день.')
             ->progress($deletedUsersOneDayPercentage)
             ->hint($totalUsers > 0 ? 'Из общего числа пользователей.' : 'Нет пользователей.'),
+
+            Widget::make()
+            ->type('progress')
+            ->class('card mb-3')
+            ->statusBorder('start')
+            ->accentColor('green')
+            ->ribbon(['top', 'la-user'])
+            ->progressClass('progressbar')
+            ->value($totalUsers)
+            ->description('всего пользователей'),
+
+             Widget::make()
+            ->type('progress')
+            ->class('card mb-3')
+            ->statusBorder('start')
+            ->accentColor('red')
+            ->ribbon(['top', 'la-user'])
+            ->progressClass('progressbar')
+            ->value($deletedUsersTotal)
+            ->description('всего пользователей удалено')
             ]);
 
 
