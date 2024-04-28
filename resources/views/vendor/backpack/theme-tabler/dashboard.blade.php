@@ -54,7 +54,7 @@
         $deletedUsersOneDay = DeletedUser::where('date', '>=', Carbon::now()->subDay())
     ->count();
         $deletedUsersOneDayPercentage = $totalUsers > 0 ? (100 * $deletedUsersOneDay / $totalUsers) : 0;
-        $deletedUsersTotal = DeletedUser::count();
+        $deletedUsersTotal = Secondaryuser::where('mode', 'deleted')->count();
 
 
         Widget::add()
