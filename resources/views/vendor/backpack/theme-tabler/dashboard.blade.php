@@ -21,19 +21,19 @@
                 'button_text' => trans('backpack::base.logout'),
             ];
         }
-        $newUsersMale = Secondaryuser::where('registration_date', '>=', Carbon::now()->subDays(7))
+        $newUsersMale = Secondaryuser::where('registration_date', '>=', Carbon::now()->startOfWeek())
     ->where('gender', 'male')
     ->count();
 
-        $newUsersFemale = Secondaryuser::where('registration_date', '>=', Carbon::now()->subDays(7))
+        $newUsersFemale = Secondaryuser::where('registration_date', '>=', Carbon::now()->startOfWeek())
     ->where('gender', 'female')
     ->count();
 
-        $newUsersMaleOneDay = Secondaryuser::where('registration_date', '>=', Carbon::now()->subDays())
+        $newUsersMaleOneDay = Secondaryuser::where('registration_date', '>=', Carbon::now()->startOfDay())
     ->where('gender', 'male')
     ->count();
 
-        $newUsersFemaleOneDay = Secondaryuser::where('registration_date', '>=', Carbon::now()->subDays())
+        $newUsersFemaleOneDay = Secondaryuser::where('registration_date', '>=', Carbon::now()->startOfDay())
     ->where('gender', 'female')
     ->count();
 
