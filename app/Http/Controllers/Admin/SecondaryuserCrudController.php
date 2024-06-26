@@ -136,11 +136,6 @@ class SecondaryuserCrudController extends CrudController
             'attribute' => 'bio',
             'model' => UserInformation::class,
         ]);
-
-        CRUD::column('username')->label('Имя пользователя');
-        CRUD::column('phone')->label('Телефон');
-        CRUD::column('email')->label('Электронная почта');
-//        CRUD::column('birth_date')->label('Дата рождения');
         CRUD::column('gender')
             ->label('Пол')
             ->type('select_from_array')
@@ -161,6 +156,11 @@ class SecondaryuserCrudController extends CrudController
                 'asexual' => 'Асексуал',
                 'not_decided' => 'Не решено'
             ]);
+        CRUD::column('last_check')->label('Последняя проверка');
+        CRUD::column('is_online')->label('Онлайн статус');
+        CRUD::column('phone')->label('Телефон');
+        CRUD::column('email')->label('Электронная почта');
+//        CRUD::column('birth_date')->label('Дата рождения');
         CRUD::column('mode')
             ->label('Режим')
             ->type('select_from_array')
@@ -169,8 +169,7 @@ class SecondaryuserCrudController extends CrudController
                 'deleted' => 'Удалён'
             ]);
         CRUD::column('registration_date')->label('Дата регистрации');
-        CRUD::column('last_check')->label('Последняя проверка');
-        CRUD::column('is_online')->label('Онлайн статус');
+        CRUD::column('username')->label('Имя пользователя');
 
         CRUD::addField([
             'name' => 'name',
@@ -262,20 +261,20 @@ class SecondaryuserCrudController extends CrudController
          * Columns can be defined using the fluent syntax:
          * - CRUD::column('price')->type('number');
          */
-        CRUD::column('id')->label('ID');
+        CRUD::column('id')->label('ID')->visibleInTable(false);
         CRUD::column('name')->label('Имя');
         CRUD::column('username')->label('Логин');
         CRUD::column('phone')->label('Телефон');
         CRUD::column('email')->label('Почта');
         CRUD::column('birth_date')->label('День рождения');
-        CRUD::column('age')->label('Возраст');
+        CRUD::column('age')->label('В-т');
         CRUD::column('gender')->label('Пол');
         CRUD::column('sexual_orientation')->label('Ориентация');
         CRUD::column('mode')->label('Режим');
         CRUD::column('registration_date')->label('Дата регистрации');
         $this->crud->query->orderBy('registration_date', 'desc');
         CRUD::column('last_check')->label('Последняя проверка');
-        CRUD::column('is_online')->label('Онлайн статус');
+        CRUD::column('is_online')->label('Онлайн');
         CRUD::disableResponsiveTable();
         CRUD::disablePersistentTable();
     }
