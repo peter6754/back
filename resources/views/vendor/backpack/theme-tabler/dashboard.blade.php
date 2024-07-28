@@ -21,11 +21,13 @@
                 'button_text' => trans('backpack::base.logout'),
             ];
         }
-        $newUsersMale = Secondaryuser::where('registration_date', '>=', Carbon::now()->startOfWeek())
+        $newUsersMale = Secondaryuser::where('registration_date', '>=', Carbon::now()->subDay()->startOfDay())
+    ->where('registration_date', '<', Carbon::now()->startOfDay())
     ->where('gender', 'male')
     ->count();
 
-        $newUsersFemale = Secondaryuser::where('registration_date', '>=', Carbon::now()->startOfWeek())
+        $newUsersFemale = Secondaryuser::where('registration_date', '>=', Carbon::now()->subDay()->startOfDay())
+    ->where('registration_date', '<', Carbon::now()->startOfDay())
     ->where('gender', 'female')
     ->count();
 
@@ -37,12 +39,15 @@
     ->where('gender', 'female')
     ->count();
 
-        $totalNewUsersOneDay = $newUsersMaleOneDay + $newUsersFemaleOneDay;
+        $totalNewUsersOneDay = Secondaryuser::where('registration_date', '>=', Carbon::now()->startOfDay())
+    ->count();
         $totalOneDayPercentage = $totalNewUsersOneDay > 0 ? (100 * $totalNewUsersOneDay / 1000) : 0;
         $maleOneDayPercentage = $totalNewUsersOneDay > 0 ? (100 * $newUsersMaleOneDay / $totalNewUsersOneDay) : 0;
         $femaleOneDayPercentage = $totalNewUsersOneDay > 0 ? (100 * $newUsersFemaleOneDay / $totalNewUsersOneDay) : 0;
 
-        $totalNewUsers = $newUsersMale + $newUsersFemale;
+        $totalNewUsers = Secondaryuser::where('registration_date', '>=', Carbon::now()->subDay()->startOfDay())
+    ->where('registration_date', '<', Carbon::now()->startOfDay())
+    ->count();
         $totalPercentage = $totalNewUsers > 0 ? (100 * $totalNewUsers / 1000) : 0;
         $malePercentage = $totalNewUsers > 0 ? (100 * $newUsersMale / $totalNewUsers) : 0;
         $femalePercentage = $totalNewUsers > 0 ? (100 * $newUsersFemale / $totalNewUsers) : 0;
@@ -70,7 +75,7 @@
             ->ribbon(['top', 'la-user'])
             ->progressClass('progressbar')
             ->value($totalNewUsers)
-            ->description('Новых пользователей за 7 дней.')
+            ->description('Новых пользователей вчера.')
             ->progress($totalPercentage)
             ->hint(5000 - $totalNewUsers .' до следующего этапа.'),
 
@@ -82,7 +87,7 @@
             ->ribbon(['top', 'la-male'])
             ->progressClass('progressbar')
             ->value($newUsersMale)
-            ->description('Мужчин за последние 7 дней.')
+            ->description('Мужчин вчера.')
             ->progress($malePercentage)
             ->hint($totalNewUsers > 0 ? 'Из общего числа пользователей.' : 'Нет новых пользователей.'),
 
@@ -94,7 +99,7 @@
             ->ribbon(['top', 'la-female'])
             ->progressClass('progressbar')
             ->value($newUsersFemale)
-            ->description('Женщин за последние 7 дней.')
+            ->description('Женщин вчера.')
             ->progress($femalePercentage)
             ->hint($totalNewUsers > 0 ? 'Из общего числа пользователей.' : 'Нет новых пользователей.'),
 
@@ -118,7 +123,7 @@
             ->ribbon(['top', 'la-user'])
             ->progressClass('progressbar')
             ->value($totalNewUsersOneDay)
-            ->description('Новых пользователей за 1 день.')
+            ->description('Новых пользователей сегодня.')
             ->progress($totalOneDayPercentage)
             ->hint(5000 - $totalNewUsersOneDay .' до следующего этапа.'),
 
@@ -130,7 +135,7 @@
             ->ribbon(['top', 'la-male'])
             ->progressClass('progressbar')
             ->value($newUsersMaleOneDay)
-            ->description('Мужчин за 1 день.')
+            ->description('Мужчин сегодня.')
             ->progress($maleOneDayPercentage)
             ->hint($totalNewUsersOneDay > 0 ? 'Из общего числа пользователей.' : 'Нет новых пользователей.'),
 
@@ -142,7 +147,7 @@
             ->ribbon(['top', 'la-female'])
             ->progressClass('progressbar')
             ->value($newUsersFemaleOneDay)
-            ->description('Женщин за 1 день.')
+            ->description('Женщин сегодня.')
             ->progress($femaleOneDayPercentage)
             ->hint($totalNewUsersOneDay > 0 ? 'Из общего числа пользователей.' : 'Нет новых пользователей.'),
 
