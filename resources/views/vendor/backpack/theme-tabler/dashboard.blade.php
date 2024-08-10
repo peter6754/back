@@ -21,32 +21,38 @@
                 'button_text' => trans('backpack::base.logout'),
             ];
         }
-        $newUsersMale = Secondaryuser::where('registration_date', '>=', Carbon::now()->subDay()->startOfDay())
-    ->where('registration_date', '<', Carbon::now()->startOfDay())
+        $startOfDayMoscow = Carbon::now('Europe/Moscow')->startOfDay()->setTimezone('UTC');
+
+        $yesterdayStart = Carbon::now('Europe/Moscow')->subDay()->startOfDay()->setTimezone('UTC');
+
+        $todayStart = Carbon::now('Europe/Moscow')->startOfDay()->setTimezone('UTC');
+
+        $newUsersMale = Secondaryuser::where('registration_date', '>=', $yesterdayStart)
+    ->where('registration_date', '<', $todayStart)
     ->where('gender', 'male')
     ->count();
 
-        $newUsersFemale = Secondaryuser::where('registration_date', '>=', Carbon::now()->subDay()->startOfDay())
-    ->where('registration_date', '<', Carbon::now()->startOfDay())
+        $newUsersFemale = Secondaryuser::where('registration_date', '>=', $yesterdayStart)
+    ->where('registration_date', '<', $todayStart)
     ->where('gender', 'female')
     ->count();
 
-        $newUsersMaleOneDay = Secondaryuser::where('registration_date', '>=', Carbon::now()->startOfDay())
+        $newUsersMaleOneDay = Secondaryuser::where('registration_date', '>=', $startOfDayMoscow)
     ->where('gender', 'male')
     ->count();
 
-        $newUsersFemaleOneDay = Secondaryuser::where('registration_date', '>=', Carbon::now()->startOfDay())
+        $newUsersFemaleOneDay = Secondaryuser::where('registration_date', '>=', $startOfDayMoscow)
     ->where('gender', 'female')
     ->count();
 
-        $totalNewUsersOneDay = Secondaryuser::where('registration_date', '>=', Carbon::now()->startOfDay())
+        $totalNewUsersOneDay = Secondaryuser::where('registration_date', '>=', $startOfDayMoscow)
     ->count();
         $totalOneDayPercentage = $totalNewUsersOneDay > 0 ? (100 * $totalNewUsersOneDay / 1000) : 0;
         $maleOneDayPercentage = $totalNewUsersOneDay > 0 ? (100 * $newUsersMaleOneDay / $totalNewUsersOneDay) : 0;
         $femaleOneDayPercentage = $totalNewUsersOneDay > 0 ? (100 * $newUsersFemaleOneDay / $totalNewUsersOneDay) : 0;
 
-        $totalNewUsers = Secondaryuser::where('registration_date', '>=', Carbon::now()->subDay()->startOfDay())
-    ->where('registration_date', '<', Carbon::now()->startOfDay())
+        $totalNewUsers = Secondaryuser::where('registration_date', '>=', $yesterdayStart)
+    ->where('registration_date', '<', $todayStart)
     ->count();
         $totalPercentage = $totalNewUsers > 0 ? (100 * $totalNewUsers / 1000) : 0;
         $malePercentage = $totalNewUsers > 0 ? (100 * $newUsersMale / $totalNewUsers) : 0;
