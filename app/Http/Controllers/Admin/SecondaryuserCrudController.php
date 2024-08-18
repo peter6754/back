@@ -156,6 +156,32 @@ class SecondaryuserCrudController extends CrudController
                 'asexual' => 'Асексуал',
                 'not_decided' => 'Не решено'
             ]);
+        // Жадная загрузка данных
+        CRUD::addClause('with', ['activeSubscription.package.subscription']);
+
+        // Колонка с информацией о подписке
+        CRUD::addColumn([
+            'name' => 'subscription_info',
+            'label' => 'Подписка',
+            'type' => 'custom_html',
+            'value' => function($entry) {
+                if (!$entry->activeSubscription) {
+                    return '<span class="text-muted">Нет активной подписки</span>';
+                }
+
+                return '
+                <div class="subscription-info">
+                    <span class="badge bg-primary">
+                        '.$entry->activeSubscription->package->subscription->type.'
+                    </span>
+                    <div class="text-sm text-muted">
+                        '.$entry->activeSubscription->due_date->format('d.m.Y').'
+                        ('.$entry->activeSubscription->due_date->diffForHumans().')
+                    </div>
+                </div>
+            ';
+            }
+        ]);
         CRUD::column('last_check')->label('Последняя проверка');
         CRUD::column('is_online')->label('Онлайн статус');
         CRUD::column('phone')->label('Телефон');
@@ -261,6 +287,7 @@ class SecondaryuserCrudController extends CrudController
          * Columns can be defined using the fluent syntax:
          * - CRUD::column('price')->type('number');
          */
+        CRUD::addButton('line', 'grant_subscription', 'view', 'crud::buttons.grant_subscription');
         CRUD::column('id')->label('ID')->visibleInTable(false);
         CRUD::column('name')->label('Имя');
         CRUD::column('username')->label('Логин');

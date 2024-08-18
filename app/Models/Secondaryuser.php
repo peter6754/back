@@ -6,7 +6,7 @@ use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
-
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Secondaryuser extends Model
 {
@@ -53,6 +53,22 @@ class Secondaryuser extends Model
     public function userInformation()
     {
         return $this->hasOne(UserInformation::class, 'user_id', 'id');
+    }
+
+    public function activeSubscription()
+    {
+        return $this->hasOneThrough(
+            BoughtSubscriptions::class, // Целевая модель
+            Transactions::class,        // Промежуточная модель
+            'user_id',                // Внешний ключ в transactions
+            'transaction_id',         // Внешний ключ в bought_subscriptions
+            'id',                     // Локальный ключ в users
+            'id'                      // Локальный ключ в transactions
+        )
+            ->whereHas('transaction', fn($q) => $q->where('status', 'succeeded'))
+            ->where('due_date', '>', now())
+            ->orderByDesc('due_date')
+            ->with(['package.subscription']);
     }
 
 }
