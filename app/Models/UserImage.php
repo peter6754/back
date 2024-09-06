@@ -17,6 +17,6 @@ class UserImage extends Model
     public function getImageUrlAttribute()
     {
         list($volumeId, $fileId) = explode(',', $this->image);
-        return "http://api.tinderone.ru:8080/{$volumeId},{$fileId}";
+        return "http://api.tinderone.ru/{$volumeId},{$fileId}";
     }
 }
