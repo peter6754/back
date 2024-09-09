@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Carbon\Carbon;
 
 class Secondaryuser extends Model
 {
@@ -69,6 +70,45 @@ class Secondaryuser extends Model
             ->where('due_date', '>', now())
             ->orderByDesc('due_date')
             ->with(['package.subscription']);
+    }
+
+    // Зависимость возраста от даты рождения и наоборот.
+    // Мутатор для возраста
+//    public function setAgeAttribute($value)
+//    {
+//        if ($value) {
+//            $this->attributes['age'] = $value;
+//            $this->attributes['birth_date'] = Carbon::now()->subYears($value)->format('Y-m-d');
+//        }
+//    }
+
+    // Мутатор для даты рождения.
+    public function setBirthDateAttribute($value)
+    {
+        if ($value) {
+            $this->attributes['birth_date'] = $value;
+            $this->attributes['age'] = Carbon::parse($value)->age;
+        }
+    }
+
+    // Принудительное обновление перед сохранением
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($user) {
+            if ($user->isDirty('birth_date')) {
+                $user->forceFill([
+                    'age' => Carbon::parse($user->birth_date)->age,
+                ]);
+            }
+
+            if ($user->isDirty('age')) {
+                $user->forceFill([
+                    'birth_date' => Carbon::now()->subYears($user->age)->format('Y-m-d'),
+                ]);
+            }
+        });
     }
 
 }
