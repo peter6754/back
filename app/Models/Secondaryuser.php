@@ -15,8 +15,8 @@ class Secondaryuser extends Model
     use HasFactory, Notifiable;
 
     protected $connection = 'mysql_secondary';
-    protected $keyType = 'string'; // Указываем тип ключа
-    public $incrementing = false; // Отключаем автоинкремент
+    protected $keyType = 'string';
+    public $incrementing = false;
     public $timestamps = false;
     public $table = 'users';
 
@@ -51,6 +51,16 @@ class Secondaryuser extends Model
         return $this->hasMany(UserImage::class, 'user_id');
     }
 
+    public function verificationRequest()
+    {
+        return $this->hasOne(VerificationRequests::class, 'user_id', 'id');
+    }
+
+    public function verificationImages()
+    {
+        return $this->hasMany(VerificationRequests::class, 'user_id');
+    }
+
     public function userInformation()
     {
         return $this->hasOne(UserInformation::class, 'user_id', 'id');
@@ -59,12 +69,12 @@ class Secondaryuser extends Model
     public function activeSubscription()
     {
         return $this->hasOneThrough(
-            BoughtSubscriptions::class, // Целевая модель
-            Transactions::class,        // Промежуточная модель
-            'user_id',                // Внешний ключ в transactions
-            'transaction_id',         // Внешний ключ в bought_subscriptions
-            'id',                     // Локальный ключ в users
-            'id'                      // Локальный ключ в transactions
+            BoughtSubscriptions::class,
+            Transactions::class,
+            'user_id',
+            'transaction_id',
+            'id',
+            'id'
         )
             ->whereHas('transaction', fn($q) => $q->where('status', 'succeeded'))
             ->where('due_date', '>', now())
@@ -91,7 +101,6 @@ class Secondaryuser extends Model
         }
     }
 
-    // Принудительное обновление перед сохранением
     protected static function boot()
     {
         parent::boot();
