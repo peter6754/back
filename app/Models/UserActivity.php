@@ -57,4 +57,42 @@ class UserActivity extends Model
             ->distinct('user_id')
             ->count('user_id');
     }
+
+    public static function getYesterdayOnlineMen()
+    {
+        $yesterday = Carbon::now('Europe/Moscow')->subDay()->startOfDay()->setTimezone('UTC');
+        $todayStart = Carbon::now('Europe/Moscow')->startOfDay()->setTimezone('UTC');
+
+        return self::join('users', 'user_activity.user_id', '=', 'users.id')
+            ->where('users.gender', 'male')
+            ->whereBetween('user_activity.session_start', [$yesterday, $todayStart])
+            ->distinct('user_id')
+            ->count('user_id');
+
+    }
+
+    public static function getYesterdayOnlineWomen()
+    {
+        $yesterday = Carbon::now('Europe/Moscow')->subDay()->startOfDay()->setTimezone('UTC');
+        $todayStart = Carbon::now('Europe/Moscow')->startOfDay()->setTimezone('UTC');
+
+        return self::join('users', 'user_activity.user_id', '=', 'users.id')
+            ->where('users.gender', 'female')
+            ->whereBetween('user_activity.session_start', [$yesterday, $todayStart])
+            ->distinct('user_id')
+            ->count('user_id');
+
+    }
+
+    public static function getYesterdayTotalOnline()
+    {
+        $yesterday = Carbon::now('Europe/Moscow')->subDay()->startOfDay()->setTimezone('UTC');
+        $todayStart = Carbon::now('Europe/Moscow')->startOfDay()->setTimezone('UTC');
+
+        return self::join('users', 'user_activity.user_id', '=', 'users.id')
+            ->whereBetween('user_activity.session_start', [$yesterday, $todayStart])
+            ->distinct('user_id')
+            ->count('user_id');
+
+    }
 }
