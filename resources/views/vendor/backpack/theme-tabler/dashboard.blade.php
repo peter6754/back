@@ -70,6 +70,9 @@
         $todayOnlineMan = UserActivity::getTodayOnlineMen();
         $todayOnlineWomen = UserActivity::getTodayOnlineWomen();
         $todayOnlineTotal = UserActivity::getTodayOnlineTotal();
+        $yesterdayOnlineMen = UserActivity::getYesterdayOnlineMen();
+        $yesterdayOnlineWomen = UserActivity::getYesterdayOnlineWomen();
+        $yesterdayOnlineTotal = UserActivity::getYesterdayTotalOnline();
 
 
         Widget::add()
@@ -222,6 +225,36 @@
             ->progressClass('progressbar')
             ->value($todayOnlineTotal)
             ->description('всего было онлайн за сегодня'),
+
+            Widget::make()
+            ->type('progress')
+            ->class('card mb-3')
+            ->statusBorder('start')
+            ->accentColor('green')
+            ->ribbon(['top', 'la-user'])
+            ->progressClass('progressbar')
+            ->value($yesterdayOnlineMen)
+            ->description('всего было онлайн вчера оналайн мужчин'),
+
+            Widget::make()
+            ->type('progress')
+            ->class('card mb-3')
+            ->statusBorder('start')
+            ->accentColor('green')
+            ->ribbon(['top', 'la-user'])
+            ->progressClass('progressbar')
+            ->value($yesterdayOnlineWomen)
+            ->description('всего было вчера онлайн женщин'),
+
+            Widget::make()
+            ->type('progress')
+            ->class('card mb-3')
+            ->statusBorder('start')
+            ->accentColor('green')
+            ->ribbon(['top', 'la-user'])
+            ->progressClass('progressbar')
+            ->value($yesterdayOnlineTotal)
+            ->description('всего было вчера онлайн'),
             ]);
 
 
