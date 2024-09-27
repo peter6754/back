@@ -45,7 +45,8 @@ class Transactions extends Model
             ->where('transactions.status', 'succeeded')
             ->where('transactions.type', 'subscription_package')
             ->where('transactions.purchased_at', '>=', $todayStart)
-            ->sum('transactions.price');
+            ->selectRaw('SUM(transactions.price) as sum, COUNT(*) as count')
+            ->first();
     }
 
     /**
@@ -59,7 +60,8 @@ class Transactions extends Model
             ->where('users.gender', 'female')
             ->where('transactions.status', 'succeeded')
             ->where('transactions.purchased_at', '>=', $todayStart)
-            ->sum('transactions.price');
+            ->selectRaw('SUM(transactions.price) as sum, COUNT(*) as count')
+            ->first();
     }
 
     /**
@@ -74,7 +76,8 @@ class Transactions extends Model
             ->where('users.gender', 'male')
             ->where('transactions.status', 'succeeded')
             ->whereBetween('transactions.purchased_at', [$yesterday, $todayStart])
-            ->sum('transactions.price');
+            ->selectRaw('SUM(transactions.price) as sum, COUNT(*) as count')
+            ->first();
     }
 
     /**
@@ -89,7 +92,8 @@ class Transactions extends Model
             ->where('users.gender', 'female')
             ->where('transactions.status', 'succeeded')
             ->whereBetween('transactions.purchased_at', [$yesterday, $todayStart])
-            ->sum('transactions.price');
+            ->selectRaw('SUM(transactions.price) as sum, COUNT(*) as count')
+            ->first();
     }
 
     /**
@@ -104,7 +108,8 @@ class Transactions extends Model
             ->whereIn('users.gender', $genders)
             ->where('transactions.status', 'succeeded')
             ->where('transactions.purchased_at', '>=', $todayStart)
-            ->sum('transactions.price');
+            ->selectRaw('SUM(transactions.price) as sum, COUNT(*) as count')
+            ->first();
     }
 
     /**
@@ -120,6 +125,7 @@ class Transactions extends Model
             ->whereIn('users.gender', $genders)
             ->where('transactions.status', 'succeeded')
             ->whereBetween('transactions.purchased_at', [$yesterday, $todayStart])
-            ->sum('transactions.price');
+            ->selectRaw('SUM(transactions.price) as sum, COUNT(*) as count')
+            ->first();
     }
 }
