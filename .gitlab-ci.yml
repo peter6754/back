@@ -13,6 +13,6 @@ deploy_to_production:
     - echo -e "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
     - ssh-keyscan -H 94.131.121.166 >> ~/.ssh/known_hosts
-    - ssh root@94.131.121.166 "cd /root/tinderone/admin-panel && ./admin_panel_update.sh"
+    - ssh root@94.131.121.166 "cd /root/tinderone/admin-panel && git pull origin main && docker-compose down && docker-compose up -d && docker exec -it admin_panel_laravel bash -c "php artisan view:clear && php artisan route:clear && php artisan cache:clear && php artisan config:cache && npm install && npm run build" "
   only:
     - main
