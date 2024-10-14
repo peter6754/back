@@ -1,18 +1,18 @@
-image: debian:bullseye
+#image: debian:bullseye
 
-before_script:
-  - apt-get update && apt-get install -y openssh-client php-cli
+#before_script:
+#  - apt-get update && apt-get install -y openssh-client php-cli
 
-stages:
-  - deploy
+#stages:
+#  - deploy
 
-deploy_to_production:
-  stage: deploy
-  script:
-    - mkdir -p ~/.ssh
-    - echo -e "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - ssh-keyscan -H 94.131.121.166 >> ~/.ssh/known_hosts
-    - ssh root@94.131.121.166 "cd /root/tinderone/admin-panel && ./admin_panel_update.sh"
-  only:
-    - main
+#deploy_to_production:
+#  stage: deploy
+#  script:
+#    - mkdir -p ~/.ssh
+#    - echo -e "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+#    - chmod 600 ~/.ssh/id_rsa
+#    - ssh-keyscan -H 94.131.121.166 >> ~/.ssh/known_hosts
+#    - ssh root@94.131.121.166 "cd /var/www/admin_tinder_usr22/data/www/admin.tinderone.ru && ./admin_panel_update.sh"
+#  only:
+#    - main
