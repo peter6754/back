@@ -31,6 +31,134 @@ class SecondaryuserCrudController extends CrudController
         CRUD::setModel(\App\Models\Secondaryuser::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/secondaryuser');
         CRUD::setEntityNameStrings('Пользователь', 'Пользователи');
+
+        // Для отображения в таблице (списке)
+        CRUD::column('id')->label('ID');
+        CRUD::column('name')->label('Имя');
+        $this->crud->addColumn([
+            'name' => 'random_image',
+            'label' => 'Фотография',
+            'type' => 'custom_html',
+            'escaped' => false,
+            'value' => function ($entry) {
+                $images = $entry->images;
+                if ($images->isNotEmpty()) {
+                    $randomImage = $images->random();
+                    return '<img src="' . $randomImage->image_url . '" height="60px" width="60px">';
+                }
+                return 'Нет фото';
+            },
+        ]);
+        CRUD::column('username')->label('Имя пользователя');
+        CRUD::column('phone')->label('Телефон');
+        CRUD::column('email')->label('Электронная почта');
+        CRUD::column('birth_date')->label('Дата рождения');
+        CRUD::column('age')->label('Возраст');
+        CRUD::column('gender')
+            ->label('Пол')
+            ->type('select_from_array')
+            ->options(['male' => 'Мужчина', 'female' => 'Женщина'])
+            ->wrapper([
+                'class' => function ($crud, $column, $entry, $related_key) {
+                    return $entry->gender === 'male' ? 'text-primary' : 'text-danger';
+                },
+            ]);
+        CRUD::column('sexual_orientation')
+            ->label('Сексуальная ориентация')
+            ->type('select_from_array')
+            ->options([
+                'hetero' => 'Гетеро',
+                'gay' => 'Гей',
+                'lesbian' => 'Лесбиянка',
+                'bisexual' => 'Бисексуал',
+                'asexual' => 'Асексуал',
+                'not_decided' => 'Не решено'
+            ]);
+        CRUD::column('mode')
+            ->label('Режим')
+            ->type('select_from_array')
+            ->options([
+                'authenticated' => 'Аутентифицирован',
+                'deleted' => 'Удалён'
+            ]);
+        CRUD::column('registration_date')->label('Дата регистрации');
+        CRUD::column('last_check')->label('Последняя проверка');
+        CRUD::column('is_online')->label('Онлайн статус');
+
+        CRUD::addField([
+            'name' => 'name',
+            'label' => 'Имя',
+            'type' => 'text'
+        ]);
+
+        CRUD::addField([
+            'name' => 'username',
+            'label' => 'Имя пользователя',
+            'type' => 'text'
+        ]);
+
+        CRUD::addField([
+            'name' => 'phone',
+            'label' => 'Телефон',
+            'type' => 'text'
+        ]);
+
+        CRUD::addField([
+            'name' => 'email',
+            'label' => 'Электронная почта',
+            'type' => 'email'
+        ]);
+
+        CRUD::addField([
+            'name' => 'birth_date',
+            'label' => 'Дата рождения',
+            'type' => 'date'
+        ]);
+
+        CRUD::addField([
+            'name' => 'age',
+            'label' => 'Возраст',
+            'type' => 'number'
+        ]);
+
+        CRUD::addField([
+            'name' => 'gender',
+            'label' => 'Пол',
+            'type' => 'select_from_array',
+            'options' => ['male' => 'Мужчина', 'female' => 'Женщина']
+        ]);
+
+        CRUD::addField([
+            'name' => 'sexual_orientation',
+            'label' => 'Сексуальная ориентация',
+            'type' => 'select_from_array',
+            'options' => ['hetero' => 'Гетеро', 'gay' => 'Гей', 'lesbian' => 'Лесбиянка', 'bisexual' => 'Бисексуал', 'asexual' => 'Асексуал', 'not_decided' => 'Не решено']
+        ]);
+
+        CRUD::addField([
+            'name' => 'mode',
+            'label' => 'Режим',
+            'type' => 'select_from_array',
+            'options' => ['authenticated' => 'Аутентифицирован', 'deleted' => 'Удалён']
+        ]);
+
+        CRUD::addField([
+            'name' => 'registration_date',
+            'label' => 'Дата регистрации',
+            'type' => 'datetime_picker'
+        ]);
+
+        CRUD::addField([
+            'name' => 'last_check',
+            'label' => 'Последняя проверка',
+            'type' => 'datetime_picker'
+        ]);
+
+        CRUD::addField([
+            'name' => 'is_online',
+            'label' => 'Онлайн статус',
+            'type' => 'boolean'
+        ]);
     }
 
     /**
@@ -47,19 +175,33 @@ class SecondaryuserCrudController extends CrudController
          * Columns can be defined using the fluent syntax:
          * - CRUD::column('price')->type('number');
          */
-        //        CRUD::column('id');
-        CRUD::column('name');
-        CRUD::column('username');
-        CRUD::column('phone');
-        CRUD::column('email');
-        CRUD::column('birth_date');
-        CRUD::column('age');
-        CRUD::column('gender');
-        CRUD::column('sexual_orientation');
-        CRUD::column('mode');
-        CRUD::column('registration_date');
-        CRUD::column('last_check');
-        CRUD::column('is_online');
+        CRUD::column('id')->label('ID');
+        $this->crud->addColumn([
+            'name' => 'images', // указываем на отношение
+            'label' => 'User Images',
+            'type' => 'custom_html',
+            'escaped' => false, // чтобы HTML не экранировался
+            'value' => function($entry) {
+                // Собираем все изображения пользователя
+                $imagesHtml = '';
+                foreach ($entry->images as $image) {
+                    $imagesHtml .= '<img src="' . $image->image_url . '" height="60px" width="60px" style="margin-right: 5px;">';
+                }
+                return $imagesHtml;
+            },
+        ]);
+        CRUD::column('name')->label('Имя');
+        CRUD::column('username')->label('Логин');
+        CRUD::column('phone')->label('Телефон');
+        CRUD::column('email')->label('Почта');
+        CRUD::column('birth_date')->label('День рождения');
+        CRUD::column('age')->label('Возраст');
+        CRUD::column('gender')->label('Пол');
+        CRUD::column('sexual_orientation')->label('Ориентация');
+        CRUD::column('mode')->label('Режим');
+        CRUD::column('registration_date')->label('Дата регистрации');
+        CRUD::column('last_check')->label('Последняя проверка');
+        CRUD::column('is_online')->label('Онлайн статус');
     }
 
     /**
