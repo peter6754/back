@@ -17,6 +17,6 @@ class UserImage extends Model
     public function getImageUrlAttribute()
     {
         list($volumeId, $fileId) = explode(',', $this->image);
-        return "http://localhost:9333/{$volumeId},{$fileId}";
+        return "http://localhost:8080/{$volumeId},{$fileId}";
     }
 }
