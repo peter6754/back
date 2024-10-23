@@ -3,6 +3,7 @@
 @php
     use Backpack\CRUD\app\Library\Widget;
     use App\Models\Secondaryuser;
+    use App\Models\DeletedUser;
     use Carbon\Carbon;
         if (backpack_theme_config('show_getting_started')) {
             $widgets['before_content'][] = [
@@ -28,6 +29,19 @@
     ->where('gender', 'female')
     ->count();
 
+        $newUsersMaleOneDay = Secondaryuser::where('registration_date', '>=', Carbon::now()->subDays())
+    ->where('gender', 'male')
+    ->count();
+
+        $newUsersFemaleOneDay = Secondaryuser::where('registration_date', '>=', Carbon::now()->subDays())
+    ->where('gender', 'female')
+    ->count();
+
+        $totalNewUsersOneDay = $newUsersMaleOneDay + $newUsersFemaleOneDay;
+        $totalOneDayPercentage = $totalNewUsersOneDay > 0 ? (100 * $totalNewUsersOneDay / 1000) : 0;
+        $maleOneDayPercentage = $totalNewUsersOneDay > 0 ? (100 * $newUsersMaleOneDay / $totalNewUsersOneDay) : 0;
+        $femaleOneDayPercentage = $totalNewUsersOneDay > 0 ? (100 * $newUsersFemaleOneDay / $totalNewUsersOneDay) : 0;
+
         $totalNewUsers = $newUsersMale + $newUsersFemale;
         $totalPercentage = $totalNewUsers > 0 ? (100 * $totalNewUsers / 1000) : 0;
         $malePercentage = $totalNewUsers > 0 ? (100 * $newUsersMale / $totalNewUsers) : 0;
@@ -36,6 +50,10 @@
         $onlineUsers = Secondaryuser::where('is_online', 1)->count();
         $totalUsers = Secondaryuser::count();
         $onlinePercentage = $totalUsers > 0 ? (100 * $onlineUsers / $totalUsers) : 0;
+
+        $deletedUsersOneDay = DeletedUser::where('date', '>=', Carbon::now()->subDay())
+    ->count();
+        $deletedUsersOneDayPercentage = $totalUsers > 0 ? (100 * $deletedUsersOneDay / $totalUsers) : 0;
 
 
         Widget::add()
@@ -79,8 +97,7 @@
             ->progress($femalePercentage)
             ->hint($totalNewUsers > 0 ? 'Из общего числа пользователей.' : 'Нет новых пользователей.'),
 
-
-         Widget::make()
+        Widget::make()
             ->type('progress')
             ->class('card mb-3')
             ->statusBorder('start')
@@ -91,7 +108,57 @@
             ->description('Пользователи онлайн сейчас.')
             ->progress($onlinePercentage)
             ->hint($totalUsers > 0 ? 'Из общего числа пользователей.' : 'Нет пользователей.'),
+
+            Widget::make()
+            ->type('progress')
+            ->class('card mb-3')
+            ->statusBorder('start')
+            ->accentColor('primary')
+            ->ribbon(['top', 'la-user'])
+            ->progressClass('progressbar')
+            ->value($totalNewUsersOneDay)
+            ->description('Новых пользователей за 1 день.')
+            ->progress($totalOneDayPercentage)
+            ->hint(5000 - $totalNewUsersOneDay .' до следующего этапа.'),
+
+            Widget::make()
+            ->type('progress')
+            ->class('card mb-3')
+            ->statusBorder('start')
+            ->accentColor('blue')
+            ->ribbon(['top', 'la-male'])
+            ->progressClass('progressbar')
+            ->value($newUsersMaleOneDay)
+            ->description('Мужчин за 1 день.')
+            ->progress($maleOneDayPercentage)
+            ->hint($totalNewUsersOneDay > 0 ? 'Из общего числа пользователей.' : 'Нет новых пользователей.'),
+
+        Widget::make()
+            ->type('progress')
+            ->class('card mb-3')
+            ->statusBorder('start')
+            ->accentColor('pink')
+            ->ribbon(['top', 'la-female'])
+            ->progressClass('progressbar')
+            ->value($newUsersFemaleOneDay)
+            ->description('Женщин за 1 день.')
+            ->progress($femaleOneDayPercentage)
+            ->hint($totalNewUsersOneDay > 0 ? 'Из общего числа пользователей.' : 'Нет новых пользователей.'),
+
+            Widget::make()
+            ->type('progress')
+            ->class('card mb-3')
+            ->statusBorder('start')
+            ->accentColor('red')
+            ->ribbon(['top', 'la-globe'])
+            ->progressClass('progressbar')
+            ->value($deletedUsersOneDay)
+            ->description('Пользователи удалено за день.')
+            ->progress($deletedUsersOneDayPercentage)
+            ->hint($totalUsers > 0 ? 'Из общего числа пользователей.' : 'Нет пользователей.'),
             ]);
+
+
 
 
 @endphp
