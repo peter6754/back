@@ -9,7 +9,8 @@
         "backpack/crud": "^6.7",
         "backpack/theme-tabler": "^1.2",
         "laravel/framework": "^11.9",
-        "laravel/tinker": "^2.9"
+        "laravel/tinker": "^2.9",
+        "robokassa/sdk-php": "dev-main"
     },
     "require-dev": {
         "backpack/generators": "^4.0",
