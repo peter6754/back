@@ -2,18 +2,15 @@
 
 namespace App\Http\Controllers\Payments;
 
-use App\Models\User;
-use App\Models\Transaction;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\RedirectResponse;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Contracts\View\View;
 use App\Services\RobokassaService;
-use Illuminate\Http\Response;
 use Illuminate\Http\Request;
+use App\Models\Transactions;
 
 class RobokassaController extends Controller
 {
@@ -80,31 +77,7 @@ class RobokassaController extends Controller
         ]);
     }
 
-    /**
-     * ResultURL — асинхронный callback от Robokassa (POST!)
-     * @param Request $request
-     * @return ResponseFactory|Application|Response|object
-     * @throws \Exception
-     */
     public function result(Request $request)
-    {
-        $orderId = $request->input('InvId');
-        $amount = $request->input('OutSum');
-
-        $response = $this->robokassa->opState($orderId);
-        if (!empty($response['State']['Code']) && $response['State']['Code'] == 100) {
-            echo "SUCCESS";
-        }
-
-        // Обновляем статус заказа в БД (например: $order->markAsPaid())
-        // ...
-
-        // Обязательный ответ для Robokassa (иначе будет повторный запрос)
-        return response("OK{$orderId}", 200);
-    }
-
-
-    public function handleResult(Request $request)
     {
         // 1. Логирование входящего запроса
         Log::channel('robokassa')->info('GET ResultURL callback:', $request->all());
@@ -142,7 +115,7 @@ class RobokassaController extends Controller
 
         // 5. Обработка заказа (идемпотентная)
         try {
-            $order = Transaction::firstOrCreate(
+            $order = Transactions::firstOrCreate(
                 ['invoice_id' => $request->InvId],
                 [
                     'amount' => $request->OutSum,
@@ -174,30 +147,5 @@ class RobokassaController extends Controller
         // 6. Обязательный ответ для Robokassa
         return response("OK{$request->InvId}")
             ->header('Content-Type', 'text/plain');
-    }
-
-
-    /**
-     * Создание платежа и редирект на Robokassa
-     * @param Request $request
-     * @return RedirectResponse
-     */
-    public function createPayment(Request $request)
-    {
-        $amount = 1000; // Сумма платежа
-        $orderId = 123; // ID заказа в вашей системе
-        $description = 'Оплата заказа #' . $orderId;
-        $email = $request->user()->email; // Email пользователя (если нужен)
-
-        // Генерируем URL для оплаты
-        $paymentUrl = $this->robokassa->getPaymentUrl(
-            amount: $amount,
-            invoiceId: $orderId,
-            description: $description,
-            email: $email
-        );
-
-        // Редирект на Robokassa
-        return redirect()->away($paymentUrl);
     }
 }

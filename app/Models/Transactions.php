@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 class Transactions extends Model
 {
     use HasFactory;
+
     protected $connection = 'mysql_secondary';
     protected $table = 'transactions';
     public $timestamps = false;
