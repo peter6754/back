@@ -22,6 +22,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        if (empty(env('APP_URL'))) {
+            $schema = request()->isSecure() ? 'https://' : 'http://';
+            \URL::forceRootUrl($schema . request()->getHttpHost());
+        }
     }
 }
