@@ -129,4 +129,9 @@ class Transactions extends Model
             ->selectRaw('SUM(transactions.price) as sum, COUNT(*) as count')
             ->first();
     }
+
+    public static function createPayment($price, $product, $customerId)
+    {
+
+    }
 }
