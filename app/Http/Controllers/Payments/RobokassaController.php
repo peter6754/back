@@ -5,28 +5,12 @@ namespace App\Http\Controllers\Payments;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\RedirectResponse;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Contracts\View\View;
-use App\Services\RobokassaService;
 use Illuminate\Http\Request;
-use App\Models\Transactions;
 
-class RobokassaController extends Controller
+class RobokassaController extends PaymentsController
 {
-    /**
-     * @var RobokassaService
-     */
-    protected RobokassaService $robokassa;
-
-    /**
-     *
-     */
-    public function __construct()
-    {
-        $this->robokassa = new RobokassaService();
-    }
-
     /**
      * SuccessURL — пользователь вернулся после успешной оплаты
      * @param Request $request
@@ -77,6 +61,12 @@ class RobokassaController extends Controller
         ]);
     }
 
+// robokassa/result?out_summ=0.010000&OutSum=0.010000&inv_id=864243694&InvId=864243694&crc=E057E2BA6B466C0E53546021F6FAD83E&SignatureValue=E057E2BA6B466C0E53546021F6FAD83E&PaymentMethod=BankCard&IncSum=0.010000&IncCurrLabel=BankCardPSBR&EMail=enternetacum@yandex.ru&Fee=0.000000
+// robokassa/result?out_summ=0.010000&OutSum=0.010000&inv_id=1343225391&InvId=1343225391&crc=6BFDAB1554FC55CD76ACDA61CA3D51D7&SignatureValue=6BFDAB1554FC55CD76ACDA61CA3D51D7&PaymentMethod=BankCard&IncSum=0.010000&IncCurrLabel=BankCardPSBR&EMail=enternetacum@yandex.ru&Fee=0.000000
+//185.59.216.65 - - [03/May/2025:00:01:41 +0300] "GET /robokassa/result?out_summ=0.010000&OutSum=0.010000&inv_id=1796139958&InvId=1796139958&crc=70C0F9C24736A30E388B113A06E6BCB6&SignatureValue=70C0F9C24736A30E388B113A06E6BCB6&PaymentMethod=BankCard&IncSum=0.010000&IncCurrLabel=BankCardPSBR&EMail=enternetacum@yandex.ru&Fee=0.000000 HTTP/1.1" 200 55 "-" ".NET Framework/v4.0.30319"
+//185.59.216.65 - - [03/May/2025:00:02:41 +0300] "GET /robokassa/result?out_summ=0.010000&OutSum=0.010000&inv_id=1796139958&InvId=1796139958&crc=70C0F9C24736A30E388B113A06E6BCB6&SignatureValue=70C0F9C24736A30E388B113A06E6BCB6&PaymentMethod=BankCard&IncSum=0.010000&IncCurrLabel=BankCardPSBR&EMail=enternetacum@yandex.ru&Fee=0.000000 HTTP/1.1" 200 55 "-" ".NET Framework/v4.0.30319"
+//185.59.216.65 - - [03/May/2025:00:03:42 +0300] "GET /robokassa/result?out_summ=0.010000&OutSum=0.010000&inv_id=1796139958&InvId=1796139958&crc=70C0F9C24736A30E388B113A06E6BCB6&SignatureValue=70C0F9C24736A30E388B113A06E6BCB6&PaymentMethod=BankCard&IncSum=0.010000&IncCurrLabel=BankCardPSBR&EMail=enternetacum@yandex.ru&Fee=0.000000 HTTP/1.1" 200 55 "-" ".NET Framework/v4.0.30319"
+//185.59.216.65 - - [03/May/2025:00:04:43 +0300] "GET /robokassa/result?out_summ=0.010000&OutSum=0.010000&inv_id=1796139958&InvId=1796139958&crc=70C0F9C24736A30E388B113A06E6BCB6&SignatureValue=70C0F9C24736A30E388B113A06E6BCB6&PaymentMethod=BankCard&IncSum=0.010000&IncCurrLabel=BankCardPSBR&EMail=enternetacum@yandex.ru&Fee=0.000000 HTTP/1.1" 200 55 "-" ".NET Framework/v4.0.30319"
     public function result(Request $request)
     {
         // 1. Логирование входящего запроса
@@ -113,36 +103,39 @@ class RobokassaController extends Controller
             abort(403, 'Invalid signature');
         }
 
+        $getOrder = $this->robokassa->opState($request->InvId);
+        print_r($getOrder);
+
         // 5. Обработка заказа (идемпотентная)
-        try {
-            $order = Transactions::firstOrCreate(
-                ['invoice_id' => $request->InvId],
-                [
-                    'amount' => $request->OutSum,
-                    'status' => 'pending'
-                ]
-            );
-
-            // Если уже оплачен - просто подтверждаем
-            if ($order->status === 'succeeded') {
-                return response("OK{$request->InvId}");
-            }
-
-            // Обновляем статус
-            $order->update([
-                'status' => 'succeeded',
-                'paid_at' => now()
-            ]);
-
-            // Здесь можно добавить:
-            // - Активацию услуги
-            // - Отправку уведомления
-            // - event(new PaymentReceived($order))
-
-        } catch (\Exception $e) {
-            Log::error("Robokassa: Order processing failed - {$e->getMessage()}");
-            abort(500, 'Order processing error');
-        }
+//        try {
+//            $order = Transactions::firstOrCreate(
+//                ['invoice_id' => $request->InvId],
+//                [
+//                    'amount' => $request->OutSum,
+//                    'status' => 'pending'
+//                ]
+//            );
+//
+//            // Если уже оплачен - просто подтверждаем
+//            if ($order->status === 'succeeded') {
+//                return response("OK{$request->InvId}");
+//            }
+//
+//            // Обновляем статус
+//            $order->update([
+//                'status' => 'succeeded',
+//                'paid_at' => now()
+//            ]);
+//
+//            // Здесь можно добавить:
+//            // - Активацию услуги
+//            // - Отправку уведомления
+//            // - event(new PaymentReceived($order))
+//
+//        } catch (\Exception $e) {
+//            Log::error("Robokassa: Order processing failed - {$e->getMessage()}");
+//            abort(500, 'Order processing error');
+//        }
 
         // 6. Обязательный ответ для Robokassa
         return response("OK{$request->InvId}")
