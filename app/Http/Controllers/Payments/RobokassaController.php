@@ -5,11 +5,12 @@ namespace App\Http\Controllers\Payments;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\RedirectResponse;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
-class RobokassaController extends PaymentsController
+class RobokassaController extends Controller
 {
     /**
      * SuccessURL — пользователь вернулся после успешной оплаты

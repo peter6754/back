@@ -2,12 +2,11 @@
 
 namespace App\Models;
 
-use App\Services\JwtService;
-use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Model;
+use App\Services\JwtService;
 use Carbon\Carbon;
 
 class Secondaryuser extends Model
@@ -138,7 +137,7 @@ class Secondaryuser extends Model
      * @return array|null
      * @throws \Exception
      */
-    protected static function getUser(): array|null
+    protected function getUser(): array|null
     {
         // Decode JWT Token
         if (!$payload = app(JwtService::class)->decode(request()->bearerToken())) {
