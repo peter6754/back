@@ -15,7 +15,7 @@ class JwtService
 
     public function __construct(string $secret = null)
     {
-        $this->secret = $secret ?? env("JWT_SECRET");
+        $this->secret = $secret ?? config('jwt.jwt_secret');
 
         if (empty($this->secret)) {
             throw new InvalidArgumentException('Secret key cannot be empty');
