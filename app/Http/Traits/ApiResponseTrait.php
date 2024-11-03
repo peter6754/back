@@ -4,7 +4,6 @@ namespace App\Http\Traits;
 
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Http\JsonResponse;
-use App\Services\JwtService;
 
 trait ApiResponseTrait
 {
@@ -51,33 +50,5 @@ trait ApiResponseTrait
             ],
             'data' => null
         ], $httpCode);
-    }
-
-    /**
-     * Ответ для 404 ошибки
-     * @param string|null $message
-     * @param int $errorCode
-     * @return JsonResponse
-     */
-    protected function notFoundResponse(
-        ?string $message = 'Resource not found',
-        int     $errorCode = 0
-    ): JsonResponse
-    {
-        return $this->errorResponse(
-            $message,
-            $errorCode,
-            Response::HTTP_NOT_FOUND
-        );
-    }
-
-    protected function unauthorizedResponse() {
-        try {
-
-        $payload = app(JwtService::class)->decode(request()->bearerToken());
-
-        } catch (\Throwable $th) {
-
-        }
     }
 }
