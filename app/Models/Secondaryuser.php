@@ -140,10 +140,17 @@ class Secondaryuser extends Model
      */
     protected static function getUser(): array|null
     {
+        // Decode JWT Token
         if (!$payload = app(JwtService::class)->decode(request()->bearerToken())) {
             return null;
         }
 
-        return self::find($payload['id']);
+        // Get user data
+        if (!$payload = self::find($payload['id'])) {
+            return null;
+        }
+
+        // User data
+        return $payload->toArray();
     }
 }
