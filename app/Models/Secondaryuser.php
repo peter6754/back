@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\JwtService;
 use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -132,4 +133,17 @@ class Secondaryuser extends Model
         });
     }
 
+
+    /**
+     * @return array|null
+     * @throws \Exception
+     */
+    protected static function getUser(): array|null
+    {
+        if (!$payload = app(JwtService::class)->decode(request()->bearerToken())) {
+            return null;
+        }
+
+        return self::find($payload['id']);
+    }
 }
