@@ -9,8 +9,8 @@ use Exception;
 class JwtService
 {
     private string $alg = 'HS256';
-    private int $ttl = 3600; // 1 час в секундах
-    private int $leeway = 0; // Допустимое отклонение времени в секундах
+    private int $ttl = 3600;
+    private int $leeway = 0;
     private string $secret;
 
     public function __construct(string $secret = null)
