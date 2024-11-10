@@ -48,7 +48,12 @@ class VerificationRequestsCrudController extends CrudController
             'type' => 'closure',
             'function' => function ($entry) {
                 return $entry->user->email;
-            }
+            },
+            'searchLogic' => function ($query, $column, $searchTerm) {
+                $query->orWhereHas('user', function ($q) use ($searchTerm) {
+                    $q->where('email', 'like', '%' . $searchTerm . '%');
+                });
+            },
         ]);
 
 
