@@ -26,6 +26,11 @@ class InQueueForDeleteUser extends Model
         return $this->belongsTo(Secondaryuser::class, 'user_id');
     }
 
+    public function images()
+    {
+        return $this->hasMany(UserImage::class, 'user_id');
+    }
+
     public static function countDeletedUsers()
     {
 
