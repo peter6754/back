@@ -130,8 +130,14 @@ class Transactions extends Model
             ->first();
     }
 
-    public static function createPayment($price, $product, $customerId)
+    protected static function boot()
     {
+        parent::boot();
 
+        static::creating(function ($model) {
+            if (empty($model->id)) {
+                $model->id = \Illuminate\Support\Str::uuid()->toString();
+            }
+        });
     }
 }
