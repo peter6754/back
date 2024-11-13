@@ -2,9 +2,9 @@
 
 namespace App\Providers;
 
-use App\Services\JwtService;
+use App\Services\Payments\PaymentsService;
 use Illuminate\Support\ServiceProvider;
-use App\Services\RobokassaService;
+use App\Services\JwtService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -13,8 +13,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(RobokassaService::class, function () {
-            return new RobokassaService();
+        $this->app->singleton(PaymentsService::class, function ($app) {
+            return new PaymentsService($app);
         });
 
         $this->app->singleton(JwtService::class, function () {

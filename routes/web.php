@@ -1,24 +1,27 @@
 <?php
 
-use App\Http\Controllers\Payments\RobokassaController;
 use App\Http\Controllers\Payments\PaymentsController;
+use App\Http\Controllers\Payments\StatusesController;
 use Illuminate\Support\Facades\Route;
-
-
 
 // Payments system routes
 Route::prefix('payment')->group(function () {
+
+    // Services init payment
     Route::get('service-package', [PaymentsController::class, 'servicePackage'])->name('payment.service-package');
-    Route::get('subscription', [PaymentsController::class, 'subscription'])->name('payment.subscription');
-    Route::get('recurring', [PaymentsController::class, 'recurring'])->name('payment.recurring');
-    Route::get('status/{id}', [PaymentsController::class, 'status'])->name('payment.status');
+    Route::post('subscription', [PaymentsController::class, 'subscription'])->name('payment.subscription');
     Route::get('gift', [PaymentsController::class, 'gift'])->name('payment.gift');
 
-    Route::prefix('robokassa')->group(function () {
-        Route::get('success', [RobokassaController::class, 'success'])->name('robokassa.success');
-        Route::get('result', [RobokassaController::class, 'result'])->name('robokassa.result');
-        Route::get('fail', [RobokassaController::class, 'fail'])->name('robokassa.fail');
-    });
+    // Service checking
+    Route::get('status/{id}', [PaymentsController::class, 'status'])->name('payment.status');
+
+    // Statuses
+    Route::get('{provider}/result', [StatusesController::class, 'resultCallback'])->name('statuses.callback');
+    Route::get('{provider}/success', [StatusesController::class, 'success'])->name('statuses.success');
+    Route::get('{provider}/fail', [StatusesController::class, 'fail'])->name('statuses.fail');
+
+    // ToDo: Посмотреть позже, а нужно ли
+    Route::get('recurring', [PaymentsController::class, 'recurring'])->name('payment.recurring');
 });
 
 

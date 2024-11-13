@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class Transactions extends Model
 {
@@ -136,7 +137,7 @@ class Transactions extends Model
 
         static::creating(function ($model) {
             if (empty($model->id)) {
-                $model->id = \Illuminate\Support\Str::uuid()->toString();
+                $model->id = Str::uuid()->toString();
             }
         });
     }

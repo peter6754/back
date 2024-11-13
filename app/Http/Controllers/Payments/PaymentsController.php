@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\Payments;
 
+use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\Payments\PaymentsService;
 use App\Http\Traits\ApiResponseTrait;
 use App\Http\Controllers\Controller;
-use App\Services\RobokassaService;
 use Illuminate\Http\JsonResponse;
 use App\Models\Secondaryuser;
 use App\Models\Transactions;
@@ -16,11 +17,6 @@ class PaymentsController extends Controller
     use ApiResponseTrait;
 
     /**
-     * @var RobokassaService
-     */
-    protected RobokassaService $robokassa;
-
-    /**
      * @var Transactions
      */
     protected Transactions $transactions;
@@ -28,11 +24,8 @@ class PaymentsController extends Controller
     /**
      * @throws Exception
      */
-    public function __construct()
+    public function __construct(private PaymentsService $payments)
     {
-        // Payments methods
-        $this->robokassa = new RobokassaService();
-
         // Default models
         $this->transactions = new Transactions();
     }
@@ -44,18 +37,26 @@ class PaymentsController extends Controller
 
     }
 
-    public function subscription()
+    public function subscription(Request $request, string $provider = "robokassa")
     {
         // Checking auth user
-        $this->checkingAuth();
+        $customer = $this->checkingAuth();
 
-    }
+        // Logic
+        try {
+            $from_banner = !empty($request->input("from_banner"));
+            $package_id = $request->input("package_id") ?? 2;
 
-    public function recurring()
-    {
-        // Checking auth user
-        $this->checkingAuth();
+            $getTransaction = $this->payments->buySubscription($provider, [
+                "from_banner" => $from_banner,
+                "package_id" => $package_id,
+                "customer" => $customer
+            ]);
 
+            return $this->successResponse($getTransaction, Response::HTTP_CREATED);
+        } catch (Exception $exception) {
+
+        }
     }
 
     public function gift()

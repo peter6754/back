@@ -8,7 +8,6 @@
     ],
     "license": "MIT",
     "require": {
-        "robokassa/sdk-php": "dev-main",
         "backpack/theme-tabler": "^1.2",
         "zircote/swagger-php": "^5.1",
         "laravel/framework": "^11.9",
