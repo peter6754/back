@@ -37,6 +37,29 @@ class PaymentsController extends Controller
 
     }
 
+
+    public function unsubscription(Request $request, string $provider = "robokassa")
+    {
+        // Checking auth user
+        $customer = $this->checkingAuth();
+
+        // Logic
+        try {
+            $from_banner = !empty($request->input("from_banner"));
+            $package_id = $request->input("package_id") ?? 2;
+
+            $getTransaction = $this->payments->buySubscription($provider, [
+                "from_banner" => $from_banner,
+                "package_id" => $package_id,
+                "customer" => $customer
+            ]);
+
+            return $this->successResponse($getTransaction, Response::HTTP_CREATED);
+        } catch (Exception $exception) {
+
+        }
+    }
+
     public function subscription(Request $request, string $provider = "robokassa")
     {
         // Checking auth user
