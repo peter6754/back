@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -10,6 +11,7 @@ use Carbon\Carbon;
 class Transactions extends Model
 {
     use HasFactory;
+    use HasUuids;
 
     protected $connection = 'mysql_secondary';
     protected $table = 'transactions';

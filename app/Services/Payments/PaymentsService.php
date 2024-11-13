@@ -196,8 +196,8 @@ class PaymentsService extends Manager
         ]);
 
         // Create transaction
-        $transaction = Transactions::create([
-            "id" => $paymentData['payment_id'],
+        Transactions::create([
+            "id" => $paymentData['payment_id'] ?? null,
             "purchased_at" => $paymentData['created_at'],
             "price" => ($params['action'] != "recurrent" ? $params['price'] : 0.00),
             "type" => $params['product'],
@@ -208,27 +208,26 @@ class PaymentsService extends Manager
         // Increment data
         switch ($params['product']) {
             case self::ORDER_PRODUCT_SUBSCRIPTION:
-                DB::table("bought_subscriptions")->insert([
-                    "transaction_id" => $transaction['id'],
+                DB::connection('mysql_secondary')->table("bought_subscriptions")->insert([
+                    "transaction_id" => $paymentData['payment_id'],
                     "package_id" => $params['product_id'],
                 ]);
                 break;
             case self::ORDER_PRODUCT_SERVICE:
-                DB::table("bought_service_packages")->insert([
-                    "transaction_id" => $transaction['id'],
+                DB::connection('mysql_secondary')->table("bought_service_packages")->insert([
+                    "transaction_id" => $paymentData['payment_id'],
                     "package_id" => $params['product_id'],
                 ]);
                 break;
             case self::ORDER_PRODUCT_GIFT:
-                DB::table("user_gifts")->insert([
+                DB::connection('mysql_secondary')->table("user_gifts")->insert([
+                    "transaction_id" => $paymentData['payment_id'],
                     "sender_id" => $params['customer']['id'],
                     "receiver_id" => $params['receiver_id'],
-                    "transaction_id" => $transaction['id'],
                     "gift_id" => $params['product_id'],
                 ]);
                 break;
         }
-
 
         return [
             "confirmation_url" => $paymentData["confirmation_url"],

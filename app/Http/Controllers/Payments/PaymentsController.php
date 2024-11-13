@@ -84,8 +84,7 @@ class PaymentsController extends Controller
             return $this->successResponse($getTransaction, Response::HTTP_CREATED);
         } catch (Exception $e) {
             return $this->errorResponse(
-                $e->getMessage(),
-                $e->getCode()
+                $e->getMessage()
             );
         }
     }
