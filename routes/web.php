@@ -8,10 +8,10 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('payment')->group(function () {
 
     // Services init payment
-    Route::get('service-package', [PaymentsController::class, 'servicePackage'])->name('payment.service-package');
+    Route::post('service-package', [PaymentsController::class, 'servicePackage'])->name('payment.service-package');
     Route::post('unsubscription', [PaymentsController::class, 'unsubscription'])->name('payment.unsubscription');
     Route::post('subscription', [PaymentsController::class, 'subscription'])->name('payment.subscription');
-    Route::get('gift', [PaymentsController::class, 'gift'])->name('payment.gift');
+    Route::post('gift', [PaymentsController::class, 'gift'])->name('payment.gift');
 
     // Service checking
     Route::get('status/{id}', [PaymentsController::class, 'status'])->name('payment.status');

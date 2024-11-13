@@ -5,20 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ServicePackagePrice extends Model
+class GiftPrice extends Model
 {
     use HasFactory;
 
     protected $connection = 'mysql_secondary';
 
-    protected $table = 'service_package_prices';
+    protected $table = 'gift_prices';
 
-    protected $primaryKey = 'package_id';
+    protected $primaryKey = 'gift_id';
 
     public $incrementing = false;
 
     protected $fillable = [
-        'package_id',
+        'gift_id',
         'male',
         'female',
         'm_f',
@@ -41,6 +41,6 @@ class ServicePackagePrice extends Model
      */
     public function package()
     {
-        return $this->belongsTo(ServicePackages::class, 'package_id');
+        return $this->belongsTo(Gifts::class, 'gift_id');
     }
 }
