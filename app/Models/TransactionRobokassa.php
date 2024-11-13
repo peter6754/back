@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class TransactionRobokassa extends Model
 {
@@ -58,7 +58,7 @@ class TransactionRobokassa extends Model
 
         static::creating(function ($model) {
             if (empty($model->id)) {
-                $model->id = \Illuminate\Support\Str::uuid()->toString();
+                $model->id = Str::uuid()->toString();
             }
         });
     }
