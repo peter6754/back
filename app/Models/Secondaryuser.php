@@ -49,4 +49,10 @@ class Secondaryuser extends Model
     {
         return $this->hasMany(UserImage::class, 'user_id');
     }
+
+    public function userInformation()
+    {
+        return $this->hasOne(UserInformation::class, 'user_id', 'id');
+    }
+
 }
