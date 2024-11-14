@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Requests\SecondaryuserRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
+use App\Models\UserInformation;
 
 /**
  * Class SecondaryuserCrudController
@@ -35,6 +36,7 @@ class SecondaryuserCrudController extends CrudController
         // Для отображения в таблице (списке)
 //        CRUD::column('id')->label('ID');
         CRUD::column('name')->label('Имя');
+        CRUD::column('age')->label('Возраст');
         $this->crud->addColumn([
             'name' => 'random_image',
             'label' => 'Фотография',
@@ -43,44 +45,102 @@ class SecondaryuserCrudController extends CrudController
             'value' => function ($entry) {
                 $images = $entry->images;
                 if ($images->isNotEmpty()) {
-                    $randomImage = $images->random();
-                    $imageUrl = $randomImage->image_url;
-                    return '
-                <img src="' . $imageUrl . '" height="80px" width="60px" style="cursor: pointer;" onclick="openModal(\'' . $imageUrl . '\')">
+                    // Устанавливаем ширину колонки в зависимости от количества изображений
+                    $count = $images->count();
+                    $width = $count * 70; // 60px ширина изображения + 10px отступ для каждого
 
-                <!-- Модальное окно -->
-                <div id="imageModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center;">
-                    <span onclick="closeModal()" style="position: absolute; top: 20px; right: 30px; font-size: 30px; color: white; cursor: pointer;">&times;</span>
-                    <img id="modalImage" src="" style="max-width: 90%; max-height: 90%; border-radius: 5px;">
-                </div>
+                    // Начало строки изображений
+                    $imagesHtml = '<div style="display: flex; width: ' . $width . 'px; gap: 5px;">';
 
+                    // Добавляем каждое изображение
+                    foreach ($images as $image) {
+                        $imageUrl = $image->image_url;
+                        $imagesHtml .= '
+                    <img src="' . $imageUrl . '" height="80px" width="60px" style="cursor: pointer;" onclick="openGlobalModal(\'' . $imageUrl . '\')">
+                ';
+                    }
+
+                    $imagesHtml .= '</div>';
+
+                    // Скрипт для создания глобального модального окна
+                    $imagesHtml .= '
                 <script>
-                    function openModal(imageUrl) {
-                        document.getElementById("imageModal").style.display = "flex";
-                        document.getElementById("modalImage").src = imageUrl;
+                    function openGlobalModal(imageUrl) {
+                        // Создаем модальное окно в body
+                        const modal = document.createElement("div");
+                        modal.id = "globalImageModal";
+                        modal.style.position = "fixed";
+                        modal.style.top = 0;
+                        modal.style.left = 0;
+                        modal.style.width = "100%";
+                        modal.style.height = "100%";
+                        modal.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
+                        modal.style.display = "flex";
+                        modal.style.justifyContent = "center";
+                        modal.style.alignItems = "center";
+                        modal.style.zIndex = 99999; // Превышает любые другие z-index
+
+                        // Кнопка закрытия
+                        const closeButton = document.createElement("span");
+                        closeButton.innerHTML = "&times;";
+                        closeButton.style.position = "absolute";
+                        closeButton.style.top = "20px";
+                        closeButton.style.right = "30px";
+                        closeButton.style.fontSize = "30px";
+                        closeButton.style.color = "white";
+                        closeButton.style.cursor = "pointer";
+                        closeButton.onclick = function() {
+                            closeGlobalModal();
+                        };
+
+                        // Полноразмерное изображение
+                        const img = document.createElement("img");
+                        img.src = imageUrl;
+                        img.style.maxWidth = "90%";
+                        img.style.maxHeight = "90%";
+                        img.style.borderRadius = "5px";
+
+                        // Добавляем элементы в модальное окно
+                        modal.appendChild(closeButton);
+                        modal.appendChild(img);
+                        modal.onclick = function(e) {
+                            if (e.target === modal) {
+                                closeGlobalModal();
+                            }
+                        };
+
+                        // Добавляем модальное окно в body
+                        document.body.appendChild(modal);
                     }
 
-                    function closeModal() {
-                        document.getElementById("imageModal").style.display = "none";
-                    }
-
-                    // Закрытие модального окна при клике вне изображения
-                    document.getElementById("imageModal").addEventListener("click", function(event) {
-                        if (event.target === this) {
-                            closeModal();
+                    function closeGlobalModal() {
+                        const modal = document.getElementById("globalImageModal");
+                        if (modal) {
+                            document.body.removeChild(modal);
                         }
-                    });
+                    }
                 </script>
             ';
+
+                    return $imagesHtml;
                 }
                 return 'Нет фото';
             },
         ]);
+
+        $this->crud->addColumn([
+            'name' => 'userInformation.bio',
+            'label' => 'О себе',
+            'type' => 'bio_with_collapse', // Используем кастомный тип
+            'entity' => 'userInformation',
+            'attribute' => 'bio',
+            'model' => UserInformation::class,
+        ]);
+
         CRUD::column('username')->label('Имя пользователя');
         CRUD::column('phone')->label('Телефон');
         CRUD::column('email')->label('Электронная почта');
-        CRUD::column('birth_date')->label('Дата рождения');
-        CRUD::column('age')->label('Возраст');
+//        CRUD::column('birth_date')->label('Дата рождения');
         CRUD::column('gender')
             ->label('Пол')
             ->type('select_from_array')
@@ -203,82 +263,6 @@ class SecondaryuserCrudController extends CrudController
          * - CRUD::column('price')->type('number');
          */
         CRUD::column('id')->label('ID');
-        $this->crud->addColumn([
-            'name' => 'images',
-            'label' => 'User Images',
-            'type' => 'custom_html',
-            'escaped' => false,
-            'value' => function($entry) {
-                $imagesHtml = '';
-                foreach ($entry->images as $image) {
-                    $imagesHtml .= '
-                    <img src="' . $image->image_url . '" height="80px" width="60px" style="margin-right: 5px; cursor: pointer;" onclick="openGlobalModal(\'' . $image->image_url . '\')">
-                ';
-                }
-
-                // Скрипт для создания глобального модального окна
-                $imagesHtml .= '
-                <script>
-                    function openGlobalModal(imageUrl) {
-                        // Создаем модальное окно в body
-                        const modal = document.createElement("div");
-                        modal.id = "globalImageModal";
-                        modal.style.position = "fixed";
-                        modal.style.top = 0;
-                        modal.style.left = 0;
-                        modal.style.width = "100%";
-                        modal.style.height = "100%";
-                        modal.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
-                        modal.style.display = "flex";
-                        modal.style.justifyContent = "center";
-                        modal.style.alignItems = "center";
-                        modal.style.zIndex = 99999; // Превышает любые другие z-index
-
-                        // Кнопка закрытия
-                        const closeButton = document.createElement("span");
-                        closeButton.innerHTML = "&times;";
-                        closeButton.style.position = "absolute";
-                        closeButton.style.top = "20px";
-                        closeButton.style.right = "30px";
-                        closeButton.style.fontSize = "30px";
-                        closeButton.style.color = "white";
-                        closeButton.style.cursor = "pointer";
-                        closeButton.onclick = function() {
-                            closeGlobalModal();
-                        };
-
-                        // Полноразмерное изображение
-                        const img = document.createElement("img");
-                        img.src = imageUrl;
-                        img.style.maxWidth = "90%";
-                        img.style.maxHeight = "90%";
-                        img.style.borderRadius = "5px";
-
-                        // Добавляем элементы в модальное окно
-                        modal.appendChild(closeButton);
-                        modal.appendChild(img);
-                        modal.onclick = function(e) {
-                            if (e.target === modal) {
-                                closeGlobalModal();
-                            }
-                        };
-
-                        // Добавляем модальное окно в body
-                        document.body.appendChild(modal);
-                    }
-
-                    function closeGlobalModal() {
-                        const modal = document.getElementById("globalImageModal");
-                        if (modal) {
-                            document.body.removeChild(modal);
-                        }
-                    }
-                </script>
-            ';
-
-                return $imagesHtml;
-            },
-        ]);
         CRUD::column('name')->label('Имя');
         CRUD::column('username')->label('Логин');
         CRUD::column('phone')->label('Телефон');
