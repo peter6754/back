@@ -13,6 +13,7 @@
         "laravel/framework": "^11.9",
         "laravel/tinker": "^2.9",
         "backpack/crud": "^6.7",
+        "ext-simplexml": "*",
         "php": "^8.2"
     },
     "require-dev": {

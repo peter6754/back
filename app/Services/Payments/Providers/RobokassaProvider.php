@@ -14,7 +14,6 @@ class RobokassaProvider implements PaymentProviderInterface
     private string $merchantLogin;
     private string $password1;
     private string $password2;
-    private bool $isTest;
 
     /**
      *
@@ -24,7 +23,6 @@ class RobokassaProvider implements PaymentProviderInterface
         $this->merchantLogin = config('payments.robokassa.merchant_login');
         $this->password1 = config('payments.robokassa.password1');
         $this->password2 = config('payments.robokassa.password2');
-        $this->isTest = config('payments.robokassa.test_mode', false);
     }
 
     /**
@@ -94,7 +92,7 @@ class RobokassaProvider implements PaymentProviderInterface
 
         $baseUrl = 'https://auth.robokassa.ru/Merchant/Index.aspx';
 
-        $signature = $this->generateSignature(
+        $signature = $this->signatureOrder(
             $params['amount'],
             $params['invoiceId'],
             $this->password1
@@ -110,8 +108,7 @@ class RobokassaProvider implements PaymentProviderInterface
             'Description' => $params['description'],
             'SignatureValue' => $signature,
             'Email' => $params['email'],
-            'ExpirationDate' => $expirationDate->format('c'),
-            'IsTest' => $this->isTest ? 1 : 0,
+            'ExpirationDate' => $expirationDate->format('c')
         ];
 
         if (isset($params['currency'])) {
@@ -130,17 +127,6 @@ class RobokassaProvider implements PaymentProviderInterface
         ];
     }
 
-    public function initRecurringPayment(array $params): array
-    {
-        $required = ['amount', 'description', 'email', 'previousInvoiceId'];
-        $this->validateParams($params, $required);
-
-        return $this->pay(array_merge($params, [
-            'recurring' => true,
-            'PreviousInvID' => $params['previousInvoiceId']
-        ]));
-    }
-
     public function validate(array $params): bool
     {
         $required = ['InvId', 'OutSum', 'SignatureValue'];
@@ -148,7 +134,7 @@ class RobokassaProvider implements PaymentProviderInterface
             return false;
         }
 
-        $signature = $this->generateSignature(
+        $signature = $this->signatureResult(
             $params['OutSum'],
             $params['InvId'],
             $this->password2
@@ -164,7 +150,7 @@ class RobokassaProvider implements PaymentProviderInterface
             return false;
         }
 
-        $signature = $this->generateSignature(
+        $signature = $this->signatureOrder(
             $params['OutSum'],
             $params['InvId'],
             $this->password1
@@ -173,23 +159,52 @@ class RobokassaProvider implements PaymentProviderInterface
         return strtolower($params['SignatureValue']) === strtolower($signature);
     }
 
-    public function validateRecurringPayment(array $params): bool
+    public function checkOrderStatus(string $invoiceId): array
     {
-        $required = ['InvId', 'OutSum', 'SignatureValue', 'PreviousInvID'];
-        if (count(array_intersect_key(array_flip($required), $params)) !== count($required)) {
-            return false;
-        }
+        $requestUrl = "https://auth.robokassa.ru/Merchant/WebService/Service.asmx/OpStateExt";
+        $queryParams = [
+            'MerchantLogin' => $this->merchantLogin,
+            'InvoiceID' => $invoiceId,
+            'Signature' => $this->signatureState(
+                $invoiceId,
+                $this->password2
+            )
+        ];
 
-        return $this->validate($params);
+        $response = (new Client())->request('GET', $requestUrl . '?' . http_build_query($queryParams));
+        $response = simplexml_load_string($response->getBody());
+        return json_decode(json_encode((array)$response, JSON_NUMERIC_CHECK), true);
     }
 
-    private function generateSignature(string $amount, string $invoiceId, string $password): string
+    private function signatureResult(string $amount, string $invoiceId, string $password): string
+    {
+        $signatureStr = implode(':', [
+            $amount,
+            $invoiceId,
+            $password,
+        ]);
+
+        return md5($signatureStr);
+    }
+
+    private function signatureOrder(string $amount, string $invoiceId, string $password): string
     {
         $signatureStr = implode(':', [
             $this->merchantLogin,
             $amount,
             $invoiceId,
             $password,
+        ]);
+
+        return md5($signatureStr);
+    }
+
+    private function signatureState(string $invoiceId, string $password): string
+    {
+        $signatureStr = implode(':', [
+            $this->merchantLogin,
+            $invoiceId,
+            $password
         ]);
 
         return md5($signatureStr);
@@ -202,10 +217,5 @@ class RobokassaProvider implements PaymentProviderInterface
                 'payment' => 'Missing required payment parameters: ' . implode(', ', $required)
             ]);
         }
-    }
-
-    public function processRecurringPayment(array $params): bool
-    {
-        return $this->validateRecurringPayment($params);
     }
 }

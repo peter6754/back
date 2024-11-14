@@ -25,11 +25,11 @@ class PaymentsService extends Manager
             "female" => "55f9c107-f698-4f51-95a8-bfd68ffeb3ef",
             "male" => "545a01b4-7de7-4063-93f4-4572d0036d29",
         ],
+//        7 => [
+//            "female" => "b44bdb1e-e7f7-44bb-a886-b040cc5cb53c",
+//            "male" => "648ef7cf-382c-4ff1-9656-672220d299e1",
+//        ],
         7 => [
-            "female" => "b44bdb1e-e7f7-44bb-a886-b040cc5cb53c",
-            "male" => "648ef7cf-382c-4ff1-9656-672220d299e1",
-        ],
-        99 => [
             "female" => "bdc80644-a987-4798-bafc-85356d86bd55",
             "male" => "bdc80644-a987-4798-bafc-85356d86bd55",
         ],
@@ -192,6 +192,7 @@ class PaymentsService extends Manager
         $paymentData = call_user_func([$this->driver($provider), $params['action']], [
             "description" => self::$titleProducts[$params['product']],
             "email" => $params['customer']['email'],
+            "product_id" => $params['product_id'],
             "amount" => $params['price']
         ]);
 
