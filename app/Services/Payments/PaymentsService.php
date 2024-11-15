@@ -164,7 +164,7 @@ class PaymentsService extends Manager
 
         // Get price
         $gift = Gifts::with('price')->find((int)$params["gift_id"]);
-        $user = Secondaryuser::find((int)$params["user_id"]);
+        $user = Secondaryuser::find($params["user_id"]);
         if (!$user || !$gift) {
             throw new \Exception("Gift/User doesn't exist", 4060);
         }
