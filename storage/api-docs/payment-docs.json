@@ -182,47 +182,93 @@
                     }
                 ]
             }
+        },
+        "/payment/status/{id}": {
+            "get": {
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Get payment status by ID",
+                "operationId": "getPaymentStatus",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Payment ID (UUID)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "example": "000558ed-d557-4fc0-99da-b23dec6be0bf"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "error": {
+                                                    "description": "Error information (null if no error)",
+                                                    "type": "null",
+                                                    "example": null
+                                                },
+                                                "status": {
+                                                    "description": "HTTP status code",
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "description": "Payment status data",
+                                            "properties": {
+                                                "status": {
+                                                    "description": "Current payment status",
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "completed",
+                                                        "pending",
+                                                        "failed",
+                                                        "canceled"
+                                                    ],
+                                                    "example": "canceled"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Unauthorized"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
         "schemas": {
-            "Unauthorized": {
-                "title": "Error Unauthorized Structure",
-                "description": "Standard Unauthorized response format",
-                "properties": {
-                    "meta": {
-                        "properties": {
-                            "error": {
-                                "properties": {
-                                    "code": {
-                                        "description": "Application-specific error code",
-                                        "type": "integer",
-                                        "example": 4010
-                                    },
-                                    "message": {
-                                        "description": "Human-readable error message",
-                                        "type": "string",
-                                        "example": "Unauthorized"
-                                    }
-                                },
-                                "type": "object"
-                            },
-                            "status": {
-                                "description": "HTTP status code",
-                                "type": "integer",
-                                "example": 401
-                            }
-                        },
-                        "type": "object"
-                    },
-                    "data": {
-                        "description": "Empty data payload for error responses",
-                        "type": "null",
-                        "example": null
-                    }
-                },
-                "type": "object"
-            },
             "SuccessResponse": {
                 "title": "Success Response Structure",
                 "description": "Standard success response format",
@@ -259,6 +305,43 @@
                             }
                         },
                         "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "Unauthorized": {
+                "title": "Error Unauthorized Structure",
+                "description": "Standard Unauthorized response format",
+                "properties": {
+                    "meta": {
+                        "properties": {
+                            "error": {
+                                "properties": {
+                                    "code": {
+                                        "description": "Application-specific error code",
+                                        "type": "integer",
+                                        "example": 4010
+                                    },
+                                    "message": {
+                                        "description": "Human-readable error message",
+                                        "type": "string",
+                                        "example": "Unauthorized"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "status": {
+                                "description": "HTTP status code",
+                                "type": "integer",
+                                "example": 401
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "data": {
+                        "description": "Empty data payload for error responses",
+                        "type": "null",
+                        "example": null
                     }
                 },
                 "type": "object"

@@ -4,6 +4,7 @@ namespace App\Http\Traits;
 
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Http\JsonResponse;
+use App\Models\Secondaryuser;
 
 trait ApiResponseTrait
 {
@@ -90,5 +91,61 @@ trait ApiResponseTrait
             ],
             'data' => null
         ], $httpCode);
+    }
+
+    /**
+     * @return array|JsonResponse
+     * @throws Exception
+
+     * @OA\Schema(
+     *     schema="Unauthorized",
+     *     title="Error Unauthorized Structure",
+     *     description="Standard Unauthorized response format",
+     *     @OA\Property(
+     *         property="meta",
+     *         type="object",
+     *         @OA\Property(
+     *             property="error",
+     *             type="object",
+     *             @OA\Property(
+     *                 property="code",
+     *                 type="integer",
+     *                 example=4010,
+     *                 description="Application-specific error code"
+     *             ),
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 example="Unauthorized",
+     *                 description="Human-readable error message"
+     *             )
+     *         ),
+     *         @OA\Property(
+     *             property="status",
+     *             type="integer",
+     *             example=401,
+     *             description="HTTP status code"
+     *         )
+     *     ),
+     *     @OA\Property(
+     *         property="data",
+     *         type="null",
+     *         example=null,
+     *         description="Empty data payload for error responses"
+     *     )
+     * )
+     */
+    protected function checkingAuth(): JsonResponse|array
+    {
+        $getUser = Secondaryuser::getUser();
+        if (empty($getUser)) {
+            $this->errorResponse(
+                Response::$statusTexts[Response::HTTP_UNAUTHORIZED],
+                4010,
+                Response::HTTP_UNAUTHORIZED
+            )->send();
+            die();
+        }
+        return $getUser;
     }
 }
