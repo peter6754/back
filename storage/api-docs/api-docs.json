@@ -1,19 +1,13 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "Laravel API Documentation",
-        "description": "L5 Swagger OpenApi description",
+        "title": "TinderOne API",
+        "description": "Payment service documentaion",
         "contact": {
-            "email": "admin@admin.com"
+            "email": "enternetacum@yandex.ru"
         },
         "version": "1.0.0"
     },
-    "servers": [
-        {
-            "url": "/",
-            "description": "API Server"
-        }
-    ],
     "paths": {
         "/payment/service-package": {
             "post": {
@@ -193,8 +187,8 @@
     "components": {
         "schemas": {
             "Unauthorized": {
-                "title": "Error Response Structure",
-                "description": "Standard error response format",
+                "title": "Error Unauthorized Structure",
+                "description": "Standard Unauthorized response format",
                 "properties": {
                     "meta": {
                         "properties": {

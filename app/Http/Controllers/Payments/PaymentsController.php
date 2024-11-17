@@ -258,8 +258,8 @@ class PaymentsController extends Controller
 
      * @OA\Schema(
      *     schema="Unauthorized",
-     *     title="Error Response Structure",
-     *     description="Standard error response format",
+     *     title="Error Unauthorized Structure",
+     *     description="Standard Unauthorized response format",
      *     @OA\Property(
      *         property="meta",
      *         type="object",
