@@ -10,7 +10,6 @@ Route::prefix('payment')->group(function () {
 
     // Services init payment
     Route::post('service-package', [PaymentsController::class, 'servicePackage'])->name('payment.service-package');
-    Route::post('unsubscription', [PaymentsController::class, 'unsubscription'])->name('payment.unsubscription');
     Route::post('subscription', [PaymentsController::class, 'subscription'])->name('payment.subscription');
     Route::post('gift', [PaymentsController::class, 'gift'])->name('payment.gift');
 

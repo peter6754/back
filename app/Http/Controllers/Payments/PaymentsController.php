@@ -35,6 +35,38 @@ class PaymentsController extends Controller
      * @param string $provider
      * @return JsonResponse
      * @throws Exception
+     * @OA\Post(
+     *     path="/payment/service-package",
+     *     tags={"Payment"},
+     *     summary="Create service package payment",
+     *     operationId="createServicePackagePayment",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"service_package_id"},
+     *             @OA\Property(
+     *                 property="service_package_id",
+     *                 type="integer",
+     *                 example=4,
+     *                 description="ID of the package"
+     *             ),
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         @OA\JsonContent(ref="#/components/schemas/SuccessResponse"),
+     *         description="Successful operation",
+     *         response=201,
+     *     ),
+     *
+     *     @OA\Response(
+     *         @OA\JsonContent(ref="#/components/schemas/Unauthorized"),
+     *         description="Unauthorized",
+     *         response=401
+     *     )
+     * )
      */
     public function servicePackage(Request $request, string $provider = "robokassa")
     {
@@ -64,6 +96,38 @@ class PaymentsController extends Controller
      * @param string $provider
      * @return JsonResponse
      * @throws Exception
+     * @OA\Post(
+     *     path="/payment/subscription",
+     *     tags={"Payment"},
+     *     summary="Create subscription payment",
+     *     operationId="createSubscriptionPayment",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"package_id"},
+     *             @OA\Property(
+     *                 property="package_id",
+     *                 type="integer",
+     *                 example=4,
+     *                 description="ID of the subscription package"
+     *             ),
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         @OA\JsonContent(ref="#/components/schemas/SuccessResponse"),
+     *         description="Successful operation",
+     *         response=201,
+     *     ),
+     *
+     *     @OA\Response(
+     *         @OA\JsonContent(ref="#/components/schemas/Unauthorized"),
+     *         description="Unauthorized",
+     *         response=401
+     *     )
+     * )
      */
     public function subscription(Request $request, string $provider = "robokassa")
     {
@@ -94,6 +158,45 @@ class PaymentsController extends Controller
      * @param string $provider
      * @return JsonResponse
      * @throws Exception
+     * @OA\Post(
+     *      path="/payment/gift",
+     *      tags={"Payment"},
+     *      summary="Create gift payment",
+     *      operationId="createGiftPayment",
+     *      security={{"bearerAuth":{}}},
+     *
+     *      @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              required={"user_id","gift_id"},
+     *               @OA\Property(
+     *                   property="user_id",
+     *                   type="string",
+     *                   example="0b18a55c-e44e-4f72-9829-6d143878ce35",
+     *                   description="User id"
+     *               ),
+     *               @OA\Property(
+     *                   property="gift_id",
+     *                   type="integer",
+     *                   example=4,
+     *                   description="Gift id"
+     *               )
+     *          )
+     *      ),
+     *
+     *      @OA\Response(
+     *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse"),
+     *          description="Successful operation",
+     *          response=201,
+     *      ),
+     *
+     *      @OA\Response(
+     *          @OA\JsonContent(ref="#/components/schemas/Unauthorized"),
+     *          description="Unauthorized",
+     *          response=401
+     *      )
+     *  )
+     * /
      */
     public function gift(Request $request, string $provider = "robokassa")
     {
@@ -152,6 +255,44 @@ class PaymentsController extends Controller
     /**
      * @return array|JsonResponse
      * @throws Exception
+
+     * @OA\Schema(
+     *     schema="Unauthorized",
+     *     title="Error Response Structure",
+     *     description="Standard error response format",
+     *     @OA\Property(
+     *         property="meta",
+     *         type="object",
+     *         @OA\Property(
+     *             property="error",
+     *             type="object",
+     *             @OA\Property(
+     *                 property="code",
+     *                 type="integer",
+     *                 example=4010,
+     *                 description="Application-specific error code"
+     *             ),
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 example="Unauthorized",
+     *                 description="Human-readable error message"
+     *             )
+     *         ),
+     *         @OA\Property(
+     *             property="status",
+     *             type="integer",
+     *             example=401,
+     *             description="HTTP status code"
+     *         )
+     *     ),
+     *     @OA\Property(
+     *         property="data",
+     *         type="null",
+     *         example=null,
+     *         description="Empty data payload for error responses"
+     *     )
+     * )
      */
     private function checkingAuth(): JsonResponse|array
     {
