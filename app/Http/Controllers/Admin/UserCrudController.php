@@ -26,6 +26,11 @@ class UserCrudController extends CrudController
      */
     public function setup()
     {
+
+        if (!backpack_user()->can('access users')) {
+            abort(403);
+        }
+
         CRUD::setModel(\App\Models\User::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/user');
         CRUD::setEntityNameStrings('Администратор', 'Администраторы');

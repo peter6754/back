@@ -29,6 +29,10 @@ class SecondaryuserCrudController extends CrudController
      */
     public function setup()
     {
+        if (!backpack_user()->can('access secondaryusers')) {
+            abort(403);
+        }
+
         CRUD::setModel(\App\Models\Secondaryuser::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/secondaryuser');
         CRUD::setEntityNameStrings('Пользователь', 'Пользователи');
