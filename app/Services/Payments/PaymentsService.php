@@ -7,6 +7,7 @@ use App\Models\Secondaryuser;
 use App\Models\ServicePackages;
 use Illuminate\Config\Repository;
 use Illuminate\Support\Facades\DB;
+use App\Models\TransactionProcess;
 use App\Models\SubscriptionPackages;
 use Illuminate\Support\Manager;
 use App\Models\Transactions;
@@ -182,6 +183,12 @@ class PaymentsService extends Manager
         ]);
     }
 
+
+    protected function checkPendingPayments(): array
+    {
+
+    }
+
     /**
      * @param string $provider
      * @param array $params
@@ -192,6 +199,7 @@ class PaymentsService extends Manager
         $paymentData = call_user_func([$this->driver($provider), $params['action']], [
             "description" => self::$titleProducts[$params['product']],
             "email" => $params['customer']['email'],
+            "user_id" => $params['customer']['id'],
             "product_id" => $params['product_id'],
             "amount" => $params['price']
         ]);
