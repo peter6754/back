@@ -6,7 +6,7 @@
 <x-backpack::menu-item title="Пользователи" icon="la la-question" :link="backpack_url('secondaryuser')" />
 @endif
 
-@if(backpack_user()->hasRole('superadmin'))
+@if(backpack_user()->hasRole('Superadmin'))
 <x-backpack::menu-item title="Администраторы" icon="la la-question" :link="backpack_url('user')" />
 @endif
 
@@ -22,7 +22,7 @@
 <x-backpack::menu-item title="Очередь на удаление" icon="la la-question" :link="backpack_url('in-queue-for-delete-user')" />
 @endif
 
-@if(backpack_user()->hasRole('superadmin'))
+@if(backpack_user()->hasRole('Superadmin'))
 <x-backpack::menu-dropdown title="Управление доступом" icon="la la-lock">
     <x-backpack::menu-dropdown-item title="Пользователи" icon="la la-user" :link="backpack_url('user')" />
     <x-backpack::menu-dropdown-item title="Роли" icon="la la-group" :link="backpack_url('role')" />
