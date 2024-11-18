@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use App\Services\Payments\PaymentsService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
@@ -47,7 +48,7 @@ class Transactions extends Model
         return self::join('users', 'transactions.user_id', '=', 'users.id')
             ->where('users.gender', 'male')
             ->where('transactions.status', 'succeeded')
-            ->where('transactions.type', 'subscription_package')
+            ->where('transactions.type', PaymentsService::ORDER_PRODUCT_SUBSCRIPTION)
             ->where('transactions.purchased_at', '>=', $todayStart)
             ->selectRaw('SUM(transactions.price) as sum, COUNT(*) as count')
             ->first();
