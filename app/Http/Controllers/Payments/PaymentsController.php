@@ -289,10 +289,6 @@ class PaymentsController extends Controller
         // Checking auth user
         $this->checkingAuth();
 
-//        $status = $this->payments->driver("robokassa")->checkOrderStatus($id);
-//        print_r($status);
-//        exit();
-
         // Get transaction
         if (!$transaction = Transactions::select('status')->find($id)) {
             return $this->errorResponse(

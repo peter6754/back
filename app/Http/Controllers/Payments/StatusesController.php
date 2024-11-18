@@ -26,12 +26,17 @@ class StatusesController extends Controller
      */
     public function resultCallback(Request $request, string $provider)
     {
-        if (!$this->payments->driver($provider)->validate($request->all())) {
-            \Log::error("Invalid {$provider} callback", $request->all());
-            return response()->json(['code' => 1, 'message' => 'Invalid signature'], 400);
+        $getResults = $this->payments->driver($provider)->callbackResult($request->all());
+        if (empty($getResults)) {
+            return response()->json([
+                'meta' => [
+                    'error' => null,
+                    'status' => 200
+                ],
+                'data' => 'Invalid signature'
+            ]);
         }
-
-//        $this->payments->
+        print_r($getResults);
     }
 
     /**
