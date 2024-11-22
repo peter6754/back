@@ -14,6 +14,7 @@ class RobokassaProvider implements PaymentProviderInterface
     private string $merchantLogin;
     private string $password1;
     private string $password2;
+    private $isTest;
 
     /**
      *
@@ -21,8 +22,16 @@ class RobokassaProvider implements PaymentProviderInterface
     public function __construct()
     {
         $this->merchantLogin = config('payments.robokassa.merchant_login');
-        $this->password1 = config('payments.robokassa.password1');
-        $this->password2 = config('payments.robokassa.password2');
+
+        $this->password1 = config('payments.robokassa.isTest') ?
+            config('payments.robokassa.password1_test') :
+            config('payments.robokassa.password1');
+
+        $this->password2 = config('payments.robokassa.isTest') ?
+            config('payments.robokassa.password2_test') :
+            config('payments.robokassa.password2');
+
+        $this->isTest = config('payments.robokassa.isTest');
     }
 
     /**
@@ -128,6 +137,7 @@ class RobokassaProvider implements PaymentProviderInterface
             'Email' => $params['customer']['email'],
             'ExpirationDate' => $expirationDate->format('c'),
             'Shp_product' => $params['product'],
+            'isTest' => $this->isTest,
             'SignatureValue' => $this->signatureMerchant([
                 $params['price'],
                 $getData['id'],
@@ -165,7 +175,9 @@ class RobokassaProvider implements PaymentProviderInterface
     }
 
     /**
-     * @throws \Exception
+     * @param array $params
+     * @return array
+     * @throws GuzzleException
      */
     public function callbackResult(array $params): array
     {
