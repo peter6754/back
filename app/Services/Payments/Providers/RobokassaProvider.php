@@ -129,7 +129,36 @@ class RobokassaProvider implements PaymentProviderInterface
 
         $expirationDate = (new \DateTime())->setTimestamp(strtotime("+1 day"));
         $baseUrl = 'https://auth.robokassa.ru/Merchant/Index.aspx';
-        $queryParams = [
+        $queryParams = [];
+
+        $signature = $this->signatureMerchant([
+            $params['price'],
+            $getData['id'],
+            $this->password1,
+            "Shp_product=" . $params['product'],
+        ]);
+
+        if ($this->isTest) {
+            $queryParams['SuccessUrl2'] = url("payment/{$this->getProviderName()}/success");
+            $queryParams['ResultUrl2'] = url("payment/{$this->getProviderName()}/result");
+            $queryParams['FailUrl2'] = url("payment/{$this->getProviderName()}/fail");
+            $queryParams['SuccessUrl2Method'] = "GET";
+            $queryParams['FailUrl2Method'] = "GET";
+
+            $signature = $this->signatureMerchant([
+                $params['price'],
+                $getData['id'],
+                $queryParams['ResultUrl2'],
+                $queryParams['SuccessUrl2'],
+                $queryParams['SuccessUrl2Method'],
+                $queryParams['FailUrl2'],
+                $queryParams['FailUrl2Method'],
+                $this->password1,
+                "Shp_product=" . $params['product'],
+            ]);
+        }
+
+        $queryParams = array_merge([
             'MerchantLogin' => $this->merchantLogin,
             'OutSum' => $params['price'],
             'InvId' => $getData['id'],
@@ -138,13 +167,8 @@ class RobokassaProvider implements PaymentProviderInterface
             'ExpirationDate' => $expirationDate->format('c'),
             'Shp_product' => $params['product'],
             'isTest' => $this->isTest,
-            'SignatureValue' => $this->signatureMerchant([
-                $params['price'],
-                $getData['id'],
-                $this->password1,
-                "Shp_product=" . $params['product'],
-            ])
-        ];
+            'SignatureValue' => $signature
+        ], $queryParams);
 
         if (isset($params['recurring'])) {
             $queryParams['Recurring'] = "true";
@@ -161,15 +185,23 @@ class RobokassaProvider implements PaymentProviderInterface
     public function validate(array $params): bool
     {
         $required = ['InvId', 'OutSum', 'SignatureValue'];
+        $customParams = [];
+
         if (count(array_intersect_key(array_flip($required), $params)) !== count($required)) {
             return false;
         }
 
-        $signature = $this->signatureResult([
+        foreach ($params as $key => $val) {
+            if (str_contains($key, 'Shp_')) {
+                $customParams[] = "{$key}={$val}";
+            }
+        }
+
+        $signature = $this->signatureResult(array_merge([
             $params['OutSum'],
             $params['InvId'],
-            $this->password2
-        ]);
+            $this->password1
+        ], $customParams));
 
         return strtolower($params['SignatureValue']) === strtolower($signature);
     }
@@ -198,6 +230,7 @@ class RobokassaProvider implements PaymentProviderInterface
             if (!$this->validate($params)) {
                 throw new \Exception('Invalid signature');
             }
+
             return [
                 "id" => $params['InvId'] ?? null,
             ];

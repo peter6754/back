@@ -47,9 +47,9 @@
     <p class="card-text mb-4">
         Заказ <strong>#{{ $orderId }}</strong> успешно обработан.
     </p>
-    <p class="text-muted mb-4">
-        Чек отправлен на вашу почту.
-    </p>
+{{--    <p class="text-muted mb-4">--}}
+{{--        Чек отправлен на вашу почту.--}}
+{{--    </p>--}}
     <a href="https://tinderone.ru" class="btn btn-success">
         Вернуться на главную
     </a>
