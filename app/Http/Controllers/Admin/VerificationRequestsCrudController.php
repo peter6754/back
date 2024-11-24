@@ -48,16 +48,73 @@ class VerificationRequestsCrudController extends CrudController
         ]);
 
         $this->crud->addColumn([
-            'name' => 'user_email',
-            'label' => 'Email',
-            'type' => 'closure',
-            'function' => function ($entry) {
-                return $entry->user->email;
-            },
-            'searchLogic' => function ($query, $column, $searchTerm) {
-                $query->orWhereHas('user', function ($q) use ($searchTerm) {
-                    $q->where('email', 'like', '%' . $searchTerm . '%');
-                });
+            'name' => 'random_image',
+            'label' => 'Фотография',
+            'type' => 'custom_html',
+            'escaped' => false,
+            'value' => function ($entry) {
+                $images = $entry->images;
+                if ($images->isNotEmpty()) {
+                    $image = $images->first();
+                    $imageUrl = $image->image_url;
+
+                    $imageHtml = '
+                <img src="' . $imageUrl . '" height="80px" width="60px" style="cursor: pointer;" onclick="openGlobalModal(\'' . $imageUrl . '\')">
+                <script>
+                    function openGlobalModal(imageUrl) {
+                        const modal = document.createElement("div");
+                        modal.id = "globalImageModal";
+                        modal.style.position = "fixed";
+                        modal.style.top = 0;
+                        modal.style.left = 0;
+                        modal.style.width = "100%";
+                        modal.style.height = "100%";
+                        modal.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
+                        modal.style.display = "flex";
+                        modal.style.justifyContent = "center";
+                        modal.style.alignItems = "center";
+                        modal.style.zIndex = 99999;
+
+                        const closeButton = document.createElement("span");
+                        closeButton.innerHTML = "&times;";
+                        closeButton.style.position = "absolute";
+                        closeButton.style.top = "20px";
+                        closeButton.style.right = "30px";
+                        closeButton.style.fontSize = "30px";
+                        closeButton.style.color = "white";
+                        closeButton.style.cursor = "pointer";
+                        closeButton.onclick = function() {
+                            closeGlobalModal();
+                        };
+
+                        const img = document.createElement("img");
+                        img.src = imageUrl;
+                        img.style.maxWidth = "90%";
+                        img.style.maxHeight = "90%";
+                        img.style.borderRadius = "5px";
+
+                        modal.appendChild(closeButton);
+                        modal.appendChild(img);
+                        modal.onclick = function(e) {
+                            if (e.target === modal) {
+                                closeGlobalModal();
+                            }
+                        };
+
+                        document.body.appendChild(modal);
+                    }
+
+                    function closeGlobalModal() {
+                        const modal = document.getElementById("globalImageModal");
+                        if (modal) {
+                            document.body.removeChild(modal);
+                        }
+                    }
+                </script>
+            ';
+                    return $imageHtml;
+                }
+                return 'Нет фото';
             },
         ]);
 
@@ -136,6 +193,46 @@ class VerificationRequestsCrudController extends CrudController
             },
         ]);
 
+        $this->crud->addColumn([
+            'name' => 'user_email',
+            'label' => 'Email',
+            'type' => 'closure',
+            'function' => function ($entry) {
+                return $entry->user->email;
+            },
+            'searchLogic' => function ($query, $column, $searchTerm) {
+                $query->orWhereHas('user', function ($q) use ($searchTerm) {
+                    $q->where('email', 'like', '%' . $searchTerm . '%');
+                });
+            },
+        ]);
+
+        CRUD::addColumn([
+            'name' => 'user_gender',
+            'label' => 'Пол',
+            'type' => 'closure',
+            'function' => function ($entry) {
+                $genders = [
+                    'male'    => 'Мужской',
+                    'female'  => 'Женский',
+                    'm_f'     => 'М + Ж',
+                    'm_m'     => 'М + М',
+                    'f_f'     => 'Ж + Ж',
+                ];
+
+                return $genders[$entry->user->gender] ?? 'Неизвестно';
+            }
+        ]);
+
+        CRUD::addColumn([
+            'name' => 'user_age',
+            'label' => 'Возраст',
+            'type' => 'closure',
+            'function' => function ($entry) {
+                return $entry->user->age;
+            }
+        ]);
+
         CRUD::column('status')
             ->label('Статус')
             ->type('select_from_array')
@@ -200,7 +297,7 @@ class VerificationRequestsCrudController extends CrudController
 
         CRUD::setValidation([
             'status' => 'required|string',
-            'rejection_reason' => 'nullable|string',
+            'rejection_reason' => 'nullable|string|min:5|max:255',
         ]);
 
         CRUD::field('status')->label('Статус')->type('select_from_array')->options([

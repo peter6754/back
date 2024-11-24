@@ -29,3 +29,5 @@
     <x-backpack::menu-dropdown-item title="Права" icon="la la-key" :link="backpack_url('permission')" />
 </x-backpack::menu-dropdown>
 @endif
+
+<x-backpack::menu-item title="Статистика(временно)" icon="la la-question" :link="backpack_url('statistics')" />

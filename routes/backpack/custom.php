@@ -24,6 +24,9 @@ Route::group([
     ),
     'namespace' => 'App\Http\Controllers\Admin',
 ], function () { // custom admin routes
+    Route::get('statistics', function () {
+        return view(backpack_view('statistics'));
+    })->name('backpack.statistics');
     Route::crud('secondaryuser', 'SecondaryuserCrudController');
     Route::crud('user', 'UserCrudController');
     Route::crud('bought-subscriptions', 'BoughtSubscriptionsCrudController');
