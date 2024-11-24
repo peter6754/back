@@ -9,8 +9,6 @@ class ServicePackages extends Model
 {
     use HasFactory;
 
-    protected $connection = 'mysql_secondary';
-
     protected $table = 'service_packages';
 
     protected $fillable = [

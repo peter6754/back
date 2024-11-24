@@ -14,7 +14,6 @@ class Secondaryuser extends Model
     use CrudTrait;
     use HasFactory, Notifiable;
 
-    protected $connection = 'mysql_secondary';
     protected $keyType = 'string';
     public $incrementing = false;
     public $timestamps = false;

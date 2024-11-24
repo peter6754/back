@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class Subscriptions extends Model
 {
     use HasFactory;
-    protected $connection = 'mysql_secondary';
     protected $table = 'subscriptions';
     protected $fillable = ['type'];
 

@@ -16,8 +16,9 @@ class RobokassaProvider implements PaymentProviderInterface
     private string $merchantLogin;
     private string $password1;
     private string $password2;
-    private  $payments;
+    private $payments;
     private $isTest;
+
     /**
      *
      */
@@ -222,8 +223,8 @@ class RobokassaProvider implements PaymentProviderInterface
     {
         Log::channel($this->getProviderName())->info('[REQUEST] Result request: ', $params);
         try {
-            if (!$this->validate($params, true)) {
-//                throw new \Exception('Invalid signature');
+            if (!$this->validate($params, true) && !$this->isTest) {
+                throw new \Exception('Invalid signature');
             }
 
             // Checking transaction
@@ -232,7 +233,10 @@ class RobokassaProvider implements PaymentProviderInterface
                 $transaction = $getTransaction->toArray();
 
                 // Если мы уже обработали платеж
-                if ($transaction['status'] === PaymentsService::ORDER_STATUS_COMPLETE) {
+                if (
+                    $transaction['status'] === PaymentsService::ORDER_STATUS_COMPLETE &&
+                    !$this->isTest
+                ) {
                     return "OK" . $params['InvId'];
                 }
 

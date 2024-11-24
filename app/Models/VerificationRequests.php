@@ -10,7 +10,6 @@ class VerificationRequests extends Model
 {
     use CrudTrait;
     use HasFactory;
-    protected $connection = 'mysql_secondary';
     protected $table = 'verification_requests';
     protected $keyType = 'string';
     protected $primaryKey = 'user_id';

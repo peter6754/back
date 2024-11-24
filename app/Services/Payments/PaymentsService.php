@@ -2,6 +2,7 @@
 
 namespace App\Services\Payments;
 
+use App\Models\BoughtSubscriptions;
 use App\Services\ExpoNotificationService;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Foundation\Application;
@@ -39,6 +40,13 @@ class PaymentsService extends Manager
         ],
     ];
 
+    // Days in subscription
+    static array $subscriptionDays = [
+        "year" => 360,
+        "six_months" => 180,
+        "one_month" => 30,
+    ];
+
     // Gender convert
     static array $genders = [
         "female" => "female",
@@ -47,7 +55,6 @@ class PaymentsService extends Manager
         "m_f" => "male",
         "m_m" => "male",
     ];
-
 
     // Orders Products codes
     const ORDER_PRODUCT_SUBSCRIPTION = "subscription_package";
@@ -132,8 +139,7 @@ class PaymentsService extends Manager
         }
         $package->toArray();
 
-//        $getSubscriptions = DB::connection('mysql_secondary')
-//            ->table('bought_subscriptions')
+//        $getSubscriptions = DB::table('bought_subscriptions')
 //            ->select([
 //                'bought_subscriptions.*',
 //                'transactions.user_id',
@@ -215,8 +221,27 @@ class PaymentsService extends Manager
      */
     public function sendSubscription(array $params)
     {
+        DB::transaction(function () use ($params) {
+            // Работаем строго с подписками
+            if ($params['type'] == self::ORDER_PRODUCT_SUBSCRIPTION) {
+                // Деактивируем все активные подписки пользователя
+                BoughtSubscriptions::whereHas('transaction', function ($query) use ($params) {
+                    $query->where('status', 'succeeded')
+                        ->where('user_id', $params['user_id']);
+                })
+                    ->where('due_date', '>', now())
+                    ->update(['due_date' => null]);
 
+                // Активируем новую подписку
+                $termDays = self::$subscriptionDays[$params['subscription_term']] ?? 1;
+                BoughtSubscriptions::where('transaction_id', $params['transaction_id'])
+                    ->update(['due_date' => now()->addDays($termDays)]);
+            }
+
+            // Обновление информации пользователя / пакетов
+        });
     }
+
 
     /**
      * @param array $params
@@ -227,7 +252,7 @@ class PaymentsService extends Manager
     {
         try {
             // Проверка существующих сообщений
-            $hasPreviousMessages = DB::connection('mysql_secondary')->table('chat_messages')
+            $hasPreviousMessages = DB::table('chat_messages')
                 ->where('sender_id', $params['gift_receiver_id'])
                 ->where('receiver_id', $params['gift_sender_id'])
                 ->exists();
@@ -280,19 +305,19 @@ class PaymentsService extends Manager
         // Increment data
         switch ($params['product']) {
             case self::ORDER_PRODUCT_SUBSCRIPTION:
-                DB::connection('mysql_secondary')->table("bought_subscriptions")->insert([
+                DB::table("bought_subscriptions")->insert([
                     "transaction_id" => $paymentData['payment_id'],
                     "package_id" => $params['product_id'],
                 ]);
                 break;
             case self::ORDER_PRODUCT_SERVICE:
-                DB::connection('mysql_secondary')->table("bought_service_packages")->insert([
+                DB::table("bought_service_packages")->insert([
                     "transaction_id" => $paymentData['payment_id'],
                     "package_id" => $params['product_id'],
                 ]);
                 break;
             case self::ORDER_PRODUCT_GIFT:
-                DB::connection('mysql_secondary')->table("user_gifts")->insert([
+                DB::table("user_gifts")->insert([
                     "transaction_id" => $paymentData['payment_id'],
                     "sender_id" => $params['customer']['id'],
                     "receiver_id" => $params['receiver_id'],
@@ -318,14 +343,12 @@ class PaymentsService extends Manager
         unset($params['transaction_id']);
 
         try {
-            return DB::connection('mysql_secondary')->transaction(function () use ($params, $transactionId) {
-                $updatedProcess = DB::connection('mysql_secondary')
-                    ->table('transactions_process')
+            return DB::transaction(function () use ($params, $transactionId) {
+                $updatedProcess = DB::table('transactions_process')
                     ->where('transaction_id', $transactionId)
                     ->update($params);
 
-                $updatedTransaction = DB::connection('mysql_secondary')
-                    ->table('transactions')
+                $updatedTransaction = DB::table('transactions')
                     ->where('id', $transactionId)
                     ->update($params);
 
