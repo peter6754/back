@@ -27,6 +27,9 @@ class StatusesController extends Controller
     public function resultCallback(Request $request, string $provider)
     {
         $getResults = $this->payments->driver($provider)->callbackResult($request->all());
+
+        var_dump($getResults);
+        exit;
         if (empty($getResults)) {
             return response()->json([
                 'meta' => [
@@ -36,7 +39,6 @@ class StatusesController extends Controller
                 'data' => 'Invalid signature'
             ]);
         }
-        print_r($getResults);
     }
 
     /**

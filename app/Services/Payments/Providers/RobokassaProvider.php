@@ -2,6 +2,9 @@
 
 namespace App\Services\Payments\Providers;
 
+use App\Models\Transactions;
+use Illuminate\Support\Facades\Log;
+use App\Services\Payments\PaymentsService;
 use App\Services\Payments\Contracts\PaymentProviderInterface;
 use Illuminate\Validation\ValidationException;
 use GuzzleHttp\Exception\GuzzleException;
@@ -182,7 +185,7 @@ class RobokassaProvider implements PaymentProviderInterface
         ];
     }
 
-    public function validate(array $params): bool
+    public function validate(array $params, bool $result = false): bool
     {
         $required = ['InvId', 'OutSum', 'SignatureValue'];
         $customParams = [];
@@ -200,7 +203,8 @@ class RobokassaProvider implements PaymentProviderInterface
         $signature = $this->signatureResult(array_merge([
             $params['OutSum'],
             $params['InvId'],
-            $this->password1
+            ($result === false) ? $this->password1 :
+                $this->password2
         ], $customParams));
 
         return strtolower($params['SignatureValue']) === strtolower($signature);
@@ -210,14 +214,46 @@ class RobokassaProvider implements PaymentProviderInterface
      * @param array $params
      * @return array
      * @throws GuzzleException
+     * @throws \Throwable
      */
     public function callbackResult(array $params): array
     {
-        if (!$this->validate($params)) {
-            throw new \Exception('Invalid signature');
-        }
 
-        return $this->checkOrderStatus($params['InvId']);
+        Log::channel($this->getProviderName())->info('[REQUEST] Result request: ', $params);
+        try {
+            if (!$this->validate($params)) {
+                throw new \Exception('Invalid signature');
+            }
+
+            // Checking transaction
+            if ($getTransaction = TransactionProcess::find($params['InvId'])) {
+                // Get Transaction
+                $transaction = $getTransaction->toArray();
+
+                // Update status
+                PaymentsService::updateTransaction([
+                    'transaction_id' => $transaction['transaction_id'],
+                    'status' => PaymentsService::ORDER_STATUS_COMPLETE
+                ]);
+            }
+
+            switch ($params['Shp_product'] ?? null) {
+                case PaymentsService::ORDER_PRODUCT_SERVICE:
+
+                    break;
+                case PaymentsService::ORDER_PRODUCT_GIFT:
+
+                    break;
+                default:
+
+                    break;
+            }
+
+            return $this->checkOrderStatus($params['InvId']);
+        } catch (\Exception $e) {
+            Log::channel($this->getProviderName())->info('[ERROR] ' . __METHOD__ . ': ' . $e->getMessage());
+            return [];
+        }
     }
 
     /**
@@ -235,6 +271,7 @@ class RobokassaProvider implements PaymentProviderInterface
                 "id" => $params['InvId'] ?? null,
             ];
         } catch (\Exception $e) {
+            Log::channel($this->getProviderName())->info('[ERROR] ' . __METHOD__ . ': ' . $e->getMessage());
             return [];
         }
     }
@@ -249,10 +286,24 @@ class RobokassaProvider implements PaymentProviderInterface
             if (!$this->validate($params)) {
                 throw new \Exception('Invalid signature');
             }
+
+            // Checking transaction
+            if ($getTransaction = TransactionProcess::find($params['InvId'])) {
+                // Get Transaction
+                $transaction = $getTransaction->toArray();
+
+                // Update status
+                PaymentsService::updateTransaction([
+                    'transaction_id' => $transaction['transaction_id'],
+                    'status' => PaymentsService::ORDER_STATUS_CANCEL
+                ]);
+            }
+
             return [
-                "id" => $params['InvId'] ?? null,
+                "id" => $transaction['id'] ?? null,
             ];
         } catch (\Exception $e) {
+            Log::channel($this->getProviderName())->info('[ERROR] ' . __METHOD__ . ': ' . $e->getMessage());
             return [];
         }
     }
@@ -282,6 +333,7 @@ class RobokassaProvider implements PaymentProviderInterface
             true
         );
 
+        var_dump($orderData);
         // Get state
         if (empty($orderData['Info']['OpKey'])) {
             throw new \Exception("Order not found");

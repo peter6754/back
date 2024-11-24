@@ -8,10 +8,12 @@ use App\Models\ServicePackages;
 use Illuminate\Config\Repository;
 use Illuminate\Support\Facades\DB;
 use App\Models\TransactionProcess;
+use Illuminate\Support\Facades\Log;
 use App\Models\SubscriptionPackages;
 use Illuminate\Support\Manager;
 use App\Models\Transactions;
 use Illuminate\Foundation\Application;
+use Composer\DependencyResolver\Transaction;
 use function Symfony\Component\String\b;
 
 class PaymentsService extends Manager
@@ -196,14 +198,6 @@ class PaymentsService extends Manager
         ]);
     }
 
-    protected function checkPendingPayments(string $invoiceId = null): array
-    {
-        if (is_null($invoiceId)) {
-            TransactionProcess::find(["invoice_id" => $invoiceId]);
-        }
-
-    }
-
     /**
      * @param string $provider
      * @param array $params
@@ -211,17 +205,10 @@ class PaymentsService extends Manager
      */
     private function createPayment(string $provider, array $params): array
     {
+        // Init payment
         $paymentData = call_user_func([$this->driver($provider), $params['action']], array_merge($params, [
             "description" => self::$titleProducts[$params['product']]
         ]));
-
-//        $paymentData = call_user_func([$this->driver($provider), $params['action']], [
-//            "description" => self::$titleProducts[$params['product']],
-//            "email" => $params['customer']['email'],
-//            "user_id" => $params['customer']['id'],
-//            "product_id" => $params['product_id'],
-//            "amount" => $params['price']
-//        ]);
 
         // Create transaction
         Transactions::create([
@@ -261,5 +248,44 @@ class PaymentsService extends Manager
             "confirmation_url" => $paymentData["confirmation_url"],
             "payment_id" => $paymentData["payment_id"]
         ];
+    }
+
+    /**
+     * @param array $params
+     * @return bool
+     * @throws \Throwable
+     */
+    public static function updateTransaction(array $params): bool
+    {
+        $transactionId = $params['transaction_id'];
+        unset($params['transaction_id']);
+
+        try {
+            return DB::connection('mysql_secondary')->transaction(function () use ($params, $transactionId) {
+                $updatedProcess = DB::connection('mysql_secondary')
+                    ->table('transactions_process')
+                    ->where('transaction_id', $transactionId)
+                    ->update($params);
+
+                $updatedTransaction = DB::connection('mysql_secondary')
+                    ->table('transactions')
+                    ->where('id', $transactionId)
+                    ->update($params);
+
+                return $updatedProcess > 0 && $updatedTransaction > 0;
+            });
+        } catch (\Exception $e) {
+            Log::channel('payments')->info('[ERROR] ' . __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
+    }
+
+
+    protected function checkPendingPayments(string $invoiceId = null): array
+    {
+        if (is_null($invoiceId)) {
+            TransactionProcess::find(["invoice_id" => $invoiceId]);
+        }
+
     }
 }

@@ -8,6 +8,8 @@
     ],
     "license": "MIT",
     "require": {
+        "ctwillie/expo-server-sdk-php": "^v2.1",
+        "backpack/permissionmanager": "^7.2",
         "backpack/theme-tabler": "^1.2",
         "laravel/framework": "^11.9",
         "laravel/tinker": "^2.9",
