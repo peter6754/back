@@ -2,21 +2,20 @@
 
 namespace App\Services\Payments;
 
-use App\Models\Gifts;
-use App\Models\Secondaryuser;
-use App\Services\ChatService;
-use App\Models\ServicePackages;
-use Illuminate\Config\Repository;
+use App\Services\ExpoNotificationService;
+use GuzzleHttp\Exception\GuzzleException;
+use Illuminate\Foundation\Application;
+use App\Models\SubscriptionPackages;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use App\Models\TransactionProcess;
-use Illuminate\Support\Facades\Log;
-use App\Models\SubscriptionPackages;
+use Illuminate\Config\Repository;
+use App\Models\ServicePackages;
 use Illuminate\Support\Manager;
+use App\Models\Secondaryuser;
+use App\Services\ChatService;
 use App\Models\Transactions;
-use Illuminate\Foundation\Application;
-use App\Services\ExpoNotificationService;
-use Composer\DependencyResolver\Transaction;
-use function Symfony\Component\String\b;
+use App\Models\Gifts;
 
 class PaymentsService extends Manager
 {
@@ -113,13 +112,6 @@ class PaymentsService extends Manager
         ]);
     }
 
-
-    public function sendServicePackage(array $params): array
-    {
-
-    }
-
-
     /**
      * @param string $provider
      * @param array $params
@@ -175,12 +167,6 @@ class PaymentsService extends Manager
         ]);
     }
 
-
-    public function sendSubscription(array $params): array
-    {
-
-    }
-
     /**
      * @param string $provider
      * @param array $params
@@ -212,6 +198,31 @@ class PaymentsService extends Manager
         ]);
     }
 
+    /**
+     * @param array $params
+     * @return bool
+     * @throws GuzzleException
+     */
+    public function sendServicePackage(array $params)
+    {
+
+    }
+
+    /**
+     * @param array $params
+     * @return bool
+     * @throws GuzzleException
+     */
+    public function sendSubscription(array $params)
+    {
+
+    }
+
+    /**
+     * @param array $params
+     * @return bool
+     * @throws GuzzleException
+     */
     public function sendGift(array $params)
     {
         try {
@@ -221,23 +232,25 @@ class PaymentsService extends Manager
                 ->where('receiver_id', $params['gift_sender_id'])
                 ->exists();
 
-            // Отправка подарка и уведомления
-            $results = [
-                (new ChatService())->sendGift([
-                    'user_id' => $params['gift_receiver_id'],
-                    'sender_id' => $params['gift_sender_id'],
-                    'gift_id' => $params['gift_id']
-                ], !$hasPreviousMessages),
+            // Отправка подарка
+            (new ChatService())->sendGift([
+                'user_id' => $params['gift_receiver_id'],
+                'sender_id' => $params['gift_sender_id'],
+                'gift_id' => $params['gift_id']
+            ], !$hasPreviousMessages);
 
-                !$hasPreviousMessages ? (new ExpoNotificationService())->sendPushNotification(
+            // Уведомление о подарке
+            if (!$hasPreviousMessages) {
+                (new ExpoNotificationService())->sendPushNotification(
                     json_decode($params['receiver_device_tokens'], true),
                     ExpoNotificationService::NEW_GIFT_PUSH['message'],
                     ExpoNotificationService::NEW_GIFT_PUSH['title'],
-                ) : null
-            ];
+                );
+            }
 
             return true;
         } catch (\Exception $e) {
+            Log::channel('payments')->info('[ERROR] ' . __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
     }

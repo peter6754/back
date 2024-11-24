@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Support\Facades\Log;
 use GuzzleHttp\Client;
 
@@ -60,13 +61,9 @@ class ExpoNotificationService
     protected string $apiUrl = 'https://exp.host/--/api/v2/push/send';
     protected Client $client;
 
-
-//$expo = new ExpoNotificationService();
-//$response = $expo->sendPushNotification([
-//"ExponentPushToken[TtCzy6NWfPxNshBiTPGF0i]"
-//],"Message Test","Привет андрей!");
-//var_dump($response);
-
+    /**
+     *
+     */
     public function __construct()
     {
         $this->client = new Client([
@@ -78,6 +75,15 @@ class ExpoNotificationService
         ]);
     }
 
+    /**
+     * @param array $tokens
+     * @param string $message
+     * @param string $title
+     * @param $additionalData
+     * @param bool $withSound
+     * @return array
+     * @throws GuzzleException
+     */
     public function sendPushNotification(
         array  $tokens,
         string $message,
@@ -94,11 +100,11 @@ class ExpoNotificationService
             }
 
             $messages[] = [
-                'to' => $token,
                 'sound' => $withSound ? 'default' : '',
-                'title' => $title,
-                'body' => $message,
                 'data' => (object)$additionalData,
+                'body' => $message,
+                'title' => $title,
+                'to' => $token,
             ];
         }
 
@@ -107,12 +113,14 @@ class ExpoNotificationService
 
         foreach ($chunks as $chunk) {
             try {
-                $response = $this->client->post($this->apiUrl, [
-                    'json' => $chunk,
-                ]);
-                $body = json_decode($response->getBody(), true);
-                if (isset($body['data'])) {
-                    $tickets = array_merge($tickets, $body['data']);
+                foreach ($chunk as $item) {
+                    $response = $this->client->post($this->apiUrl, [
+                        'json' => $item,
+                    ]);
+                    $body = json_decode($response->getBody(), true);
+                    if (isset($body['data'])) {
+                        $tickets = array_merge($tickets, $body['data']);
+                    }
                 }
             } catch (\Exception $e) {
                 Log::error($e->getMessage());
@@ -122,6 +130,11 @@ class ExpoNotificationService
         return $tickets;
     }
 
+    /**
+     * @param array $receiptIds
+     * @return array
+     * @throws GuzzleException
+     */
     public function checkReceipts(array $receiptIds): array
     {
         $results = [];
@@ -148,12 +161,21 @@ class ExpoNotificationService
         return $results;
     }
 
+    /**
+     * @param $token
+     * @return bool
+     */
     protected function isExpoPushToken($token): bool
     {
         // Expo push tokens always start with "ExponentPushToken["
         return is_string($token) && preg_match('/^ExponentPushToken\[(.+)\]$/', $token);
     }
 
+    /**
+     * @param array $messages
+     * @param $chunkSize
+     * @return array
+     */
     protected function chunkPushNotifications(array $messages, $chunkSize = 100): array
     {
         // Expo recommends not sending more than 100 notifications per request

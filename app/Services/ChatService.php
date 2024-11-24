@@ -4,15 +4,17 @@ namespace App\Services;
 
 use App\Models\Secondaryuser as User;
 use App\Events\UnreadMessagesStatus;
-use Illuminate\Support\Facades\Mail;
 use App\Models\Conversation;
-use App\Models\UserSettings;
 use App\Events\MessageSent;
 use App\Models\ChatMessage;
 use App\Models\Gifts;
 
 class ChatService
 {
+    /**
+     * @param array $payload
+     * @return void
+     */
     public function sendMedia(array $payload)
     {
         foreach ($payload['media'] as $media) {
@@ -25,6 +27,11 @@ class ChatService
         }
     }
 
+    /**
+     * @param array $payload
+     * @param bool $isFirst
+     * @return void
+     */
     public function sendGift(array $payload, bool $isFirst = false)
     {
         $conversation = Conversation::where(function ($query) use ($payload) {
@@ -56,6 +63,16 @@ class ChatService
         );
     }
 
+    /**
+     * @param string $senderId
+     * @param int $conversationId
+     * @param string $message
+     * @param string $type
+     * @param string|null $gift
+     * @param string|null $contactType
+     * @param bool $isFirst
+     * @return array[]|null[]
+     */
     public function emitMessage(
         string  $senderId,
         int     $conversationId,
