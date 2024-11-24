@@ -3,18 +3,18 @@
 namespace App\Http\Controllers\Payments;
 
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Contracts\View\View;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Foundation\Application;
+use App\Services\ExpoNotificationService;
 use App\Services\Payments\PaymentsService;
 
 class StatusesController extends Controller
 {
-    public function __construct(private PaymentsService $payments)
+    public function __construct(private readonly PaymentsService $payments)
     {
 
     }
@@ -28,8 +28,6 @@ class StatusesController extends Controller
     {
         $getResults = $this->payments->driver($provider)->callbackResult($request->all());
 
-        var_dump($getResults);
-        exit;
         if (empty($getResults)) {
             return response()->json([
                 'meta' => [
