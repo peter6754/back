@@ -9,6 +9,7 @@
     "license": "MIT",
     "require": {
         "backpack/permissionmanager": "^7.2",
+        "pusher/pusher-php-server": "^7.2",
         "backpack/theme-tabler": "^1.2",
         "laravel/framework": "^11.9",
         "laravel/tinker": "^2.9",
