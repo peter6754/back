@@ -4,6 +4,7 @@ namespace App\Services\Payments;
 
 use App\Models\Gifts;
 use App\Models\Secondaryuser;
+use App\Services\ChatService;
 use App\Models\ServicePackages;
 use Illuminate\Config\Repository;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +14,7 @@ use App\Models\SubscriptionPackages;
 use Illuminate\Support\Manager;
 use App\Models\Transactions;
 use Illuminate\Foundation\Application;
+use App\Services\ExpoNotificationService;
 use Composer\DependencyResolver\Transaction;
 use function Symfony\Component\String\b;
 
@@ -212,9 +214,32 @@ class PaymentsService extends Manager
 
     public function sendGift(array $params)
     {
+        try {
+            // Проверка существующих сообщений
+            $hasPreviousMessages = DB::connection('mysql_secondary')->table('chat_messages')
+                ->where('sender_id', $params['gift_receiver_id'])
+                ->where('receiver_id', $params['gift_sender_id'])
+                ->exists();
 
-        var_dump($params);
-        exit;
+            // Отправка подарка и уведомления
+            $results = [
+                (new ChatService())->sendGift([
+                    'user_id' => $params['gift_receiver_id'],
+                    'sender_id' => $params['gift_sender_id'],
+                    'gift_id' => $params['gift_id']
+                ], !$hasPreviousMessages),
+
+                !$hasPreviousMessages ? (new ExpoNotificationService())->sendPushNotification(
+                    json_decode($params['receiver_device_tokens'], true),
+                    ExpoNotificationService::NEW_GIFT_PUSH['message'],
+                    ExpoNotificationService::NEW_GIFT_PUSH['title'],
+                ) : null
+            ];
+
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 
     /**
