@@ -206,17 +206,16 @@ class RobokassaProvider implements PaymentProviderInterface
             ($result === false) ? $this->password1 :
                 $this->password2
         ], $customParams));
-
         return strtolower($params['SignatureValue']) === strtolower($signature);
     }
 
     /**
      * @param array $params
-     * @return array
+     * @return array|string
      * @throws GuzzleException
      * @throws \Throwable
      */
-    public function callbackResult(array $params): array
+    public function callbackResult(array $params): array|string
     {
         Log::channel($this->getProviderName())->info('[REQUEST] Result request: ', $params);
         try {
@@ -248,8 +247,7 @@ class RobokassaProvider implements PaymentProviderInterface
                     break;
             }
 
-//            return $this->checkOrderStatus($params['InvId']);
-            return [];
+            return "OK" . $params['InvId'];
         } catch (\Exception $e) {
             Log::channel($this->getProviderName())->info('[ERROR] ' . __METHOD__ . ': ' . $e->getMessage());
             return [];
