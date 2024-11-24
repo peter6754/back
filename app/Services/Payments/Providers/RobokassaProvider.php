@@ -72,7 +72,7 @@ class RobokassaProvider implements PaymentProviderInterface
             "subscription_id" => $params['price'],
             "transaction_id" => $getRobo['id'],
             "id" => (int)$getRobo['invId'],
-            "type" => $params['product'],
+            "type" => $params['product']
         ])->toArray();
 
         $recurrentUrl = "https://auth.robokassa.ru/RecurringSubscriptionPage/Subscription/SubscriberGetOrCreate";
@@ -129,7 +129,7 @@ class RobokassaProvider implements PaymentProviderInterface
             "transaction_id" => $getRobo['id'],
             "type" => $params['product'],
             "price" => $params['price'],
-            "id" => $getRobo['invId'],
+            "id" => $getRobo['invId']
         ])->toArray();
 
         $expirationDate = (new \DateTime())->setTimestamp(strtotime("+1 day"));

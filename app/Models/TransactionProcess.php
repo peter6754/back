@@ -20,11 +20,12 @@ class TransactionProcess extends Model
         'id',
         'subscription_id',
         'transaction_id',
+        'purchased_at',
         'provider',
         'user_id',
         'price',
         'email',
-        'purchased_at'
+        'type'
     ];
 
     // Приведение типов
