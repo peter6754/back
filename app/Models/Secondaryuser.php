@@ -31,19 +31,36 @@ class Secondaryuser extends Model
         'last_check', 'is_online',
     ];
 
+    /**
+     * The attributes that should be hidden for serialization.
+     * @var array
+     */
+    protected $hidden = [
+        'remember_token',
+    ];
 
     /**
      * The attributes that should be cast.
-     *
-     * @var array<string, string>
+     * @var array
      */
     protected $casts = [
         'birth_date' => 'date',
-        'registration_date' => 'datetime',
-        'last_check' => 'datetime',
         'lat' => 'decimal:8',
         'long' => 'decimal:8',
         'is_online' => 'boolean',
+        'is_bot' => 'boolean',
+        'registration_date' => 'datetime',
+        'last_check' => 'datetime',
+        'bot_genders_for_likes' => 'array',
+    ];
+
+    /**
+     * The model's default values for attributes.
+     * @var array
+     */
+    protected $attributes = [
+        'mode' => 'authenticated',
+        'is_online' => false,
     ];
 
     public function images()
@@ -154,5 +171,100 @@ class Secondaryuser extends Model
 
         // User data
         return $payload->toArray();
+    }
+
+    /**
+     * Get the user's gender options.
+     * @return array
+     */
+    public static function getGenderOptions(): array
+    {
+        return ['male', 'female', 'm_f', 'm_m', 'f_f'];
+    }
+
+    /**
+     * Get the user's sexual orientation options.
+     * @return array
+     */
+    public static function getSexualOrientationOptions(): array
+    {
+        return ['hetero', 'gay', 'lesbian', 'bisexual', 'asexual', 'not_decided'];
+    }
+
+    /**
+     * Get the user's mode options.
+     * @return array
+     */
+    public static function getModeOptions(): array
+    {
+        return ['authenticated', 'deleted', 'inQueueForDelete'];
+    }
+
+    /**
+     * Scope a query to only include online users.
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeOnline($query)
+    {
+        return $query->where('is_online', true);
+    }
+
+    /**
+     * Scope a query to only include bots.
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeBots($query)
+    {
+        return $query->where('is_bot', true);
+    }
+
+    /**
+     * Get the queue for delete associated with the user.
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function queueForDelete()
+    {
+        return $this->belongsTo(InQueueForDeleteUser::class, 'in_queue_for_delete_user_id', 'user_id');
+    }
+
+    /**
+     * Get the user's settings.
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function settings()
+    {
+        return $this->hasOne(UserSetting::class, 'user_id', 'id');
+    }
+
+    /**
+     * Get the user's conversations where they are user1.
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function conversationsAsUser1()
+    {
+        return $this->hasMany(Conversation::class, 'user1_id', 'id');
+    }
+
+    /**
+     * Get the user's conversations where they are user2.
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function conversationsAsUser2()
+    {
+        return $this->hasMany(Conversation::class, 'user2_id', 'id');
+    }
+
+    /**
+     * Get all conversations for the user.
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function conversations()
+    {
+        return Conversation::where(function ($query) {
+            $query->where('user1_id', $this->id)
+                ->orWhere('user2_id', $this->id);
+        });
     }
 }

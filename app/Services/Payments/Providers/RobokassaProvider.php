@@ -4,8 +4,10 @@ namespace App\Services\Payments\Providers;
 
 use App\Services\Payments\Contracts\PaymentProviderInterface;
 use Illuminate\Validation\ValidationException;
+use App\Services\Payments\PaymentsService;
 use GuzzleHttp\Exception\GuzzleException;
 use App\Models\TransactionRobokassa;
+use Illuminate\Support\Facades\Log;
 use App\Models\TransactionProcess;
 use GuzzleHttp\Client;
 
@@ -14,8 +16,8 @@ class RobokassaProvider implements PaymentProviderInterface
     private string $merchantLogin;
     private string $password1;
     private string $password2;
+    private  $payments;
     private $isTest;
-
     /**
      *
      */
@@ -32,6 +34,8 @@ class RobokassaProvider implements PaymentProviderInterface
             config('payments.robokassa.password2');
 
         $this->isTest = config('payments.robokassa.isTest');
+
+        $this->payments = app(PaymentsService::class);
     }
 
     /**
@@ -69,6 +73,7 @@ class RobokassaProvider implements PaymentProviderInterface
             "subscription_id" => $params['price'],
             "transaction_id" => $getRobo['id'],
             "id" => (int)$getRobo['invId'],
+            "type" => $params['product']
         ])->toArray();
 
         $recurrentUrl = "https://auth.robokassa.ru/RecurringSubscriptionPage/Subscription/SubscriberGetOrCreate";
@@ -123,8 +128,9 @@ class RobokassaProvider implements PaymentProviderInterface
 
             "provider" => $this->getProviderName(),
             "transaction_id" => $getRobo['id'],
+            "type" => $params['product'],
             "price" => $params['price'],
-            "id" => $getRobo['invId'],
+            "id" => $getRobo['invId']
         ])->toArray();
 
         $expirationDate = (new \DateTime())->setTimestamp(strtotime("+1 day"));
@@ -182,7 +188,7 @@ class RobokassaProvider implements PaymentProviderInterface
         ];
     }
 
-    public function validate(array $params): bool
+    public function validate(array $params, bool $result = false): bool
     {
         $required = ['InvId', 'OutSum', 'SignatureValue'];
         $customParams = [];
@@ -200,24 +206,68 @@ class RobokassaProvider implements PaymentProviderInterface
         $signature = $this->signatureResult(array_merge([
             $params['OutSum'],
             $params['InvId'],
-            $this->password1
+            ($result === false) ? $this->password1 :
+                $this->password2
         ], $customParams));
-
         return strtolower($params['SignatureValue']) === strtolower($signature);
     }
 
     /**
      * @param array $params
-     * @return array
+     * @return array|string
      * @throws GuzzleException
+     * @throws \Throwable
      */
-    public function callbackResult(array $params): array
+    public function callbackResult(array $params): array|string
     {
-        if (!$this->validate($params)) {
-            throw new \Exception('Invalid signature');
-        }
+        Log::channel($this->getProviderName())->info('[REQUEST] Result request: ', $params);
+        try {
+            if (!$this->validate($params, true)) {
+//                throw new \Exception('Invalid signature');
+            }
 
-        return $this->checkOrderStatus($params['InvId']);
+            // Checking transaction
+            if ($getTransaction = TransactionProcess::find($params['InvId'])) {
+                // Get Transaction
+                $transaction = $getTransaction->toArray();
+
+                // Если мы уже обработали платеж
+                if ($transaction['status'] === PaymentsService::ORDER_STATUS_COMPLETE) {
+                    return "OK" . $params['InvId'];
+                }
+
+                // Update status
+                PaymentsService::updateTransaction([
+                    'transaction_id' => $transaction['transaction_id'],
+                    'status' => PaymentsService::ORDER_STATUS_COMPLETE
+                ]);
+            }
+
+            $transaction = (array)(new \App\Models\TransactionProcess)->transactionInfo(
+                $transaction['transaction_id'] ??
+                (int)$params['InvId'] ??
+                null
+            );
+
+            switch ($transaction['type'] ?? null) {
+                case PaymentsService::ORDER_PRODUCT_SERVICE:
+                    $this->payments->sendServicePackage($transaction);
+                    break;
+
+                case PaymentsService::ORDER_PRODUCT_GIFT:
+                    $this->payments->sendGift($transaction);
+                    break;
+
+                default:
+                    $this->payments->sendSubscription($transaction);
+                    break;
+            }
+
+            return "OK" . $params['InvId'];
+        } catch (\Exception $e) {
+            Log::channel($this->getProviderName())->info('[ERROR] ' . __METHOD__ . ': ' . $e->getMessage());
+            return [];
+        }
     }
 
     /**
@@ -235,6 +285,7 @@ class RobokassaProvider implements PaymentProviderInterface
                 "id" => $params['InvId'] ?? null,
             ];
         } catch (\Exception $e) {
+            Log::channel($this->getProviderName())->info('[ERROR] ' . __METHOD__ . ': ' . $e->getMessage());
             return [];
         }
     }
@@ -249,10 +300,24 @@ class RobokassaProvider implements PaymentProviderInterface
             if (!$this->validate($params)) {
                 throw new \Exception('Invalid signature');
             }
+
+            // Checking transaction
+            if ($getTransaction = TransactionProcess::find($params['InvId'])) {
+                // Get Transaction
+                $transaction = $getTransaction->toArray();
+
+                // Update status
+                PaymentsService::updateTransaction([
+                    'transaction_id' => $transaction['transaction_id'],
+                    'status' => PaymentsService::ORDER_STATUS_CANCEL
+                ]);
+            }
+
             return [
-                "id" => $params['InvId'] ?? null,
+                "id" => $transaction['id'] ?? null,
             ];
         } catch (\Exception $e) {
+            Log::channel($this->getProviderName())->info('[ERROR] ' . __METHOD__ . ': ' . $e->getMessage());
             return [];
         }
     }

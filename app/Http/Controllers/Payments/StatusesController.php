@@ -2,19 +2,17 @@
 
 namespace App\Http\Controllers\Payments;
 
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Contracts\View\View;
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Contracts\View\Factory;
-use Illuminate\Foundation\Application;
 use App\Services\Payments\PaymentsService;
+use Illuminate\Foundation\Application;
+use Illuminate\Contracts\View\Factory;
+use Illuminate\Http\RedirectResponse;
+use App\Http\Controllers\Controller;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\Request;
 
 class StatusesController extends Controller
 {
-    public function __construct(private PaymentsService $payments)
+    public function __construct(private readonly PaymentsService $payments)
     {
 
     }
@@ -22,11 +20,12 @@ class StatusesController extends Controller
     /**
      * @param Request $request
      * @param string $provider
-     * @return JsonResponse|void
+     * @return string
      */
     public function resultCallback(Request $request, string $provider)
     {
         $getResults = $this->payments->driver($provider)->callbackResult($request->all());
+
         if (empty($getResults)) {
             return response()->json([
                 'meta' => [
@@ -36,7 +35,11 @@ class StatusesController extends Controller
                 'data' => 'Invalid signature'
             ]);
         }
-        print_r($getResults);
+
+        if (is_string($getResults)) {
+            return $getResults;
+        }
+        return response()->json($getResults);
     }
 
     /**

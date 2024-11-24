@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\Payments\PaymentsService;
+use App\Services\ExpoNotificationService;
 use Illuminate\Support\ServiceProvider;
 use App\Services\JwtService;
 
@@ -13,6 +14,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->singleton(ExpoNotificationService::class, function () {
+            return new ExpoNotificationService();
+        });
         $this->app->singleton(PaymentsService::class, function ($app) {
             return new PaymentsService($app);
         });

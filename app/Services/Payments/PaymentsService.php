@@ -2,17 +2,20 @@
 
 namespace App\Services\Payments;
 
-use App\Models\Gifts;
-use App\Models\Secondaryuser;
-use App\Models\ServicePackages;
-use Illuminate\Config\Repository;
+use App\Services\ExpoNotificationService;
+use GuzzleHttp\Exception\GuzzleException;
+use Illuminate\Foundation\Application;
+use App\Models\SubscriptionPackages;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use App\Models\TransactionProcess;
-use App\Models\SubscriptionPackages;
+use Illuminate\Config\Repository;
+use App\Models\ServicePackages;
 use Illuminate\Support\Manager;
+use App\Models\Secondaryuser;
+use App\Services\ChatService;
 use App\Models\Transactions;
-use Illuminate\Foundation\Application;
-use function Symfony\Component\String\b;
+use App\Models\Gifts;
 
 class PaymentsService extends Manager
 {
@@ -107,7 +110,6 @@ class PaymentsService extends Manager
             "customer" => $params["customer"],
             "action" => "payment",
         ]);
-
     }
 
     /**
@@ -196,12 +198,61 @@ class PaymentsService extends Manager
         ]);
     }
 
-    protected function checkPendingPayments(string $invoiceId = null): array
+    /**
+     * @param array $params
+     * @return bool
+     * @throws GuzzleException
+     */
+    public function sendServicePackage(array $params)
     {
-        if (is_null($invoiceId)) {
-            TransactionProcess::find(["invoice_id" => $invoiceId]);
-        }
 
+    }
+
+    /**
+     * @param array $params
+     * @return bool
+     * @throws GuzzleException
+     */
+    public function sendSubscription(array $params)
+    {
+
+    }
+
+    /**
+     * @param array $params
+     * @return bool
+     * @throws GuzzleException
+     */
+    public function sendGift(array $params)
+    {
+        try {
+            // Проверка существующих сообщений
+            $hasPreviousMessages = DB::connection('mysql_secondary')->table('chat_messages')
+                ->where('sender_id', $params['gift_receiver_id'])
+                ->where('receiver_id', $params['gift_sender_id'])
+                ->exists();
+
+            // Отправка подарка
+            (new ChatService())->sendGift([
+                'user_id' => $params['gift_receiver_id'],
+                'sender_id' => $params['gift_sender_id'],
+                'gift_id' => $params['gift_id']
+            ], !$hasPreviousMessages);
+
+            // Уведомление о подарке
+            if (!$hasPreviousMessages) {
+                (new ExpoNotificationService())->sendPushNotification(
+                    json_decode($params['receiver_device_tokens'], true),
+                    ExpoNotificationService::NEW_GIFT_PUSH['message'],
+                    ExpoNotificationService::NEW_GIFT_PUSH['title'],
+                );
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            Log::channel('payments')->info('[ERROR] ' . __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
     }
 
     /**
@@ -211,17 +262,10 @@ class PaymentsService extends Manager
      */
     private function createPayment(string $provider, array $params): array
     {
+        // Init payment
         $paymentData = call_user_func([$this->driver($provider), $params['action']], array_merge($params, [
             "description" => self::$titleProducts[$params['product']]
         ]));
-
-//        $paymentData = call_user_func([$this->driver($provider), $params['action']], [
-//            "description" => self::$titleProducts[$params['product']],
-//            "email" => $params['customer']['email'],
-//            "user_id" => $params['customer']['id'],
-//            "product_id" => $params['product_id'],
-//            "amount" => $params['price']
-//        ]);
 
         // Create transaction
         Transactions::create([
@@ -261,5 +305,44 @@ class PaymentsService extends Manager
             "confirmation_url" => $paymentData["confirmation_url"],
             "payment_id" => $paymentData["payment_id"]
         ];
+    }
+
+    /**
+     * @param array $params
+     * @return bool
+     * @throws \Throwable
+     */
+    public static function updateTransaction(array $params): bool
+    {
+        $transactionId = $params['transaction_id'];
+        unset($params['transaction_id']);
+
+        try {
+            return DB::connection('mysql_secondary')->transaction(function () use ($params, $transactionId) {
+                $updatedProcess = DB::connection('mysql_secondary')
+                    ->table('transactions_process')
+                    ->where('transaction_id', $transactionId)
+                    ->update($params);
+
+                $updatedTransaction = DB::connection('mysql_secondary')
+                    ->table('transactions')
+                    ->where('id', $transactionId)
+                    ->update($params);
+
+                return $updatedProcess > 0 && $updatedTransaction > 0;
+            });
+        } catch (\Exception $e) {
+            Log::channel('payments')->info('[ERROR] ' . __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
+    }
+
+
+    protected function checkPendingPayments(string $invoiceId = null): array
+    {
+        if (is_null($invoiceId)) {
+            TransactionProcess::find(["invoice_id" => $invoiceId]);
+        }
+
     }
 }
