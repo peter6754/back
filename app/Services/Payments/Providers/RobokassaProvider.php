@@ -248,7 +248,7 @@ class RobokassaProvider implements PaymentProviderInterface
      */
     public function callbackResult(array $params): array|string
     {
-        Log::channel($this->getProviderName())->info('[REQUEST] Result request: ', $params);
+        Log::channel($this->getProviderName())->info('Result request: ', $params);
         try {
             if (!$this->validate($params, true) && !$this->isTest) {
                 throw new \Exception('Invalid signature');
@@ -331,7 +331,7 @@ class RobokassaProvider implements PaymentProviderInterface
 
             return "OK" . $params['InvId'];
         } catch (\Exception $e) {
-            Log::channel($this->getProviderName())->info('[ERROR] ' . __METHOD__ . ': ' . $e->getMessage());
+            Log::channel($this->getProviderName())->error(__METHOD__ . ': ' . $e->getMessage());
             return [];
         }
     }
@@ -351,7 +351,7 @@ class RobokassaProvider implements PaymentProviderInterface
                 "id" => $params['InvId'] ?? null,
             ];
         } catch (\Exception $e) {
-            Log::channel($this->getProviderName())->info('[ERROR] ' . __METHOD__ . ': ' . $e->getMessage());
+            Log::channel($this->getProviderName())->error(__METHOD__ . ': ' . $e->getMessage());
             return [];
         }
     }
@@ -383,7 +383,7 @@ class RobokassaProvider implements PaymentProviderInterface
                 "id" => $transaction['id'] ?? null,
             ];
         } catch (\Exception $e) {
-            Log::channel($this->getProviderName())->info('[ERROR] ' . __METHOD__ . ': ' . $e->getMessage());
+            Log::channel($this->getProviderName())->error(__METHOD__ . ': ' . $e->getMessage());
             return [];
         }
     }
