@@ -113,7 +113,6 @@ class RobokassaProvider implements PaymentProviderInterface
     {
         $required = ['price', 'description'];
         if (count(array_intersect_key(array_flip($required), $params)) !== count($required)) {
-            print_r($params);
             throw ValidationException::withMessages([
                 'payment' => 'Missing required payment parameters'
             ]);
@@ -182,7 +181,7 @@ class RobokassaProvider implements PaymentProviderInterface
         }
 
         return [
-            "confirmation_url" => $baseUrl . '?' . http_build_query($queryParams),
+            "confirmation_url" => $baseUrl . '?' . http_build_query($queryParams, '', '&', PHP_QUERY_RFC3986),
             "created_at" => (new \DateTime())->format('Y-m-d H:i:s'),
             "payment_id" => $getData['transaction_id'],
             "invoice_id" => $getData['id'],
