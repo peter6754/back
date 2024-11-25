@@ -14,13 +14,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        if (class_exists(\Laravel\Telescope\TelescopeServiceProvider::class)) {
+            $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
+            $this->app->register(TelescopeServiceProvider::class);
+        }
+
         $this->app->singleton(ExpoNotificationService::class, function () {
             return new ExpoNotificationService();
         });
         $this->app->singleton(PaymentsService::class, function ($app) {
             return new PaymentsService($app);
         });
-
         $this->app->singleton(JwtService::class, function () {
             return new JwtService();
         });

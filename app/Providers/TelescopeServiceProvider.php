@@ -63,10 +63,9 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
 
     protected function authorization()
     {
-        // Разрешаем доступ только авторизованным пользователям Backpack
         Telescope::auth(function ($request) {
-            // Доступ только для авторизованных админов Backpack
-            return backpack_auth()->check();
+            // Доступ только для авторизованных пользователей Backpack
+            return backpack_auth()->check() && backpack_user()->hasRole('Superadmin');
         });
     }
 }
