@@ -30,6 +30,7 @@ Route::get('swagger', function () {
     ]);
     return response($getGenerator->toYaml());
 });
+
 Route::get('/', function () {
     return view('welcome');
 });
