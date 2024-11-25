@@ -9,8 +9,6 @@ class Gifts extends Model
 {
     use HasFactory;
 
-    protected $connection = 'mysql_secondary';
-
     protected $table = 'gifts';
 
     protected $fillable = [

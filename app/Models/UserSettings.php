@@ -10,12 +10,6 @@ class UserSettings extends Model
     use HasFactory;
 
     /**
-     * The database associated with the model.
-     * @var string
-     */
-    protected $connection = 'mysql_secondary';
-
-    /**
      * The table associated with the model.
      * @var string
      */

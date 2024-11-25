@@ -10,7 +10,7 @@ class BoughtSubscriptions extends Model
 {
     use CrudTrait;
     use HasFactory;
-    protected $connection = 'mysql_secondary';
+
     protected $table = 'bought_subscriptions';
     public $timestamps = false;
     protected $casts = [
