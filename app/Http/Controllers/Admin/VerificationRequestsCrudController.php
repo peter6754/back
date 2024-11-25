@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Alert;
 use App\Http\Requests\VerificationRequestsRequest;
 
+use App\Models\VerificationRequests;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 
@@ -295,17 +297,155 @@ class VerificationRequestsCrudController extends CrudController
     protected function setupUpdateOperation()
     {
 
-        CRUD::setValidation([
-            'status' => 'required|string',
-            'rejection_reason' => 'nullable|string|min:5|max:255',
-        ]);
-
         CRUD::field('status')->label('Статус')->type('select_from_array')->options([
             'initial' => 'В ожидании',
             'approved' => 'Одобрено',
             'rejected' => 'Отклонено',
         ]);
 
-        CRUD::field('rejection_reason')->label('Rejection Reason')->type('textarea');
+        $this->crud->setValidation(VerificationRequestsRequest::class);
+
+        $this->crud->addField([
+            'name' => 'preset_reason',
+            'label' => 'Причина отказа (из списка)',
+            'type' => 'select_from_array',
+            'options' => [
+                'Плохое качество фото' => 'Плохое качество фото',
+                'Лицо не видно' => 'Лицо не видно',
+            ],
+            'allows_null' => true,
+        ]);
+
+        $this->crud->addField([
+            'name' => 'custom_reason',
+            'label' => 'Или напишите свою причину',
+            'type' => 'textarea',
+        ]);
+
+        $this->crud->addField([
+            'name' => 'rejection_reason',
+            'type' => 'hidden',
+        ]);
+
+        $this->crud->addSaveAction([
+            'name' => 'save_and_back',
+            'button_text' => 'Сохранить и вернуться',
+            'redirect' => function ($crud, $request, $itemId = null) {
+                $preset = trim($request->input('preset_reason'));
+                $custom = trim($request->input('custom_reason'));
+                $reason = $custom ?: $preset;
+
+                VerificationRequests::where('user_id', $itemId)->update([
+                    'rejection_reason' => $reason,
+                ]);
+
+                return $crud->route;
+            },
+        ]);
+
+        $this->crud->setOperationSetting('saveAllInputsExcept', ['preset_reason', 'custom_reason']);
+
+        $entry = $this->crud->getCurrentEntry();
+
+        if ($entry) {
+            $userPhoto = $entry->images->first()->image_url ?? null;
+            $verificationPhoto = $entry->image_url ?? null;
+            $gender = $entry->user->gender ?? 'unknown';
+
+            $genderText = [
+                'male' => 'Мужской',
+                'female' => 'Женский',
+                'm_f' => 'М + Ж',
+                'm_m' => 'М + М',
+                'f_f' => 'Ж + Ж',
+            ][$gender] ?? 'Неизвестно';
+
+            $html = '
+        <style>
+            .image-thumb {
+                cursor: pointer;
+                border-radius: 5px;
+                border: 1px solid #ccc;
+                max-height: 120px;
+                transition: transform 0.2s ease-in-out;
+            }
+            .image-thumb:hover {
+                transform: scale(1.05);
+            }
+        </style>
+
+        <div style="display: flex; gap: 40px; flex-wrap: wrap; align-items: flex-start;">
+            <div>
+                <strong>Фото профиля</strong><br><br>'
+                . ($userPhoto ? '<img src="' . $userPhoto . '" class="image-thumb" onclick="openGlobalModal(\'' . $userPhoto . '\')">' : 'Нет фото') . '
+            </div>
+            <div>
+                <strong>Фото для верификации</strong><br><br>'
+                . ($verificationPhoto ? '<img src="' . $verificationPhoto . '" class="image-thumb" onclick="openGlobalModal(\'' . $verificationPhoto . '\')">' : 'Нет фото') . '
+            </div>
+            <div>
+                <strong>Пол</strong><br><br>' . $genderText . '
+            </div>
+        </div>
+
+        <script>
+            function openGlobalModal(imageUrl) {
+                const modal = document.createElement("div");
+                modal.id = "globalImageModal";
+                modal.style.position = "fixed";
+                modal.style.top = 0;
+                modal.style.left = 0;
+                modal.style.width = "100%";
+                modal.style.height = "100%";
+                modal.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
+                modal.style.display = "flex";
+                modal.style.justifyContent = "center";
+                modal.style.alignItems = "center";
+                modal.style.zIndex = 99999;
+
+                const closeButton = document.createElement("span");
+                closeButton.innerHTML = "&times;";
+                closeButton.style.position = "absolute";
+                closeButton.style.top = "20px";
+                closeButton.style.right = "30px";
+                closeButton.style.fontSize = "30px";
+                closeButton.style.color = "white";
+                closeButton.style.cursor = "pointer";
+                closeButton.onclick = function() {
+                    closeGlobalModal();
+                };
+
+                const img = document.createElement("img");
+                img.src = imageUrl;
+                img.style.maxWidth = "90%";
+                img.style.maxHeight = "90%";
+                img.style.borderRadius = "5px";
+
+                modal.appendChild(closeButton);
+                modal.appendChild(img);
+                modal.onclick = function(e) {
+                    if (e.target === modal) {
+                        closeGlobalModal();
+                    }
+                };
+
+                document.body.appendChild(modal);
+            }
+
+            function closeGlobalModal() {
+                const modal = document.getElementById("globalImageModal");
+                if (modal) {
+                    document.body.removeChild(modal);
+                }
+            }
+        </script>
+        ';
+
+            $this->crud->addField([
+                'name' => 'photo_preview',
+                'type' => 'custom_html',
+                'value' => $html,
+            ]);
+        }
     }
 }

@@ -26,6 +26,8 @@ class VerificationRequestsRequest extends FormRequest
     {
         return [
             // 'name' => 'required|min:5|max:255'
+            'preset_reason' => 'nullable|string',
+            'custom_reason' => 'nullable|string|min:5|max:255',
         ];
     }
 
@@ -51,5 +53,18 @@ class VerificationRequestsRequest extends FormRequest
         return [
             //
         ];
+    }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $preset = trim($this->input('preset_reason'));
+            $custom = trim($this->input('custom_reason'));
+
+            if ($preset && $custom) {
+                $validator->errors()->add('preset_reason', 'Укажите только одну причину: из списка или свою.');
+                $validator->errors()->add('custom_reason', 'Укажите только одну причину: из списка или свою.');
+            }
+        });
     }
 }
