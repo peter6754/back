@@ -1,5 +1,6 @@
 <?php
 
+use Laravel\Telescope\Telescope;
 use App\Http\Controllers\Payments\PaymentsController;
 use App\Http\Controllers\Payments\StatusesController;
 use Illuminate\Support\Facades\Route;
@@ -21,7 +22,6 @@ Route::prefix('payment')->group(function () {
     Route::get('{provider}/success', [StatusesController::class, 'success'])->name('statuses.success');
     Route::get('{provider}/fail', [StatusesController::class, 'fail'])->name('statuses.fail');
 });
-
 
 // Default routes
 Route::get('swagger', function () {
