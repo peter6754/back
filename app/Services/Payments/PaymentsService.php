@@ -106,9 +106,9 @@ class PaymentsService extends Manager
         if (!$package) {
             throw new \Exception("Item not found", 4040);
         }
-
         $package = $package->toArray();
 
+        // Calculate product price
         $price = $package['price'][$gender] * $package['count'];
         $discount = ((100 - $package['stock']) / 100);
 
