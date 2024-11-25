@@ -189,6 +189,33 @@ class RobokassaProvider implements PaymentProviderInterface
         ];
     }
 
+    /**
+     * @param array $params
+     * @return array
+     */
+    public function subscription(array $params): array
+    {
+        $getData = TransactionProcess::firstOrCreate([
+            "subscription_id" => $params['subscribeInfo']['subscription_id'] ?? null,
+            "subscriber_id" => $params['subscribeInfo']['subscriber_id'] ?? null,
+
+            "email" => $params['customer']['email'],
+            "user_id" => $params['customer']['id'],
+
+            "provider" => $this->getProviderName(),
+            "type" => $params['product'],
+            "price" => $params['price'],
+            "id" => $params['invoice_id'],
+        ])->toArray();
+
+        return [
+            "created_at" => (new \DateTime())->format('Y-m-d H:i:s'),
+            "payment_id" => $getData['transaction_id'],
+            "invoice_id" => $getData['id'],
+            "confirmation_url" => null
+        ];
+    }
+
     public function validate(array $params, bool $result = false): bool
     {
         $required = ['InvId', 'OutSum', 'SignatureValue'];
@@ -230,11 +257,11 @@ class RobokassaProvider implements PaymentProviderInterface
             // Checking transaction
             if ($getTransaction = TransactionProcess::find($params['InvId'])) {
                 // Get Transaction
-                $transaction = $getTransaction->toArray();
+                $getTransaction = $getTransaction->toArray();
 
                 // Если мы уже обработали платеж
                 if (
-                    $transaction['status'] === PaymentsService::ORDER_STATUS_COMPLETE &&
+                    $getTransaction['status'] === PaymentsService::ORDER_STATUS_COMPLETE &&
                     !$this->isTest
                 ) {
                     return "OK" . $params['InvId'];
@@ -242,18 +269,22 @@ class RobokassaProvider implements PaymentProviderInterface
 
                 // Update status
                 PaymentsService::updateTransaction([
-                    'transaction_id' => $transaction['transaction_id'],
+                    'transaction_id' => $getTransaction['transaction_id'],
                     'status' => PaymentsService::ORDER_STATUS_COMPLETE
                 ]);
             }
 
-            $transaction = (array)(new \App\Models\TransactionProcess)->transactionInfo(
+            $transaction = (new \App\Models\TransactionProcess())->transactionInfo(
                 $transaction['transaction_id'] ??
                 (int)$params['InvId'] ??
                 null
             );
 
-            switch ($transaction['type'] ?? null) {
+            if (empty($transaction['type'])) {
+                $transaction['type'] = null;
+            }
+
+            switch ($params['Shp_product'] ?? $transaction['type'] ?? null) {
                 case PaymentsService::ORDER_PRODUCT_SERVICE:
                     $this->payments->sendServicePackage($transaction);
                     break;
@@ -263,6 +294,37 @@ class RobokassaProvider implements PaymentProviderInterface
                     break;
 
                 default:
+                    // Может быть подписка на платеж, если да ищем последнюю транзакцию с подпиской
+                    if (empty($transaction['increment_id'])) {
+                        $transaction = (array)(new \App\Models\TransactionProcess())->transactionInfo(
+                            $params['EMail'] ?? null,
+                            true
+                        );
+
+                        $getData = $this->payments->createPayment($this->getProviderName(), [
+                            "product_id" => $transaction["subscription_id"],
+                            "subscribeInfo" => $getTransaction,
+                            "product" => $transaction['type'],
+                            "price" => $params['OutSum'],
+                            "invoice_id" => (int)$params['InvId'],
+                            "customer" => [
+                                "email" => $transaction['user_email'],
+                                "id" => $transaction['user_id'],
+                            ],
+                            "action" => "subscription",
+                        ]);
+
+                        // Update status
+                        PaymentsService::updateTransaction([
+                            'status' => PaymentsService::ORDER_STATUS_COMPLETE,
+                            'transaction_id' => $getData['payment_id'],
+                        ]);
+
+                        // Update transaction
+                        $transaction = (new \App\Models\TransactionProcess())->transactionInfo(
+                            $getData['payment_id'] ?? null
+                        );
+                    }
                     $this->payments->sendSubscription($transaction);
                     break;
             }

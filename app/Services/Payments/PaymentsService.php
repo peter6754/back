@@ -219,27 +219,33 @@ class PaymentsService extends Manager
      * @return bool
      * @throws GuzzleException
      */
-    public function sendSubscription(array $params)
+    public function sendSubscription(array $params): bool
     {
-        DB::transaction(function () use ($params) {
-            // Работаем строго с подписками
-            if ($params['type'] == self::ORDER_PRODUCT_SUBSCRIPTION) {
-                // Деактивируем все активные подписки пользователя
-                BoughtSubscriptions::whereHas('transaction', function ($query) use ($params) {
-                    $query->where('status', 'succeeded')
-                        ->where('user_id', $params['user_id']);
-                })
-                    ->where('due_date', '>', now())
-                    ->update(['due_date' => null]);
+        try {
+            DB::transaction(function () use ($params) {
+                // Работаем строго с подписками
+                if ($params['type'] == self::ORDER_PRODUCT_SUBSCRIPTION) {
+                    // Деактивируем все активные подписки пользователя
+                    BoughtSubscriptions::whereHas('transaction', function ($query) use ($params) {
+                        $query->where('status', 'succeeded')
+                            ->where('user_id', $params['user_id']);
+                    })
+                        ->where('due_date', '>', now())
+                        ->update(['due_date' => null]);
 
-                // Активируем новую подписку
-                $termDays = self::$subscriptionDays[$params['subscription_term']] ?? 1;
-                BoughtSubscriptions::where('transaction_id', $params['transaction_id'])
-                    ->update(['due_date' => now()->addDays($termDays)]);
-            }
+                    // Активируем новую подписку
+                    $termDays = self::$subscriptionDays[$params['subscription_term']] ?? 1;
+                    BoughtSubscriptions::where('transaction_id', $params['transaction_id'])
+                        ->update(['due_date' => now()->addDays($termDays)]);
+                }
 
-            // Обновление информации пользователя / пакетов
-        });
+                // Обновление информации пользователя / пакетов
+            });
+            return true;
+        } catch (\Exception $e) {
+            Log::channel('payments')->info('[ERROR] ' . __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
     }
 
 
@@ -248,7 +254,7 @@ class PaymentsService extends Manager
      * @return bool
      * @throws GuzzleException
      */
-    public function sendGift(array $params)
+    public function sendGift(array $params): bool
     {
         try {
             // Проверка существующих сообщений
@@ -285,7 +291,7 @@ class PaymentsService extends Manager
      * @param array $params
      * @return array
      */
-    private function createPayment(string $provider, array $params): array
+    public function createPayment(string $provider, array $params): array
     {
         // Init payment
         $paymentData = call_user_func([$this->driver($provider), $params['action']], array_merge($params, [
@@ -293,7 +299,7 @@ class PaymentsService extends Manager
         ]));
 
         // Create transaction
-        Transactions::create([
+        Transactions::firstOrCreate([
             "id" => $paymentData['payment_id'] ?? null,
             "purchased_at" => $paymentData['created_at'],
             "price" => ($params['action'] != "recurrent" ? $params['price'] : 0.00),
