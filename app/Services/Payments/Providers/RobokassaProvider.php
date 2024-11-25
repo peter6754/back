@@ -340,7 +340,12 @@ class RobokassaProvider implements PaymentProviderInterface
 
             return "OK" . $params['InvId'];
         } catch (\Exception $e) {
-            Log::channel($this->getProviderName())->error(__METHOD__ . ': ' . $e->getMessage());
+            Log::channel('payments')->error('Error callback result: ' . $e->getMessage(), [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return [];
         }
     }
@@ -360,7 +365,12 @@ class RobokassaProvider implements PaymentProviderInterface
                 "id" => $params['InvId'] ?? null,
             ];
         } catch (\Exception $e) {
-            Log::channel($this->getProviderName())->error(__METHOD__ . ': ' . $e->getMessage());
+            Log::channel('payments')->error('Error callback successPage: ' . $e->getMessage(), [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return [];
         }
     }
@@ -392,7 +402,12 @@ class RobokassaProvider implements PaymentProviderInterface
                 "id" => $transaction['id'] ?? null,
             ];
         } catch (\Exception $e) {
-            Log::channel($this->getProviderName())->error(__METHOD__ . ': ' . $e->getMessage());
+            Log::channel('payments')->error('Error callback errorPage: ' . $e->getMessage(), [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return [];
         }
     }
