@@ -13,6 +13,7 @@
         "ext-simplexml": "*",
         "backpack/crud": "^6.7",
         "backpack/permissionmanager": "^7.2",
+        "backpack/pro": "^2.2",
         "backpack/theme-tabler": "^1.2",
         "laravel/framework": "^11.9",
         "laravel/telescope": "^5.7",
@@ -73,5 +74,11 @@
         }
     },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "repositories": {
+        "backpack": {
+            "type": "composer",
+            "url": "https://repo.backpackforlaravel.com/"
+        }
+    }
 }
