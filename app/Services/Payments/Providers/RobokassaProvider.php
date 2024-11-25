@@ -249,7 +249,7 @@ class RobokassaProvider implements PaymentProviderInterface
     {
         Log::channel($this->getProviderName())->info('Result request: ', $params);
         try {
-            if (!$this->validate($params, true) && !$this->isTest) {
+            if (!$this->validate($params, true)) {
                 throw new \Exception('Invalid signature');
             }
 
@@ -259,10 +259,7 @@ class RobokassaProvider implements PaymentProviderInterface
                 $getTransaction = $getTransaction->toArray();
 
                 // Если мы уже обработали платеж
-                if (
-                    $getTransaction['status'] === PaymentsService::ORDER_STATUS_COMPLETE &&
-                    !$this->isTest
-                ) {
+                if ($getTransaction['status'] === PaymentsService::ORDER_STATUS_COMPLETE) {
                     return "OK" . $params['InvId'];
                 }
 
@@ -311,7 +308,7 @@ class RobokassaProvider implements PaymentProviderInterface
                         );
 
                         $getData = $this->payments->createPayment($this->getProviderName(), [
-                            "product_id" => $transaction["subscription_id"],
+                            "product_id" => $transaction["subscription_id"] ?? null,
                             "subscribeInfo" => $getTransaction,
                             "product" => $transaction['type'],
                             "price" => $params['OutSum'],
