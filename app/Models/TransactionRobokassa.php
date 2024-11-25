@@ -34,7 +34,8 @@ class TransactionRobokassa extends Model
      * Поля, которые можно массово назначать
      */
     protected $fillable = [
-        'id' // только 'id', так как 'invId' автоинкрементный
+        'invId',
+        'id'
     ];
 
     /**

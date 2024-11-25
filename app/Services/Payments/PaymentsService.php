@@ -30,15 +30,16 @@ class PaymentsService extends Manager
             "female" => "55f9c107-f698-4f51-95a8-bfd68ffeb3ef",
             "male" => "545a01b4-7de7-4063-93f4-4572d0036d29",
         ],
-//        7 => [
-//            "female" => "b44bdb1e-e7f7-44bb-a886-b040cc5cb53c",
-//            "male" => "648ef7cf-382c-4ff1-9656-672220d299e1",
-//        ],
         7 => [
+            "female" => "b44bdb1e-e7f7-44bb-a886-b040cc5cb53c",
+            "male" => "648ef7cf-382c-4ff1-9656-672220d299e1",
+        ],
+        99 => [
             "female" => "bdc80644-a987-4798-bafc-85356d86bd55",
             "male" => "bdc80644-a987-4798-bafc-85356d86bd55",
         ],
     ];
+
 
     // Days in subscription
     static array $subscriptionDays = [
@@ -214,7 +215,27 @@ class PaymentsService extends Manager
      */
     public function sendServicePackage(array $params)
     {
+        try {
+            $updateParams = [];
 
+            if (!empty($params['superlikes'])) {
+                $updateParams['superlikes'] = DB::raw('superlikes + ' . $params['superlikes']);
+            }
+
+            if (!empty($params['superbooms'])) {
+                $updateParams['superbooms'] = DB::raw('superbooms + ' . $params['superbooms']);
+            }
+
+            if (!empty($updateParams)) {
+                DB::table('user_information')
+                    ->where('user_id', $params['user_id'])
+                    ->update($updateParams);
+            }
+            return true;
+        } catch (\Exception $e) {
+            Log::channel('payments')->error(__METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
     }
 
     /**
@@ -243,6 +264,13 @@ class PaymentsService extends Manager
                 }
 
                 // Обновление информации пользователя / пакетов
+                if ($params['subscription_id'] > 1) {
+                    $this->sendServicePackage([
+                        'user_id' => $params['user_id'],
+                        'superlikes' => 5,
+                        'superbooms' => 1,
+                    ]);
+                }
             });
             return true;
         } catch (\Exception $e) {
