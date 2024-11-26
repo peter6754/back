@@ -2,12 +2,12 @@
 
 namespace App\Services\Payments;
 
-use App\Models\BoughtSubscriptions;
 use App\Services\ExpoNotificationService;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Foundation\Application;
 use App\Models\SubscriptionPackages;
 use Illuminate\Support\Facades\Log;
+use App\Models\BoughtSubscriptions;
 use Illuminate\Support\Facades\DB;
 use App\Models\TransactionProcess;
 use Illuminate\Config\Repository;
@@ -22,18 +22,49 @@ class PaymentsService extends Manager
 {
     // Subscribes params list
     static array $subscriptions = [
+        // Account plus
         1 => [
             "female" => "d527d1a5-92e2-48a8-9565-51ad17004d59",
             "male" => "1c8ff1ce-15f9-4245-8762-82b5d8a4aaa1",
         ],
+        2 => [
+            "female" => "5b70c94a-4f88-4ee6-b1e5-7a842b52bff1",
+            "male" => "361a4ad8-bf46-4195-94d8-4f81b3432068",
+        ],
+        3 => [
+            "female" => "843e7499-802a-4360-8bc6-95f7ac70611a",
+            "male" => "641f9f15-61ed-4868-9a92-effbe57a5b3e",
+        ],
+
+        // Account gold
         4 => [
             "female" => "55f9c107-f698-4f51-95a8-bfd68ffeb3ef",
             "male" => "545a01b4-7de7-4063-93f4-4572d0036d29",
         ],
+        5 => [
+            "female" => "67bf9a79-5890-4b59-bf50-13ca30ed1780",
+            "male" => "157a362b-98cb-4b02-b613-2023ec32c7b0",
+        ],
+        6 => [
+            "female" => "9d28ed0d-8472-4cb3-9c46-4f2d9100550f",
+            "male" => "25cddb25-7c3f-4215-9a83-65508f58814c",
+        ],
+
+        // Account premium
         7 => [
             "female" => "b44bdb1e-e7f7-44bb-a886-b040cc5cb53c",
             "male" => "648ef7cf-382c-4ff1-9656-672220d299e1",
         ],
+        8 => [
+            "female" => "1f18edaa-6dde-4383-ada3-06111e967273",
+            "male" => "ef0f6c78-27f9-4065-9422-0e9c1ba2d183",
+        ],
+        9 => [
+            "female" => "32539b1a-a4f7-46e7-b406-dc712929264a",
+            "male" => "234a264a-7035-44d7-ae92-53a1c9f63b39",
+        ],
+
+        // Test
         99 => [
             "female" => "bdc80644-a987-4798-bafc-85356d86bd55",
             "male" => "bdc80644-a987-4798-bafc-85356d86bd55",
