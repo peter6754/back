@@ -22,7 +22,7 @@ class PaymentsService extends Manager
 {
     // Subscribes params list
     static array $subscriptions = [
-        // Account plus
+        // Subscription Plus
         1 => [
             "female" => "d527d1a5-92e2-48a8-9565-51ad17004d59",
             "male" => "1c8ff1ce-15f9-4245-8762-82b5d8a4aaa1",
@@ -36,7 +36,7 @@ class PaymentsService extends Manager
             "male" => "641f9f15-61ed-4868-9a92-effbe57a5b3e",
         ],
 
-        // Account gold
+        // Subscription Gold
         4 => [
             "female" => "55f9c107-f698-4f51-95a8-bfd68ffeb3ef",
             "male" => "545a01b4-7de7-4063-93f4-4572d0036d29",
@@ -50,7 +50,7 @@ class PaymentsService extends Manager
             "male" => "25cddb25-7c3f-4215-9a83-65508f58814c",
         ],
 
-        // Account premium
+        // Subscription Premium
         7 => [
             "female" => "b44bdb1e-e7f7-44bb-a886-b040cc5cb53c",
             "male" => "648ef7cf-382c-4ff1-9656-672220d299e1",
@@ -64,7 +64,7 @@ class PaymentsService extends Manager
             "male" => "234a264a-7035-44d7-ae92-53a1c9f63b39",
         ],
 
-        // Test
+        // Test subscription
         99 => [
             "female" => "bdc80644-a987-4798-bafc-85356d86bd55",
             "male" => "bdc80644-a987-4798-bafc-85356d86bd55",
