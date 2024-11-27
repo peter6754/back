@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Services\JwtService;
 use Illuminate\Support\Facades\Cache;
+use Laravel\Socialite\Facades\Socialite;
 use Symfony\Component\HttpFoundation\Response;
 use GuzzleHttp\Exception\GuzzleException;
 use App\Http\Traits\ApiResponseTrait;
@@ -130,6 +131,14 @@ class AuthController extends Controller
 
     public function socialCallback(Request $request)
     {
+        $provider = $request->route('provider');
 
+//        try {
+            $socialUser = Socialite::driver($provider)->user();
+
+            var_dump($socialUser);
+//        } catch (\Exception $e) {
+//            return redirect('/login')->with('error', 'Ошибка авторизации');
+//        }
     }
 }
