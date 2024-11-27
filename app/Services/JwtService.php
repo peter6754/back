@@ -8,8 +8,8 @@ use Exception;
 
 class JwtService
 {
+    private int $ttl = 365 * 24 * 60 * 60;
     private string $alg = 'HS256';
-    private int $ttl = 3600;
     private int $leeway = 0;
     private string $secret;
 
@@ -99,6 +99,7 @@ class JwtService
 
             return $decodedPayload;
         } catch (Exception $e) {
+            echo $e->getMessage();
             return [];
         }
     }

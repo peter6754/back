@@ -1,8 +1,8 @@
 <?php
 
-use Laravel\Telescope\Telescope;
-use App\Http\Controllers\Payments\PaymentsController;
 use App\Http\Controllers\Payments\StatusesController;
+use App\Http\Controllers\Payments\PaymentsController;
+use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
 use OpenApi\Generator;
 
@@ -21,6 +21,13 @@ Route::prefix('payment')->group(function () {
     Route::get('{provider}/result/{event?}', [StatusesController::class, 'resultCallback'])->name('statuses.callback');
     Route::get('{provider}/success', [StatusesController::class, 'success'])->name('statuses.success');
     Route::get('{provider}/fail', [StatusesController::class, 'fail'])->name('statuses.fail');
+});
+
+// Auth routes
+Route::prefix('auth')->group(function () {
+    Route::post('login', [AuthController::class, 'login'])->name('auth.verify');
+    Route::post('verify-login', [AuthController::class, 'verify'])->name('auth.login');
+
 });
 
 // Default routes
