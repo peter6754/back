@@ -11,9 +11,9 @@
     <x-backpack::menu-item title="Пользователи" icon="la la-question" :link="backpack_url('secondaryuser')"/>
 @endif
 
-@if(backpack_user()->hasRole('Superadmin'))
-    <x-backpack::menu-item title="Администраторы" icon="la la-question" :link="backpack_url('user')"/>
-@endif
+{{--@if(backpack_user()->hasRole('Superadmin'))--}}
+{{--    <x-backpack::menu-item title="Администраторы" icon="la la-question" :link="backpack_url('user')"/>--}}
+{{--@endif--}}
 
 @if (backpack_user()->can('access bought-subscriptions'))
     <x-backpack::menu-item title="Подписки" icon="la la-question" :link="backpack_url('bought-subscriptions')"/>
@@ -30,10 +30,10 @@
 @endif
 
 @if(backpack_user()->hasRole('Superadmin'))
-    <x-backpack::menu-dropdown title="Управление доступом" icon="la la-lock">
+    <x-backpack::menu-dropdown title="Администраторы" icon="la la-lock">
         <x-backpack::menu-dropdown-item title="Пользователи" icon="la la-user" :link="backpack_url('user')"/>
-        <x-backpack::menu-dropdown-item title="Роли" icon="la la-group" :link="backpack_url('role')"/>
         <x-backpack::menu-dropdown-item title="Права" icon="la la-key" :link="backpack_url('permission')"/>
+        <x-backpack::menu-dropdown-item title="Роли" icon="la la-group" :link="backpack_url('role')"/>
     </x-backpack::menu-dropdown>
 @endif
 
