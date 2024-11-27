@@ -3,6 +3,7 @@
 namespace App\Services\External;
 
 use GreenSMS\GreenSMS;
+use Illuminate\Support\Facades\Log;
 
 class GreenSMSService
 {
@@ -33,17 +34,23 @@ class GreenSMSService
      */
     public function sendSMS(string $phone, string $message): bool
     {
-        // Disable sending messages for local
-        if (app()->environment('local')) {
-            return true;
+        try {
+
+            // Disable sending messages for local
+            if (app()->environment('local')) {
+                return true;
+            }
+
+            // Send message
+            $response = $this->client->sms->send([
+                'to' => preg_replace("/[^,.0-9]/", '', $phone),
+                'txt' => $message
+            ]);
+
+            return (!empty($response->request_id));
+        } catch (\Exception $e) {
+            Log::error("GreenSMSService::sendSMS(): {$e->getMessage()}", $e);
+            return false;
         }
-
-        // Send message
-        $response = $this->client->sms->send([
-            'to' => preg_replace("/[^,.0-9]/", '', $phone),
-            'txt' => $message
-        ]);
-
-        return (!empty($response->request_id));
     }
 }
