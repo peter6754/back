@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\JwtService;
 use App\Services\AuthService;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use App\Services\Payments\PaymentsService;
 use App\Services\External\GreenSMSService;
@@ -16,6 +17,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // Add social network
+        Event::listen(function (\SocialiteProviders\Manager\SocialiteWasCalled $event) {
+            $event->extendSocialite('apple', \SocialiteProviders\Apple\Provider::class);
+        });
+
+        // Telescope
         if (class_exists(\Laravel\Telescope\TelescopeServiceProvider::class)) {
             $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
             $this->app->register(TelescopeServiceProvider::class);

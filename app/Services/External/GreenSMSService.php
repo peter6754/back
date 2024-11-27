@@ -35,7 +35,6 @@ class GreenSMSService
     public function sendSMS(string $phone, string $message): bool
     {
         try {
-
             // Disable sending messages for local
             if (app()->environment('local')) {
                 return true;
