@@ -145,7 +145,7 @@ class AuthController extends Controller
             );
 
             if (empty($data)) {
-                return redirect()->away('tinderone://oauth/' . url($data));
+                return redirect()->away('tinderone://oauth/' . urlencode($data));
             }
 
             abort(403, 'Invalid account data');
