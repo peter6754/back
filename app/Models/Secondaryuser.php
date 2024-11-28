@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Notifications\Notifiable;
@@ -21,7 +22,6 @@ class Secondaryuser extends Model
 
     /**
      * The attributes that are mass assignable.
-     *
      * @var array<int, string>
      */
     protected $fillable = [
@@ -144,6 +144,12 @@ class Secondaryuser extends Model
                 $user->forceFill([
                     'birth_date' => Carbon::now()->subYears($user->age)->format('Y-m-d'),
                 ]);
+            }
+        });
+
+        static::creating(function ($model) {
+            if (empty($model->id)) {
+                $model->id = Str::uuid()->toString();
             }
         });
     }
