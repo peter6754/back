@@ -63,8 +63,8 @@
         </p>
     @endif
 
-    <a href="https://tinderone.ru" class="btn btn-danger">
-        На главную
+    <a href="tinderone://payment" class="btn btn-success">
+        Вернуться
     </a>
 </div>
 
