@@ -141,7 +141,7 @@ class AuthController extends Controller
         try {
             $socialUser = Socialite::driver($provider)->user();
             $data = $this->authService->loginBySocial($provider,
-                (array)$socialUser
+                $socialUser
             );
 
             if (empty($data)) {
