@@ -19,6 +19,8 @@ class AppServiceProvider extends ServiceProvider
     {
         // Add social network
         Event::listen(function (\SocialiteProviders\Manager\SocialiteWasCalled $event) {
+            $event->extendSocialite('vkontakte', \SocialiteProviders\VKontakte\Provider::class);
+            $event->extendSocialite('google', \SocialiteProviders\Google\Provider::class);
             $event->extendSocialite('apple', \SocialiteProviders\Apple\Provider::class);
         });
 
