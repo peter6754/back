@@ -266,4 +266,42 @@ class Secondaryuser extends Model
                 ->orWhere('user2_id', $this->id);
         });
     }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function connectedAccounts()
+    {
+        return $this->hasMany(ConnectedAccount::class, 'user_id', 'id');
+    }
+
+    /**
+     * @param string $provider
+     * @param string|null $email
+     * @return bool
+     */
+    public function hasConnectedAccount(string $provider, string $email = null): bool
+    {
+        $query = $this->connectedAccounts()
+            ->where('provider', $provider);
+
+        if ($email) {
+            $query->where('email', $email);
+        }
+
+        return $query->exists();
+    }
+
+    /**
+     * @param array $data
+     * @return ConnectedAccount
+     */
+    public function addConnectedAccount(array $data): ConnectedAccount
+    {
+        return $this->connectedAccounts()->create([
+            'email' => $data['email'],
+            'provider' => $data['provider'],
+            'name' => $data['name']
+        ]);
+    }
 }

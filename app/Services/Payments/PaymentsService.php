@@ -446,12 +446,10 @@ class PaymentsService extends Manager
         }
     }
 
-
     protected function checkPendingPayments(string $invoiceId = null): array
     {
         if (is_null($invoiceId)) {
             TransactionProcess::find(["invoice_id" => $invoiceId]);
         }
-
     }
 }
