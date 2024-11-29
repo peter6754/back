@@ -146,14 +146,14 @@ class AuthController extends Controller
             $profile = Socialite::driver($provider)->stateless()->user();
         }
 
-            $data = $this->authService->loginBySocial(
-                $provider,
-                $profile
-            );
+        $data = $this->authService->loginBySocial(
+            $provider,
+            $profile
+        );
 
-            if (!empty($data)) {
-                return redirect()->away('tinderone://oauth/' . urlencode($data));
-            }
+        if (!empty($data)) {
+            return redirect()->away('tinderone://oauth/' . urlencode($data));
+        }
 
 //            abort(403, 'Invalid account data');
 //        } catch (Exception $e) {
