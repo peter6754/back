@@ -158,10 +158,10 @@ class AuthService
 
     /**
      * @param string $provider
-     * @param array $user
-     * @return string
+     * @param object $user
+     * @return array
      */
-    public function loginBySocial(string $provider, object $user): string
+    public function loginBySocial(string $provider, object $user): array
     {
         try {
             DB::beginTransaction();
@@ -190,7 +190,11 @@ class AuthService
                     provider: $provider,
                     name: $user->getName(),
                 );
+
+                $type = 'register';
             } else {
+                $type = $account->user->registration_date ? 'login' : 'register';
+
                 // Если это первая регистрация, обновляем дату
                 if (!$account->user->registration_date) {
                     $account->user->update(['registration_date' => now()]);
@@ -199,13 +203,16 @@ class AuthService
             DB::commit();
 
             // Создаем токен аутентификации
-            return app(JwtService::class)->encode([
-                'id' => $account->user->id
-            ]);
+            return [
+                'token' => app(JwtService::class)->encode([
+                    'id' => $account->user->id
+                ]),
+                'type' => $type
+            ];
 
         } catch (\Exception $e) {
             Log::error($e);
-            return "";
+            return [];
         }
     }
 

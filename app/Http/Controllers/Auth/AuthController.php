@@ -152,10 +152,14 @@ class AuthController extends Controller
         );
 
         if (!empty($data)) {
-            return redirect()->away('tinderone://oauth/' . urlencode($data));
+            return redirect()->away('tinderone://oauth/' . implode("/", [
+                    $data['type'],
+                    $data['token']
+                ])
+            );
         }
 
-//            abort(403, 'Invalid account data');
+        abort(403, 'Invalid account data');
 //        } catch (Exception $e) {
 //            Log::error("Social authentication failed: " . $e->getMessage(), [
 //                'error' => $e->getMessage(),
