@@ -144,26 +144,6 @@ class RobokassaProvider implements PaymentProviderInterface
             "Shp_product=" . $params['product'],
         ]);
 
-        if ($this->isTest) {
-            $queryParams['SuccessUrl2'] = url("payment/{$this->getProviderName()}/success");
-            $queryParams['ResultUrl2'] = url("payment/{$this->getProviderName()}/result");
-            $queryParams['FailUrl2'] = url("payment/{$this->getProviderName()}/fail");
-            $queryParams['SuccessUrl2Method'] = "GET";
-            $queryParams['FailUrl2Method'] = "GET";
-
-            $signature = $this->signatureMerchant([
-                $params['price'],
-                $getData['id'],
-                $queryParams['ResultUrl2'],
-                $queryParams['SuccessUrl2'],
-                $queryParams['SuccessUrl2Method'],
-                $queryParams['FailUrl2'],
-                $queryParams['FailUrl2Method'],
-                $this->password1,
-                "Shp_product=" . $params['product'],
-            ]);
-        }
-
         $queryParams = array_merge([
             'MerchantLogin' => $this->merchantLogin,
             'OutSum' => $params['price'],
