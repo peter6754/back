@@ -1,3 +1,4 @@
+<span class="nav-separator">Навигация</span>
 {{-- This file is used for menu items by any Backpack v6 theme --}}
 <li class="nav-item">
     <a class="nav-link" href="{{ backpack_url('dashboard') }}">
@@ -40,9 +41,13 @@
 <x-backpack::menu-item title="Статистика(временно)" icon="la la-question" :link="backpack_url('statistics')"/>
 
 <span class="nav-separator">Утилиты</span>
+<x-backpack::menu-item title='Log Manager' icon='la la-terminal' :link="backpack_url('log')" />
+<x-backpack::menu-item title='Backups' icon='la la-hdd-o' :link="backpack_url('backup')" />
+
+<span class="nav-separator">Прочее</span>
 <li class="nav-item">
     <a class="nav-link" href="/admin/telescope" target="_blank">
-        <i class="nav-icon la la-terminal d-block d-lg-none d-xl-block"></i>
+        <i class="nav-icon la la-bug d-block d-lg-none d-xl-block"></i>
         <span>Telescope</span>
     </a>
 </li>
