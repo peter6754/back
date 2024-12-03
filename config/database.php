@@ -166,13 +166,6 @@ return [
             'password' => env('REDIS_PASSWORD'),
             'port' => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_CACHE_DB', '1'),
-        ],
-
-    ],
-
-    'dump' => [
-        'dump_binary_path' => storage_path('backups'),
-        'use_single_transaction',
-        'timeout' => 60 * 5
+        ]
     ]
 ];
