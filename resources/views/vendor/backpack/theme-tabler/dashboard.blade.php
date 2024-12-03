@@ -57,6 +57,17 @@
             Widget::make()
             ->type('progress')
             ->class('card mb-3')
+            ->wrapper(['style' => 'height: 120px;'])
+            ->statusBorder('start')
+            ->accentColor('red')
+            ->ribbon(['top', 'la-sms'])
+            ->progressClass('progressbar')
+            ->value((new \App\Services\External\GreenSMSService)->getBalance())
+            ->description('Баланс SMS'),
+
+            Widget::make()
+            ->type('progress')
+            ->class('card mb-3')
             ->statusBorder('start')
             ->accentColor('primary')
             ->ribbon(['top', 'la-user'])
@@ -88,14 +99,14 @@
              Widget::make()
             ->type('progress')
             ->class('card mb-3')
+            ->wrapper(['style' => 'height: 120px;'])
             ->statusBorder('start')
             ->accentColor('green')
             ->ribbon(['top', 'la-user'])
             ->progressClass('progressbar')
             ->value($stats['total'])
             ->description('всего пользователей'),
-
-            ]);
+        ]);
 
 
 

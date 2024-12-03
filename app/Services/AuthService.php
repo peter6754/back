@@ -93,8 +93,8 @@ class AuthService
     public function verifyLogin($body, $tokenPayload): array
     {
         Log::info("verifyLogin", [
+            'tokenPayload' => $tokenPayload,
             'body' => $body,
-            'tokenPayload' => $tokenPayload
         ]);
 
         // Находим пользователя
