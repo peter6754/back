@@ -33,10 +33,10 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
 
             return $entries->contains(function (IncomingEntry $entry) {
                 return $entry->isReportableException() ||
-                    $entry->isFailedJob() ||
+                    $entry->isClientRequest() ||
                     $entry->isScheduledTask() ||
-                    $entry->isSlowQuery() ||
-                    $entry->hasMonitoredTag();
+                    $entry->isFailedJob() ||
+                    $entry->isSlowQuery();
             });
         });
     }
