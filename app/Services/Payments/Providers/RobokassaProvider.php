@@ -227,7 +227,7 @@ class RobokassaProvider implements PaymentProviderInterface
      */
     public function callbackResult(array $params): array|string
     {
-        Log::channel($this->getProviderName())->info('Result request: ', $params);
+        Log::channel('payments')->info('[' . $this->getProviderName() . '] Result request: ', $params);
         try {
             if (!$this->validate($params, true)) {
                 throw new \Exception('Invalid signature');
@@ -317,7 +317,7 @@ class RobokassaProvider implements PaymentProviderInterface
 
             return "OK" . $params['InvId'];
         } catch (\Exception $e) {
-            Log::channel('payments')->error('Error callback result: ' . $e->getMessage(), [
+            Log::channel('payments')->info('[' . $this->getProviderName() . '] Error callback result: ' . $e->getMessage(), [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
@@ -342,7 +342,7 @@ class RobokassaProvider implements PaymentProviderInterface
                 "id" => $params['InvId'] ?? null,
             ];
         } catch (\Exception $e) {
-            Log::channel('payments')->error('Error callback successPage: ' . $e->getMessage(), [
+            Log::channel('payments')->info('[' . $this->getProviderName() . '] Error callback successPage: ' . $e->getMessage(), [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
@@ -379,7 +379,7 @@ class RobokassaProvider implements PaymentProviderInterface
                 "id" => $transaction['id'] ?? null,
             ];
         } catch (\Exception $e) {
-            Log::channel('payments')->error('Error callback errorPage: ' . $e->getMessage(), [
+            Log::channel('payments')->info('[' . $this->getProviderName() . '] Error callback errorPage: ' . $e->getMessage(), [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
