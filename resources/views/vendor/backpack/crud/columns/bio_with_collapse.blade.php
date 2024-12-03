@@ -2,8 +2,8 @@
     // Получаем текущую запись через переменную $entry
     $modalId = 'bioModal' . $entry->id; // Уникальный ID модального окна для каждой записи
 
-    $shortText = \Illuminate\Support\Str::limit($entry->userInformation->bio, 15); // Короткий текст
-    $fullText = $entry->userInformation->bio; // Полный текст
+    $shortText = \Illuminate\Support\Str::limit($entry->userInformation?->bio, 15); // Короткий текст
+    $fullText = $entry->userInformation?->bio; // Полный текст
 @endphp
 
 <span>

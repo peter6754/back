@@ -308,6 +308,14 @@ class SecondaryuserCrudController extends CrudController
             'label' => 'Онлайн статус',
             'type' => 'boolean'
         ]);
+
+        CRUD::filter('is_online')
+            ->type('dropdown')
+            ->label('Статус')
+            ->values([
+                0 => 'Оффлайн',
+                1 => 'Онлайн'
+            ]);
     }
 
     /**
