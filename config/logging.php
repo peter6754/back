@@ -18,7 +18,7 @@ return [
     |
     */
 
-    'default' => env('LOG_CHANNEL', 'stack'),
+    'default' => env('LOG_CHANNEL', 'daily'),
 
     /*
     |--------------------------------------------------------------------------
@@ -89,7 +89,7 @@ return [
             'handler_with' => [
                 'host' => env('PAPERTRAIL_URL'),
                 'port' => env('PAPERTRAIL_PORT'),
-                'connectionString' => 'tls://'.env('PAPERTRAIL_URL').':'.env('PAPERTRAIL_PORT'),
+                'connectionString' => 'tls://' . env('PAPERTRAIL_URL') . ':' . env('PAPERTRAIL_PORT'),
             ],
             'processors' => [PsrLogMessageProcessor::class],
         ],
@@ -127,19 +127,19 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        // Custom logs channels
         'payments' => [
             'path' => storage_path('logs/payments-application-service.log'),
-            'driver' => 'daily',
-            'level' => 'info',
-            'days' => 14,
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => env('LOG_DAILY_DAYS', 14),
+            'driver' => 'daily'
         ],
 
         'robokassa' => [
             'path' => storage_path('logs/payments-robokassa.log'),
-            'driver' => 'daily',
-            'level' => 'info',
-            'days' => 14,
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => env('LOG_DAILY_DAYS', 14),
+            'driver' => 'daily'
         ],
     ],
-
 ];
