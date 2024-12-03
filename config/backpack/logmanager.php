@@ -6,8 +6,9 @@ return [
     | Disallow deleting logs from the user interface.
     |--------------------------------------------------------------------------
     */
-    'allow_delete' => false,
     'date_format' => false,
+
+    'allow_delete' => true,
 
     'logs' => [
         'laravel' => [
