@@ -129,18 +129,11 @@ return [
 
         // Custom logs channels
         'payments' => [
-            'path' => storage_path('logs/payments-application-service.log'),
+            'path' => storage_path('logs/payments.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => env('LOG_DAILY_DAYS', 14),
             'driver' => 'daily'
-        ],
-
-        'robokassa' => [
-            'path' => storage_path('logs/payments-robokassa.log'),
-            'level' => env('LOG_LEVEL', 'debug'),
-            'days' => env('LOG_DAILY_DAYS', 14),
-            'driver' => 'daily'
-        ],
+        ]
     ],
 
 ];
