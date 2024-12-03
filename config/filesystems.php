@@ -78,4 +78,9 @@ return [
         'root'   => storage_path(),
         'driver' => 'local',
     ],
+
+    'backups' => [
+        'root'   => storage_path('backups'),
+        'driver' => 'local',
+    ],
 ];
