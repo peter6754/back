@@ -12,10 +12,6 @@
     <x-backpack::menu-item title="Пользователи" icon="la la-question" :link="backpack_url('secondaryuser')"/>
 @endif
 
-{{--@if(backpack_user()->hasRole('Superadmin'))--}}
-{{--    <x-backpack::menu-item title="Администраторы" icon="la la-question" :link="backpack_url('user')"/>--}}
-{{--@endif--}}
-
 @if (backpack_user()->can('access bought-subscriptions'))
     <x-backpack::menu-item title="Подписки" icon="la la-question" :link="backpack_url('bought-subscriptions')"/>
 @endif
