@@ -24,7 +24,6 @@ class VerificationRequestsCrudController extends CrudController
 
     /**
      * Configure the CrudPanel object. Apply settings to all operations.
-     *
      * @return void
      */
     public function setup()
@@ -43,7 +42,7 @@ class VerificationRequestsCrudController extends CrudController
             'label' => 'Профиль пользователя',
             'type' => 'custom_html',
             'escaped' => false,
-            'value' => function($entry) {
+            'value' => function ($entry) {
                 $url = url('/admin/secondaryuser/' . $entry->user_id . '/show');
                 return '<a href="' . $url . '" target="_blank">Профиль</a>';
             },
@@ -215,11 +214,11 @@ class VerificationRequestsCrudController extends CrudController
             'type' => 'closure',
             'function' => function ($entry) {
                 $genders = [
-                    'male'    => 'Мужской',
-                    'female'  => 'Женский',
-                    'm_f'     => 'М + Ж',
-                    'm_m'     => 'М + М',
-                    'f_f'     => 'Ж + Ж',
+                    'male' => 'Мужской',
+                    'female' => 'Женский',
+                    'm_f' => 'М + Ж',
+                    'm_m' => 'М + М',
+                    'f_f' => 'Ж + Ж',
                 ];
 
                 return $genders[$entry->user->gender] ?? 'Неизвестно';
@@ -244,11 +243,30 @@ class VerificationRequestsCrudController extends CrudController
             ->label('Причина отклонения')
             ->type('text');
 
+
+//        CRUD::filter('user_gender')
+//            ->type('dropdown')
+//            ->label('Пол')
+//            ->values([
+//                'male' => 'Мужской',
+//                'female' => 'Женский',
+//                'm_f' => 'М + Ж',
+//                'm_m' => 'М + М',
+//                'f_f' => 'Ж + Ж',
+//            ]);
+
+        CRUD::filter('status')
+            ->type('dropdown')
+            ->label('Статус')
+            ->values([
+                'approved' => 'Одобрено',
+                'rejected' => 'Отклонено',
+                'initial' => 'В ожидании'
+            ]);
     }
 
     /**
      * Define what happens when the List operation is loaded.
-     *
      * @see  https://backpackforlaravel.com/docs/crud-operation-list-entries
      * @return void
      */
@@ -273,7 +291,6 @@ class VerificationRequestsCrudController extends CrudController
 
     /**
      * Define what happens when the Create operation is loaded.
-     *
      * @see https://backpackforlaravel.com/docs/crud-operation-create
      * @return void
      */
@@ -290,7 +307,6 @@ class VerificationRequestsCrudController extends CrudController
 
     /**
      * Define what happens when the Update operation is loaded.
-     *
      * @see https://backpackforlaravel.com/docs/crud-operation-update
      * @return void
      */

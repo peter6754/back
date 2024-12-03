@@ -40,6 +40,16 @@ class BoughtSubscriptionsCrudController extends CrudController
         CRUD::setModel(\App\Models\BoughtSubscriptions::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/bought-subscriptions');
         CRUD::setEntityNameStrings('Подписку', 'Подписки');
+
+        CRUD::filter('due_date')
+            ->type('dropdown')
+            ->label('Статус')
+            ->values([
+                'whereNull' => 'Отсутствует',
+                'whereNotNull' => 'Активна'
+            ])->whenActive(function ($value) {
+                CRUD::addClause($value, 'due_date');
+            });
     }
 
     /**
@@ -186,7 +196,6 @@ class BoughtSubscriptionsCrudController extends CrudController
                 'language' => 'ru'
             ],
         ]);
-
     }
 
     public function store()
