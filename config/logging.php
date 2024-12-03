@@ -128,14 +128,14 @@ return [
         ],
 
         'payments' => [
-            'path' => storage_path('logs/payments/application-service.log'),
+            'path' => storage_path('logs/payments-application-service.log'),
             'driver' => 'daily',
             'level' => 'info',
             'days' => 14,
         ],
 
         'robokassa' => [
-            'path' => storage_path('logs/payments/robokassa.log'),
+            'path' => storage_path('logs/payments-robokassa.log'),
             'driver' => 'daily',
             'level' => 'info',
             'days' => 14,
