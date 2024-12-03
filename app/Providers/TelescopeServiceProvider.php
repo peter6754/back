@@ -51,9 +51,9 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
     private function myCustomRules(IncomingEntry $entry): bool
     {
         return match ($entry->type) {
-            EntryType::REQUEST => (function() use ($entry) {
+            EntryType::REQUEST => (function () use ($entry) {
                 $status = $entry->content['response_status'] ?? 200;
-                return $status !== 404 && $status > 200;
+                return $status > 200 && $status !== 404;
             })(),
             default => false
         };
