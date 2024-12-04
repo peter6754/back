@@ -185,12 +185,13 @@ class AuthService
             }
             if (!$account) {
                 // Создаем нового пользователя
-                $account = $this->createNewUser(
+                $user = $this->createNewUser(
                     email: $user->getEmail(),
                     provider: $provider,
                     name: $user->getName(),
                 );
 
+                $account->user = $user;
                 $type = 'register';
             } else {
                 $type = $account->user->registration_date ? 'login' : 'register';
