@@ -246,7 +246,7 @@ class AuthService
         return DB::transaction(function () use ($phone, $email, $provider, $name, $withSocialSettings) {
             // Создаем основную запись пользователя
             $userData = [
-                'registration_date' => now(),
+//                'registration_date' => now()
             ];
 
             if ($phone) {
