@@ -185,7 +185,7 @@ class AuthService
             }
             if (!$account) {
                 // Создаем нового пользователя
-                $user = $this->createNewUser(
+                $account = $this->createNewUser(
                     email: $user->getEmail(),
                     provider: $provider,
                     name: $user->getName(),
@@ -204,6 +204,15 @@ class AuthService
 
             // Создаем токен аутентификации
             $userId = $account->user->id ?? $account->id ?? null;
+            if (is_null($userId)) {
+                throw new HttpResponseException(
+                    response()->json([
+                        'code' => 403,
+                        'message' => 'User not found'
+                    ], 404)
+                );
+            }
+
             return [
                 'token' => app(JwtService::class)->encode([
                     'id' => $userId
