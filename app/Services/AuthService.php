@@ -184,6 +184,15 @@ class AuthService
                 );
             }
             if (!$account) {
+                $user = Secondaryuser::where('email', $user->getEmail())->first();
+                if (!$user) {
+                    response()->json([
+                        'code' => 403,
+                        'message' => 'User already exists'
+                    ], 403);
+                }
+
+                if (Secondaryuser::find(""))
                 // Создаем нового пользователя
                 $account = $this->createNewUser(
                     email: $user->getEmail(),
