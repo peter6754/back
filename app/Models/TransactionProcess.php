@@ -19,6 +19,7 @@ class TransactionProcess extends Model
         'id',
         'subscription_id',
         'transaction_id',
+        'subscriber_id',
         'purchased_at',
         'provider',
         'user_id',
