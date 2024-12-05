@@ -184,8 +184,8 @@ class AuthService
                 );
             }
             if (!$account) {
-                $user = Secondaryuser::where('email', $user->getEmail())->first();
-                if (!$user) {
+                $getUser = Secondaryuser::where('email', $user->getEmail())->first();
+                if (!$getUser) {
                     response()->json([
                         'code' => 403,
                         'message' => 'User already exists'
