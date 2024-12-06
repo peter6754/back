@@ -67,7 +67,7 @@ class TransactionProcess extends Model
                     'p.count as package_count',
 
                     // Данные о подписке
-                    'sp.subscription_id',
+                    'sp.id as subscription_id',
                     'sp.term as subscription_term',
 
                     // Данные о подарке
@@ -93,6 +93,7 @@ class TransactionProcess extends Model
             if ($recurrent === true) {
                 $getTransaction->where(function ($query) use ($idWhere) {
                     $query->where('t.type', PaymentsService::ORDER_PRODUCT_SUBSCRIPTION)
+                        ->where('t.status', PaymentsService::ORDER_STATUS_COMPLETE)
                         ->where('t.email', $idWhere);
                 });
             } else {
