@@ -11,15 +11,24 @@ namespace App\Http\Controllers;
  *          email="enternetacum@yandex.ru"
  *      ),
  *  )
+ *
  *  @OA\Tag(
  *      name="Auth",
  *      description="Модуль авторизации в приложении"
  *  )
+ *
+ *  @OA\Tag(
+ *       name="Recommendations",
+ *       description="Списки рекомендаций"
+ *  )
+ *
  *  @OA\Tag(
  *      name="Payment",
  *      description="Модуль платежек"
  *  )
  */
+
+
 abstract class Controller
 {
     //
