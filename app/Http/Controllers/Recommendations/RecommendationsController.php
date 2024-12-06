@@ -18,7 +18,7 @@ class RecommendationsController extends Controller
         $customer = $this->checkingAuth();
 
 
-        if (!empty($request['join'])) {
+        if (!empty($request->get('join'))) {
             $data = RecommendationService::getPotentialMatchesOptimized($customer);
         } else {
             $data = RecommendationService::getPotentialMatches($customer);
