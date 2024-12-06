@@ -101,7 +101,8 @@ class RecommendationService
             ->select([
                 'u.id',
                 'u.name',
-                DB::raw("COALESCE(bc.blocked, '0') AS blocked_me"),
+                // Исправлено: вместо bc.blocked используем факт существования записи
+                DB::raw("IF(bc.user_id IS NOT NULL, '1', '0') AS blocked_me"),
                 DB::raw("CASE WHEN has_user_subscription(u.id) AND NOT us.show_my_age THEN NULL ELSE u.age END AS age"),
                 'ui.image',
                 DB::raw("CASE WHEN has_user_subscription(u.id) AND NOT us.show_distance_from_me THEN NULL ELSE ROUND(count_distance(u.id, ?, ?), 0) END AS distance", [$lat, $lng]),
@@ -153,11 +154,11 @@ class RecommendationService
             })
             // Проверка блокировок
             ->where(function($query) use ($currentUserId) {
-                $query->whereNull('bc.phone')
+                $query->whereNull('bc.user_id')
                     ->orWhere(DB::raw("has_user_subscription(?)"), [$currentUserId]);
             })
             // Исключаем мои блокировки
-            ->whereNull('my_bc.phone')
+            ->whereNull('my_bc.user_id')
             ->orderByDesc('like_count')
             ->limit(15)
             ->get();
