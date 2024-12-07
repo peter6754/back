@@ -47,7 +47,7 @@
     $stats = Secondaryuser::getGenderStats();
 
     $smsBalance = "0.00";
-    if (env('GREENSMS_TOKEN') !== NULL) {
+    if (app()->environment('production')) {
         $smsBalance = (new \App\Services\External\GreenSMSService)->getBalance();
     }
     $smsBalance = "<br>$smsBalance<br>";
