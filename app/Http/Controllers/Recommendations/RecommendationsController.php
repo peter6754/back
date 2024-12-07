@@ -17,7 +17,7 @@ class RecommendationsController extends Controller
     /**
      * @OA\Get(
      *      path="/recommendations/top-profiles",
-     *      tags={"Recommendations"},
+     *      tags={"Рекомендации"},
      *      summary="Get top profiles",
      *      security={{"bearerAuth":{}}},
      *
@@ -57,4 +57,33 @@ class RecommendationsController extends Controller
 
         return $this->successResponse(["items" => $getData]);
     }
+
+
+    /**
+     * @param Request $request
+     * @OA\Get(
+     *       path="/recommendations",
+     *       tags={"Рекомендации"},
+     *       summary="Get profiles",
+     *       security={{"bearerAuth":{}}},
+     *
+     *       @OA\Response(
+     *           @OA\JsonContent(ref="#/components/schemas/SuccessResponse"),
+     *           description="Successful operation",
+     *           response=201,
+     *       ),
+     *
+     *       @OA\Response(
+     *           @OA\JsonContent(ref="#/components/schemas/Unauthorized"),
+     *           description="Unauthorized",
+     *           response=401
+     *       )
+     *   )
+     * @return JsonResponse
+     */
+    public function getRecommendations(Request $request): JsonResponse
+    {
+
+    }
+
 }
