@@ -316,6 +316,45 @@ class SecondaryuserCrudController extends CrudController
                 0 => 'Оффлайн',
                 1 => 'Онлайн'
             ]);
+
+        CRUD::filter('gender')
+            ->type('dropdown')
+            ->label('Пол')
+            ->values([
+                "female" => "Женщины",
+                "male" => "Мужчины",
+                "f_f" => "Ж+Ж",
+                "m_f" => "М+Ж",
+                "m_m" => "М+М",
+            ]);
+
+        CRUD::filter('age')
+            ->type('range')
+            ->label('Возраст')
+            ->whenActive(function($value) {
+                $range = json_decode($value);
+                 if ($range->from) {
+                     CRUD::addClause('where', 'age', '>=', (int) $range->from);
+                 }
+                 if ($range->to) {
+                     CRUD::addClause('where', 'age', '<=', (int) $range->to);
+                 }
+            });
+
+        CRUD::filter('has_subscription')
+            ->type('dropdown')
+            ->label('Есть подписка')
+            ->values([
+                1 => 'Да',
+                0 => 'Нет',
+            ])
+            ->whenActive(function($value) {
+                if ($value) {
+                    CRUD::addClause('whereHas', 'activeSubscription');
+                } else {
+                    CRUD::addClause('whereDoesntHave', 'activeSubscription');
+                }
+            });
     }
 
     /**
