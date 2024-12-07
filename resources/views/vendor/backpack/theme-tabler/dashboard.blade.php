@@ -47,7 +47,10 @@
         $yesterdayOnlineTotal = UserActivity::getYesterdayTotalOnline();
         $stats = Secondaryuser::getGenderStats();
 
-        $smsBalance = (new \App\Services\External\GreenSMSService)->getBalance();
+        $smsBalance = "0.00";
+        if (!empty(env('GREENSMS_TOKEN'))) {
+            $smsBalance = (new \App\Services\External\GreenSMSService)->getBalance();
+        }
         $smsBalance = "<br>$smsBalance<br>";
 
 
