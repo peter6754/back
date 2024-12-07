@@ -34,6 +34,17 @@ class TransactionProcessCrudController extends CrudController
         CRUD::denyAccess(['update', 'delete', 'create']);
         CRUD::orderBy('created_at', 'desc');
 
+        CRUD::addColumn([
+            'name' => 'user_profile',
+            'label' => 'Профиль',
+            'type' => 'custom_html',
+            'escaped' => false,
+            'value' => function ($entry) {
+                $url = url('/admin/secondaryuser/' . $entry->user_id . '/show');
+                return '<a href="' . $url . '" target="_blank">Профиль</a>';
+            },
+        ]);
+
         CRUD::filter('Статус')
             ->type('dropdown')
             ->values([
