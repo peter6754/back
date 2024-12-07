@@ -18,7 +18,7 @@ class RecommendationsController extends Controller
     /**
      * @OA\Get(
      *      path="/recommendations/top-profiles",
-     *      tags={"Рекомендации"},
+     *      tags={"Recommendations"},
      *      summary="Get top profiles",
      *      security={{"bearerAuth":{}}},
      *
@@ -67,7 +67,7 @@ class RecommendationsController extends Controller
      * @param Request $request
      * @OA\Get(
      *       path="/recommendations",
-     *       tags={"Рекомендации"},
+     *       tags={"Recommendations"},
      *       summary="Get profiles",
      *       security={{"bearerAuth":{}}},
      *

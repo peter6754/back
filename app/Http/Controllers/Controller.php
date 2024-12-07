@@ -6,7 +6,7 @@ use OpenApi\Annotations as OA;
 
 /**
  * @OA\Info(
- *      version="1.0.0",
+ *      version="1.0.1",
  *      title="TinderOne API",
  *      description="Payment service documentaion",
  *      @OA\Contact(
@@ -14,16 +14,13 @@ use OpenApi\Annotations as OA;
  *      ),
  *  )
  * @OA\Tag(
- *      name="Авторизация / Регистрация",
- *      description="Модуль авторизации в приложении"
+ *      name="User Authorization",
  *  )
  * @OA\Tag(
- *       name="Рекомендации",
- *       description="Списки рекомендаций и прочего"
+ *       name="Recommendations",
  *  )
  * @OA\Tag(
- *      name="Платежи",
- *      description="Управление платежами"
+ *      name="Payments",
  *  )
  */
 abstract class Controller
