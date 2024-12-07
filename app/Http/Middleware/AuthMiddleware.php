@@ -29,7 +29,7 @@ class AuthMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         try {
-            $token = $request->bearerToken() ?? env('JWT_DEBUG');
+            $token = $request->bearerToken() ?? env('JWT_DEBUG', '');
 
             // Проверяем и декодируем токен
             if (!$payload = $this->jwtService->decode($token)) {
