@@ -89,19 +89,13 @@ class TransactionProcessCrudController extends CrudController
             });
 
         CRUD::button('')->stack('line')->view('crud::buttons.quick')->meta([
-            'icon' => 'la la-envelope',
+            'icon' => 'la la-user-times',
+            'class' => 'btn btn-primary',
             'access' => true,
             'wrapper' => [
                 'title' => 'Unsubscribe user',
+                'target' => '_blank',
                 'element' => 'a',
-
-//                'target' => function ($entry) {
-//                    if (empty($entry->subscription_id) || empty($entry->subscriber_id)) {
-//                        return '';
-//                    }
-//                    return '_blank';
-//                },
-
                 'href' => function ($entry) {
                     if (empty($entry->subscription_id) || empty($entry->subscriber_id)) {
                         return "javascript:alert('Это не подписка');";
