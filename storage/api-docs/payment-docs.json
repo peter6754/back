@@ -12,7 +12,7 @@
         "/auth/login": {
             "post": {
                 "tags": [
-                    "Auth"
+                    "Авторизация / Регистрация"
                 ],
                 "summary": "Request user authorization",
                 "operationId": "a5385ffca73f113abef00ea604d1ca58",
@@ -58,7 +58,7 @@
         "/auth/verify-login": {
             "post": {
                 "tags": [
-                    "Auth"
+                    "Авторизация / Регистрация"
                 ],
                 "summary": "Verify user by code (Don't forget to add the token from the login)",
                 "operationId": "1d15db25b746a28f7c34f0b4bf153890",
@@ -356,6 +356,42 @@
                     }
                 ]
             }
+        },
+        "/recommendations/top-profiles": {
+            "get": {
+                "tags": [
+                    "Рекомендации"
+                ],
+                "summary": "Get top profiles",
+                "operationId": "69fe00b014440cb3927e15e69d8046af",
+                "responses": {
+                    "201": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Unauthorized"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -435,12 +471,16 @@
     },
     "tags": [
         {
-            "name": "Auth",
+            "name": "Авторизация / Регистрация",
             "description": "Модуль авторизации в приложении"
         },
         {
+            "name": "Рекомендации",
+            "description": "Списки рекомендаций и прочего"
+        },
+        {
             "name": "Payment",
-            "description": "Модуль платежек"
+            "description": "Payment"
         }
     ]
 }
