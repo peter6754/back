@@ -22,7 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Регистрируем AuthMiddleware
         $middleware->alias([
-            'jwt.auth' => AuthMiddleware::class,
+            'auth' => AuthMiddleware::class,
         ]);
     })
 

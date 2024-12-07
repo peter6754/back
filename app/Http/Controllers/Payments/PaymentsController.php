@@ -68,16 +68,12 @@ class PaymentsController extends Controller
      */
     public function servicePackage(Request $request, string $provider = "robokassa")
     {
-        // Checking auth user
-        $customer = $this->checkingAuth();
-
-        // Logic
         try {
             $package_id = $request->input("service_package_id") ?? 99;
 
             $getTransaction = $this->payments->buyServicePackage($provider, [
-                "package_id" => $package_id,
-                "customer" => $customer
+                "customer" => $request->customer,
+                "package_id" => $package_id
             ]);
 
             return $this->successResponse($getTransaction, Response::HTTP_CREATED);
@@ -128,18 +124,14 @@ class PaymentsController extends Controller
      */
     public function subscription(Request $request, string $provider = "robokassa")
     {
-        // Checking auth user
-        $customer = $this->checkingAuth();
-
-        // Logic
         try {
             $from_banner = !empty($request->input("from_banner"));
             $package_id = $request->input("package_id") ?? 99;
 
             $getTransaction = $this->payments->buySubscription($provider, [
+                "customer" => $request->customer,
                 "from_banner" => $from_banner,
                 "package_id" => $package_id,
-                "customer" => $customer
             ]);
 
             return $this->successResponse($getTransaction, Response::HTTP_CREATED);
@@ -195,16 +187,12 @@ class PaymentsController extends Controller
      */
     public function gift(Request $request, string $provider = "robokassa")
     {
-        // Checking auth user
-        $customer = $this->checkingAuth();
-
-        // Logic
         try {
             $user_jd = $request->input("user_id") ?? 99;
             $gift_id = $request->input("gift_id") ?? 99;
 
             $getTransaction = $this->payments->buyGift($provider, [
-                "customer" => $customer,
+                "customer" => $request->customer,
                 "user_id" => $user_jd,
                 "gift_id" => $gift_id
             ]);
@@ -282,10 +270,6 @@ class PaymentsController extends Controller
      */
     public function status($id): JsonResponse
     {
-        // Checking auth user
-        $this->checkingAuth();
-
-        // Get transaction
         if (!$transaction = Transactions::select('status')->find($id)) {
             return $this->errorResponse(
                 Response::$statusTexts[Response::HTTP_NOT_FOUND],

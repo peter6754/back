@@ -2,18 +2,23 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Secondaryuser;
 use Symfony\Component\HttpFoundation\Response;
+use App\Http\Traits\ApiResponseTrait;
+use App\Models\Secondaryuser;
 use App\Services\JwtService;
 use Illuminate\Http\Request;
 use Closure;
 
 class AuthMiddleware
 {
+    use ApiResponseTrait;
+
     /**
      * @param JwtService $jwtService
      */
-    public function __construct(private readonly JwtService $jwtService) {}
+    public function __construct(private readonly JwtService $jwtService)
+    {
+    }
 
     /**
      * @param Request $request
@@ -23,22 +28,26 @@ class AuthMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $token = $request->bearerToken() ?? config('app.jwt_debug', '');
+        try {
+            $token = $request->bearerToken() ?? env('JWT_DEBUG');
 
-        // Проверяем и декодируем токен
-        if (!$payload = $this->jwtService->decode($token)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            // Проверяем и декодируем токен
+            if (!$payload = $this->jwtService->decode($token)) {
+                throw new \Exception('Unauthorized');
+            }
+
+            // Получаем пользователя
+            $user = Secondaryuser::find($payload['id']);
+            if (!$user) {
+                throw new \Exception('User not found');
+            }
+
+            // Добавляем пользователя в запрос
+            $request->merge(['customer' => $user->toArray()]);
+
+            return $next($request);
+        } catch (\Exception $e) {
+            return $this->errorUnauthorized();
         }
-
-        // Получаем пользователя
-        $user = Secondaryuser::find($payload['id']);
-        if (!$user) {
-            return response()->json(['error' => 'User not found'], 401);
-        }
-
-        // Добавляем пользователя в запрос
-        $request->merge(['user' => $user->toArray()]);
-
-        return $next($request);
     }
 }
