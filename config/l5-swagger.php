@@ -106,19 +106,8 @@ return [
          * Swagger UI configuration parameters
          */
         'ui' => [
-
-            'authorization' => [
-                /*
-                 * If set to true, it persists authorization data, and it would not be lost on browser close/refresh
-                 */
-                'persist_authorization' => env('L5_SWAGGER_UI_PERSIST_AUTHORIZATION', false),
-
-                'oauth2' => [
-                    /*
-                     * If set to true, adds PKCE to AuthorizationCodeGrant flow
-                     */
-                    'use_pkce_with_authorization_code_grant' => false,
-                ],
+            'display' => [
+                'doc_expansion' => 'list'
             ],
         ],
 
