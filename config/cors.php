@@ -25,7 +25,7 @@ return [
 
     'allowed_headers' => ['Content-Type, Authorization'],
     'allowed_methods' => ['OPTIONS, POST, GET'],
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => ['*'],
     'supports_credentials' => true,
     'allowed_origins' => ['*'],
     'exposed_headers' => [],
