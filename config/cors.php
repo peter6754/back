@@ -25,7 +25,7 @@ return [
     'allowed_origins' => ['*.tinderone.app', '*.tinderone.ru'],
     'allowed_methods' => ['GET, POST, PUT, DELETE, OPTIONS'],
     'allowed_origins_patterns' => [],
-    'supports_credentials' => true,
+    'supports_credentials' => false,
     'exposed_headers' => [],
     'max_age' => 0,
 ];
