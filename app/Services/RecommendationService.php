@@ -3,10 +3,24 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
 
 class RecommendationService
 {
-    public static function getTopProfiles(array $customer): \Illuminate\Support\Collection
+    /**
+     * @param array $customer
+     * @return Collection
+     */
+    public static function getRecommendations(array $customer): Collection
+    {
+
+    }
+
+    /**
+     * @param array $customer
+     * @return Collection
+     */
+    public static function getTopProfiles(array $customer): Collection
     {
         $twoDaysAgo = now()->subDays(2)->toDateTimeString();
         $myUserId = $customer['id'];
