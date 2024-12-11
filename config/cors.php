@@ -16,18 +16,16 @@ return [
     */
 
     'paths' => [
-//        'recommendations/*',
-//        'recommendations',
-//        'payment/*',
-//        'auth/*',
-        '*'
+        'recommendations/*',
+        'recommendations',
+        'payment/*',
+        'auth/*'
     ],
-
-    'allowed_headers' => ['Content-Type, Authorization'],
-    'allowed_methods' => ['OPTIONS, POST, GET'],
-    'allowed_origins_patterns' => ['*'],
+    'allowed_headers' => ['Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN, cache-control'],
+    'allowed_origins' => ['*.tinderone.app', '*.tinderone.ru'],
+    'allowed_methods' => ['GET, POST, PUT, DELETE, OPTIONS'],
+    'allowed_origins_patterns' => [],
     'supports_credentials' => true,
-    'allowed_origins' => ['*'],
     'exposed_headers' => [],
     'max_age' => 0,
 ];
