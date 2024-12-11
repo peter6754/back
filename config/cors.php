@@ -16,23 +16,18 @@ return [
     */
 
     'paths' => [
-        'recommendations/*',
-        'recommendations',
-        'payment/*',
-        'auth/*'
+//        'recommendations/*',
+//        'recommendations',
+//        'payment/*',
+//        'auth/*',
+        '*'
     ],
 
     'allowed_headers' => ['Content-Type, Authorization'],
     'allowed_methods' => ['OPTIONS, POST, GET'],
-
-    'allowed_origins' => ['*'],
-
     'allowed_origins_patterns' => [],
-
+    'supports_credentials' => true,
+    'allowed_origins' => ['*'],
     'exposed_headers' => [],
-
     'max_age' => 0,
-
-    'supports_credentials' => false,
-
 ];
