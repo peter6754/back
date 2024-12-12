@@ -16,6 +16,7 @@ class RecommendationsController extends Controller
 
 
     /**
+     * @param Request $request
      * @OA\Get(
      *      path="/recommendations/top-profiles",
      *      tags={"Recommendations"},
