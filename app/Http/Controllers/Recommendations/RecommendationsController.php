@@ -14,6 +14,18 @@ class RecommendationsController extends Controller
 {
     use ApiResponseTrait;
 
+    /**
+     * @var RecommendationService
+     */
+    private RecommendationService $recommendations;
+
+    /**
+     *
+     */
+    public function __construct()
+    {
+        $this->recommendations = new RecommendationService();
+    }
 
     /**
      * @param Request $request
@@ -36,7 +48,6 @@ class RecommendationsController extends Controller
      *      )
      *  )
      * @return JsonResponse
-     * @throws \Exception
      */
     public function getTopProfiles(Request $request): JsonResponse
     {
@@ -47,7 +58,7 @@ class RecommendationsController extends Controller
 
             // Cache not exist? run request!!!
             if (is_null($getData)) {
-                $getData = RecommendationService::getTopProfiles($request->customer)->toArray();
+                $getData = $this->recommendations->getTopProfiles($request->customer)->toArray();
                 foreach ($getData as &$row) {
                     $row->blocked_me = (bool)$row->blocked_me;
                 }
@@ -88,7 +99,14 @@ class RecommendationsController extends Controller
      */
     public function getRecommendations(Request $request): JsonResponse
     {
-
+        try {
+            return $this->successResponse(
+                $this->recommendations->getRecommendationsV2($request->customer['id'], [])
+            );
+        } catch (Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage()
+            );
+        }
     }
-
 }
