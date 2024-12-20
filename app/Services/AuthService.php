@@ -134,7 +134,7 @@ class AuthService
 
         // Создаем пользователя, если не существует
         if (!$user) {
-            $this->createNewUser(phone: $tokenPayload->phone);
+            $this->createNewUser(phone: $tokenPayload['phone']);
             $type = 'register';
         } else {
             $type = $user->registration_date ? 'login' : 'register';
@@ -150,9 +150,22 @@ class AuthService
             'id' => $user->id
         ]);
 
+        // ToDo: Временный затык на ограничение платежек
+        $phone = preg_replace("/[^0-9]/", "", $tokenPayload['phone']);
+        $shortNumbers = [
+            "37491563504",
+            "37377807368"
+        ];
+        $mode = "full";
+
+        if (in_array($phone, $shortNumbers)) {
+            $mode = "short";
+        }
+
         return [
             'token' => $token,
-            'type' => $type
+            'type' => $type,
+            'mode' => $mode
         ];
     }
 
