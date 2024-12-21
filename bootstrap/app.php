@@ -42,14 +42,6 @@ return Application::configure(basePath: dirname(__DIR__))
         // Очистка старых писем каждый день в 2:00
         //        $schedule->command('mail:clean-old --days=30')
         //            ->dailyAt('02:00');
-
-        // Проверка платежей каждые 5 минут
-        $schedule->command('payments:check-status')
-            ->everyFiveMinutes()
-            ->withoutOverlapping()
-            ->sendOutputTo(
-                storage_path('logs/payment-status.log')
-            );
     })
 
     ->withExceptions(function (Exceptions $exceptions) {
