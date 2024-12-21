@@ -55,7 +55,7 @@ class AuthService
         $userPhone = $params['phone'];
         $code = rand(1000, 9999);
 
-        $hashedCode = md5($code);
+        $hashedCode = hash('sha256', $code);
 
         $user = Secondaryuser::where('phone', $userPhone)
             ->whereNotNull('registration_date')
@@ -110,7 +110,7 @@ class AuthService
         }
 
         // Проверяем код (1409 - тестовый код)
-        if ($body['code'] !== '7878' && md5($body['code']) !== $tokenPayload['code']) {
+        if ($body['code'] !== '7878' && hash('sha256', $body['code']) !== $tokenPayload['code']) {
             Log::warning("verifyLogin is INVALID CODE", [
                 'body' => $body,
                 'tokenPayload' => $tokenPayload,
@@ -139,15 +139,10 @@ class AuthService
 
         // ToDo: Временный затык на ограничение платежек
         $phone = preg_replace("/[^0-9]/", "", $tokenPayload['phone']);
-        $shortNumbers = [
-            "37491563504",
-            "37377807368"
-        ];
-        $mode = "full";
-
-        if (in_array($phone, $shortNumbers)) {
-            $mode = "short";
-        }
+        $shortNumbers = ["37491563504", "37377807368"];
+        $mode = in_array($phone, $shortNumbers) ?
+            "short" :
+            "full";
 
         return [
             'token' => $token,
