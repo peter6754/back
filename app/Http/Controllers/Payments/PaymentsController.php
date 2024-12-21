@@ -23,9 +23,8 @@ class PaymentsController extends Controller
     /**
      * @throws Exception
      */
-    public function __construct(private PaymentsService $payments)
+    public function __construct(private readonly PaymentsService $payments)
     {
-        // Default models
         $this->transactions = new Transactions();
     }
 
