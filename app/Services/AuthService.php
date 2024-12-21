@@ -90,6 +90,9 @@ class AuthService
         ];
     }
 
+    /**
+     * @throws \Exception
+     */
     public function verifyLogin($body, $tokenPayload): array
     {
         Log::info("verifyLogin", [
@@ -107,13 +110,7 @@ class AuthService
                 'tokenPayload' => $tokenPayload,
                 'user' => $user
             ]);
-
-            throw new HttpResponseException(
-                response()->json([
-                    'code' => 403,
-                    'message' => 'User is deactivated'
-                ], 403)
-            );
+            throw new \Exception("User is deactivated");
         }
 
         // Проверяем код (7878 - тестовый код)
@@ -123,13 +120,7 @@ class AuthService
                 'tokenPayload' => $tokenPayload,
                 'user' => $user
             ]);
-
-            throw new HttpResponseException(
-                response()->json([
-                    'code' => 406,
-                    'message' => 'Invalid verification code'
-                ], 406)
-            );
+            throw new \Exception("Invalid verification code");
         }
 
         // Создаем пользователя, если не существует
@@ -189,12 +180,7 @@ class AuthService
                     'user' => $account
                 ]);
 
-                throw new HttpResponseException(
-                    response()->json([
-                        'code' => 403,
-                        'message' => 'User is deactivated'
-                    ], 403)
-                );
+                throw new \Exception("User is deactivated");
             }
             if (!$account) {
                 $getUser = Secondaryuser::where('email', $user->getEmail())->first();
@@ -226,12 +212,7 @@ class AuthService
             // Создаем токен аутентификации
             $userId = $account->user->id ?? $account->id ?? null;
             if (is_null($userId)) {
-                throw new HttpResponseException(
-                    response()->json([
-                        'code' => 403,
-                        'message' => 'User not found'
-                    ], 404)
-                );
+                throw new \Exception("User not found");
             }
 
             return [
