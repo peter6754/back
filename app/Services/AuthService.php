@@ -55,32 +55,25 @@ class AuthService
         $userPhone = $params['phone'];
         $code = rand(1000, 9999);
 
-        $hashedCode = Hash::make($code);
+        $hashedCode = md5($code);
 
-        try {
-            $user = Secondaryuser::where('phone', $userPhone)
-                ->whereNotNull('registration_date')
-                ->first();
+        $user = Secondaryuser::where('phone', $userPhone)
+            ->whereNotNull('registration_date')
+            ->first();
 
-            if ($user) {
-                // Отправка SMS зарегистрированному пользователю
-                Log::info("Login, send SMS, code {$code}, user: " . json_encode($user));
-                $this->greenSmsService->sendSMS($userPhone, "Ваш код подтверждения: {$code}");
-                $type = 'login';
-            } else {
-                // Отправка push-уведомления новому пользователю
-                $this->expoService->sendPushNotification(
-                    [$userToken],
-                    (string)$code,
-                    "Ваш код подтверждения"
-                );
-                $type = 'register';
-            }
-        } catch (\Exception $e) {
-            Log::error($e);
-            throw new HttpResponseException(
-                response()->json(['error' => $e->getMessage()], 401)
+        if ($user) {
+            // Отправка SMS зарегистрированному пользователю
+            Log::info("Login, send SMS, code {$code}, user: " . json_encode($user));
+            $this->greenSmsService->sendSMS($userPhone, "Ваш код подтверждения: {$code}");
+            $type = 'login';
+        } else {
+            // Отправка push-уведомления новому пользователю
+            $this->expoService->sendPushNotification(
+                [$userToken],
+                (string)$code,
+                "Ваш код подтверждения"
             );
+            $type = 'register';
         }
 
         return [
@@ -117,7 +110,7 @@ class AuthService
         }
 
         // Проверяем код (7878 - тестовый код)
-        if ($body['code'] !== '7878' && !Hash::check($body['code'], $tokenPayload['code'])) {
+        if ($body['code'] !== '7878' && md5($body['code']) === $tokenPayload['code']) {
             Log::warning("verifyLogin is INVALID CODE", [
                 'body' => $body,
                 'tokenPayload' => $tokenPayload,
@@ -188,10 +181,7 @@ class AuthService
             if (!$account) {
                 $getUser = Secondaryuser::where('email', $user->getEmail())->first();
                 if (!$getUser) {
-                    response()->json([
-                        'code' => 403,
-                        'message' => 'User already exists'
-                    ], 403);
+                    throw new \Exception("User already exists");
                 }
 
                 // Создаем нового пользователя
