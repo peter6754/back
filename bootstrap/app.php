@@ -35,4 +35,8 @@ return Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping(false)
             ->everyFiveMinutes();
     })
+
+    ->withExceptions(function (Exceptions $exceptions) {
+        //
+    })
     ->create();
