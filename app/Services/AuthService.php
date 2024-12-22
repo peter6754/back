@@ -68,6 +68,7 @@ class AuthService
             $type = 'login';
         } else {
             // Отправка push-уведомления новому пользователю
+            Log::info("Login, send push, code {$code}, user: " . json_encode($user));
             $this->expoService->sendPushNotification(
                 [$userToken],
                 (string)$code,
