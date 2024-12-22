@@ -113,8 +113,9 @@ class AuthService
         // Проверяем код (1409 - тестовый код)
         if ($body['code'] !== '7878' && hash('sha256', $body['code']) !== $tokenPayload['code']) {
             Log::warning("verifyLogin is INVALID CODE", [
-                'body' => $body,
+                'tokenBody' => hash('sha256', $body['code']),
                 'tokenPayload' => $tokenPayload,
+                'body' => $body,
                 'user' => $user
             ]);
             throw new \Exception("Invalid verification code");
