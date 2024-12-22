@@ -144,7 +144,7 @@ class SecondaryuserCrudController extends CrudController
         CRUD::column('gender')
             ->label('Пол')
             ->type('select_from_array')
-            ->options(['male' => 'Мужчина', 'female' => 'Женщина'])
+            ->options(['male' => 'Мужчина', 'female' => 'Женщина', 'm_f' => 'М+Ж', 'm_m' => 'М+М', 'f_f' => 'Ж+Ж'])
             ->wrapper([
                 'class' => function ($crud, $column, $entry, $related_key) {
                     return $entry->gender === 'male' ? 'text-primary' : 'text-danger';
@@ -212,7 +212,7 @@ class SecondaryuserCrudController extends CrudController
             'name' => 'gender',
             'label' => 'Пол',
             'type' => 'select_from_array',
-            'options' => ['male' => 'Мужчина', 'female' => 'Женщина']
+            'options' => ['male' => 'Мужчина', 'female' => 'Женщина', 'm_f' => 'М+Ж', 'm_m' => 'М+М', 'f_f' => 'Ж+Ж']
         ]);
 
         CRUD::addField([
@@ -273,8 +273,11 @@ class SecondaryuserCrudController extends CrudController
         CRUD::column('sexual_orientation')->label('Ориентация');
         CRUD::column('mode')->label('Режим');
         CRUD::column('registration_date')->label('Дата регистрации');
+        $this->crud->query->orderBy('registration_date', 'desc');
         CRUD::column('last_check')->label('Последняя проверка');
         CRUD::column('is_online')->label('Онлайн статус');
+        CRUD::disableResponsiveTable();
+        CRUD::disablePersistentTable();
     }
 
     /**
