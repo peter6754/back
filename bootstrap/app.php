@@ -28,14 +28,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth' => AuthMiddleware::class,
         ]);
     })
-
     ->withSchedule(function (Schedule $schedule) {
         // Обработка очереди писем каждые 5 минут
         $schedule->command('mail:process-queue')
-            ->withoutOverlapping(false)
             ->everyFiveMinutes();
     })
-
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })
