@@ -76,7 +76,7 @@ class AuthService
             Log::info("Login, send push, code {$code}, user: " . json_encode($user));
             $this->expoService->sendPushNotification(
                 [$userToken],
-                (string)$code,
+                $code,
                 "Ваш код подтверждения"
             );
             $type = 'register';
