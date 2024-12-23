@@ -6,13 +6,13 @@
         "contact": {
             "email": "enternetacum@yandex.ru"
         },
-        "version": "1.0.0"
+        "version": "1.0.1"
     },
     "paths": {
         "/auth/login": {
             "post": {
                 "tags": [
-                    "Авторизация / Регистрация"
+                    "Customer Authorization"
                 ],
                 "summary": "Request user authorization",
                 "operationId": "a5385ffca73f113abef00ea604d1ca58",
@@ -58,10 +58,22 @@
         "/auth/verify-login": {
             "post": {
                 "tags": [
-                    "Авторизация / Регистрация"
+                    "Customer Authorization"
                 ],
                 "summary": "Verify user by code (Don't forget to add the token from the login)",
                 "operationId": "1d15db25b746a28f7c34f0b4bf153890",
+                "parameters": [
+                    {
+                        "name": "Login-Token",
+                        "in": "header",
+                        "description": "Login token",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "LOGIN_JWT_TOKEN"
+                        }
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -92,18 +104,13 @@
                             }
                         }
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
         "/payment/service-package": {
             "post": {
                 "tags": [
-                    "Платежи"
+                    "Payments"
                 ],
                 "summary": "Create service package payment",
                 "operationId": "72b2a08f2ac2a087b58035affbd3d25c",
@@ -159,7 +166,7 @@
         "/payment/subscription": {
             "post": {
                 "tags": [
-                    "Платежи"
+                    "Payments"
                 ],
                 "summary": "Create subscription payment",
                 "operationId": "4668c7fe0308a8269e801f5d698a66ea",
@@ -215,7 +222,7 @@
         "/payment/gift": {
             "post": {
                 "tags": [
-                    "Платежи"
+                    "Payments"
                 ],
                 "summary": "Create gift payment",
                 "operationId": "188ba99f97935ce4934b166b8529baf5",
@@ -277,7 +284,7 @@
         "/payment/status/{id}": {
             "get": {
                 "tags": [
-                    "Платежи"
+                    "Payments"
                 ],
                 "summary": "Get payment status by ID",
                 "operationId": "9b4a64e8a17a2f4f9f3067a0fed12637",
@@ -360,7 +367,7 @@
         "/recommendations/top-profiles": {
             "get": {
                 "tags": [
-                    "Рекомендации"
+                    "Recommendations"
                 ],
                 "summary": "Get top profiles",
                 "operationId": "69fe00b014440cb3927e15e69d8046af",
@@ -471,16 +478,13 @@
     },
     "tags": [
         {
-            "name": "Авторизация / Регистрация",
-            "description": "Модуль авторизации в приложении"
+            "name": "Customer Authorization"
         },
         {
-            "name": "Рекомендации",
-            "description": "Списки рекомендаций и прочего"
+            "name": "Recommendations"
         },
         {
-            "name": "Платежи",
-            "description": "Управление платежами"
+            "name": "Payments"
         }
     ]
 }

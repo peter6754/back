@@ -14,7 +14,7 @@ use OpenApi\Annotations as OA;
  *      ),
  *  )
  * @OA\Tag(
- *      name="User Authorization",
+ *      name="Customer Authorization",
  *  )
  * @OA\Tag(
  *       name="Recommendations",
