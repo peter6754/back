@@ -127,13 +127,16 @@ class AuthController extends Controller
         ]);
 
         try {
-            $tokenPayload = app(JwtService::class)->decode(
+            // Checking auth token
+            if (!$tokenPayload = app(JwtService::class)->decode(
                 request()->header("Login-Token") ??
                 request()->bearerToken() ?? ""
-            );
-            $response = $this->authService->verifyLogin($validatedData, $tokenPayload);
+            )) {
+                return $this->errorUnauthorized();
+            }
 
-            return $this->successResponse($response,
+            return $this->successResponse(
+                $this->authService->verifyLogin($validatedData, $tokenPayload),
                 Response::HTTP_CREATED
             );
         } catch (\Exception $e) {
