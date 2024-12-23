@@ -25,6 +25,7 @@
         "laravel/telescope": "^5.7",
         "laravel/tinker": "^2.9",
         "mobiledetect/mobiledetectlib": "^4.8",
+        "propaganistas/laravel-phone": "^6.0",
         "pusher/pusher-php-server": "^7.2",
         "socialiteproviders/apple": "^5.6",
         "socialiteproviders/google": "^4.1",
