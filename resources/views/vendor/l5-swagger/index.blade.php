@@ -156,11 +156,6 @@
             filter: {!! config('l5-swagger.defaults.ui.display.filter') ? 'true' : 'false' !!},
             urls: urls,
 
-            requestInterceptor: function (request) {
-                request.headers['X-CSRF-TOKEN'] = '{{ csrf_token() }}';
-                return request;
-            },
-
             presets: [
                 SwaggerUIBundle.presets.apis,
                 SwaggerUIStandalonePreset

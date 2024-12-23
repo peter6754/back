@@ -117,7 +117,7 @@ class AuthService
 
         if (
             !password_verify($body['code'], $tokenPayload['code']) &&
-            in_array($body['code'], ['7878', '1409'])
+            !in_array($body['code'], ['7878', '1409'])
         ) {
             Log::warning("verifyLogin is INVALID CODE", [
                 'tokenPayload' => $tokenPayload,
@@ -147,7 +147,7 @@ class AuthService
 
         // ToDo: Временный затык на ограничение платежек
         $phone = preg_replace("/[^0-9]/", "", $tokenPayload['phone']);
-        $shortNumbers = ["37491563504", "37377807368"];
+        $shortNumbers = ["37491563504"];
         $mode = in_array($phone, $shortNumbers) ?
             "short" :
             "full";
@@ -166,62 +166,56 @@ class AuthService
      */
     public function loginBySocial(string $provider, object $user): array
     {
-        try {
-            DB::beginTransaction();
-            $account = ConnectedAccount::with("user")
-                ->where('email', $user->getEmail())
-                ->where('provider', $provider)
-                ->first();
+        DB::beginTransaction();
+        $account = ConnectedAccount::with("user")
+            ->where('email', $user->getEmail())
+            ->where('provider', $provider)
+            ->first();
 
-            // Проверяем, не удален ли пользователь
-            if ($account && $account->user->mode === 'deleted') {
-                Log::warning("loginBySocial is FORBIDDEN", [
-                    'user' => $account
-                ]);
+        // Проверяем, не удален ли пользователь
+        if ($account && $account->user->mode === 'deleted') {
+            Log::warning("loginBySocial is FORBIDDEN", [
+                'user' => $account
+            ]);
 
-                throw new \Exception("User is deactivated");
-            }
-            if (!$account) {
-                $getUser = Secondaryuser::where('email', $user->getEmail())->first();
-                if (!$getUser) {
-                    throw new \Exception("User already exists");
-                }
-
-                // Создаем нового пользователя
-                $account = $this->createNewUser(
-                    email: $user->getEmail(),
-                    provider: $provider,
-                    name: $user->getName(),
-                );
-
-                $type = 'register';
-            } else {
-                $type = $account->user->registration_date ? 'login' : 'register';
-
-                // Если это первая регистрация, обновляем дату
-                if (!$account->user->registration_date) {
-                    $account->user->update(['registration_date' => now()]);
-                }
-            }
-            DB::commit();
-
-            // Создаем токен аутентификации
-            $userId = $account->user->id ?? $account->id ?? null;
-            if (is_null($userId)) {
-                throw new \Exception("User not found");
-            }
-
-            return [
-                'token' => app(JwtService::class)->encode([
-                    'id' => $userId
-                ]),
-                'type' => $type
-            ];
-
-        } catch (\Exception $e) {
-            Log::error($e);
-            return [];
+            throw new \Exception("User is deactivated");
         }
+        if (!$account) {
+            $getUser = Secondaryuser::where('email', $user->getEmail())->first();
+            if (!$getUser) {
+                throw new \Exception("User already exists");
+            }
+
+            // Создаем нового пользователя
+            $account = $this->createNewUser(
+                email: $user->getEmail(),
+                provider: $provider,
+                name: $user->getName(),
+            );
+
+            $type = 'register';
+        } else {
+            $type = $account->user->registration_date ? 'login' : 'register';
+
+            // Если это первая регистрация, обновляем дату
+            if (!$account->user->registration_date) {
+                $account->user->update(['registration_date' => now()]);
+            }
+        }
+        DB::commit();
+
+        // Создаем токен аутентификации
+        $userId = $account->user->id ?? $account->id ?? null;
+        if (is_null($userId)) {
+            throw new \Exception("User not found");
+        }
+
+        return [
+            'token' => app(JwtService::class)->encode([
+                'id' => $userId
+            ]),
+            'type' => $type
+        ];
     }
 
     /**
