@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use App\Services\Payments\PaymentsService;
 use App\Services\External\GreenSMSService;
-use App\Services\External\ExpoNotificationService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -36,17 +35,12 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // Auth service
-        $this->app->bind(ExpoNotificationService::class, function ($app) {
-            return new ExpoNotificationService();
-        });
-
         $this->app->bind(GreenSMSService::class, function ($app) {
             return new GreenSMSService();
         });
 
         $this->app->bind(AuthService::class, function ($app) {
             return new AuthService(
-                $app->make(ExpoNotificationService::class),
                 $app->make(GreenSMSService::class)
             );
         });

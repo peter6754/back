@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers\Auth;
 
-use Detection\MobileDetect;
-use App\Services\JwtService;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Http\RedirectResponse;
-use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\InvalidStateException;
 use Symfony\Component\HttpFoundation\Response;
 use GuzzleHttp\Exception\GuzzleException;
+use Laravel\Socialite\Facades\Socialite;
 use App\Http\Traits\ApiResponseTrait;
+use Illuminate\Http\RedirectResponse;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\JsonResponse;
 use App\Services\AuthService;
+use App\Services\JwtService;
 use Illuminate\Http\Request;
+use Detection\MobileDetect;
 use Exception;
-use Laravel\Socialite\Two\InvalidStateException;
 
 class AuthController extends Controller
 {

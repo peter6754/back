@@ -16,7 +16,8 @@ use App\Models\BoughtSubscriptions;
 use App\Models\SubscriptionPackages;
 use Illuminate\Foundation\Application;
 use GuzzleHttp\Exception\GuzzleException;
-use App\Services\External\ExpoNotificationService;
+use App\Services\Notifications\PushMessages;
+use App\Services\Notifications\NotificationService;
 
 class PaymentsService extends Manager
 {
@@ -342,10 +343,10 @@ class PaymentsService extends Manager
 
             // Уведомление о подарке
             if (!$hasPreviousMessages) {
-                (new ExpoNotificationService())->sendPushNotification(
+                (new NotificationService())->sendPushNotification(
                     json_decode($params['receiver_device_tokens'], true),
-                    ExpoNotificationService::NEW_GIFT_PUSH['message'],
-                    ExpoNotificationService::NEW_GIFT_PUSH['title'],
+                    PushMessages::NEW_GIFT_PUSH['message'],
+                    PushMessages::NEW_GIFT_PUSH['title']
                 );
             }
 
