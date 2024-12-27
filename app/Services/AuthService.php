@@ -181,7 +181,10 @@ class AuthService
         if (!$account) {
             $getUser = Secondaryuser::where('email', $user->getEmail())->first();
             if (!$getUser) {
-                throw new \Exception("User already exists");
+                throw new \Exception("User already exists " . PHP_EOL .
+                    "account: " . print_r($account, true) . PHP_EOL .
+                    "getUser: " . print_r($getUser, true)
+                );
             }
 
             // Создаем нового пользователя
