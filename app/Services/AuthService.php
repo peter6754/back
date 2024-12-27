@@ -183,7 +183,8 @@ class AuthService
             if (!$getUser) {
                 throw new \Exception("User already exists " . PHP_EOL .
                     "account: " . print_r($account, true) . PHP_EOL .
-                    "getUser: " . print_r($getUser, true)
+                    "getUser: " . print_r($getUser, true) . PHP_EOL .
+                    "user: " . print_r($user, true)
                 );
             }
 
