@@ -33,7 +33,7 @@
                                     "phone": {
                                         "description": "Phone Number",
                                         "type": "string",
-                                        "example": "+79851234567"
+                                        "example": "+37491563504"
                                     }
                                 },
                                 "type": "object"
