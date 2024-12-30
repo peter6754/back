@@ -1,12 +1,13 @@
 <?php
 
-use App\Http\Controllers\Recommendations\RecommendationsController;
+use OpenApi\Generator;
+use Illuminate\Support\Facades\Route;
+use Laravel\Socialite\Facades\Socialite;
+use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Payments\StatusesController;
 use App\Http\Controllers\Payments\PaymentsController;
-use App\Http\Controllers\Auth\AuthController;
-use Laravel\Socialite\Facades\Socialite;
-use Illuminate\Support\Facades\Route;
-use OpenApi\Generator;
+use App\Http\Controllers\Application\PricesController;
+use App\Http\Controllers\Recommendations\RecommendationsController;
 
 // Recommendations routes
 Route::prefix('recommendations')->middleware('auth')->group(function () {
@@ -58,6 +59,17 @@ Route::prefix('payment')->group(function () {
         ->name('statuses.success');
     Route::get('{provider}/fail', [StatusesController::class, 'fail'])
         ->name('statuses.fail');
+});
+
+
+// Prices routes
+Route::prefix('application')->middleware('auth')->group(function () {
+    Route::prefix('prices')->group(function () {
+        Route::get('subscriptions/{id}', [PricesController::class, 'getSubscriptions'])
+            ->name('prices.subscription');
+        Route::get('service-package', [PricesController::class, 'getPackages'])
+            ->name('prices.service-package');
+    });
 });
 
 // Auth routes

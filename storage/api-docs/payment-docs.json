@@ -9,6 +9,75 @@
         "version": "1.0.1"
     },
     "paths": {
+        "/application/prices/service-package": {
+            "get": {
+                "tags": [
+                    "App Settings"
+                ],
+                "summary": "Price for service packages",
+                "operationId": "eb38104a2d9bcdc0b25170dc5beb50f1",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "Type",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "superboom",
+                                "superlike"
+                            ],
+                            "example": "superboom"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                },
+                                "example": {
+                                    "meta": {
+                                        "error": null,
+                                        "status": 200
+                                    },
+                                    "data": {
+                                        "items": [
+                                            {
+                                                "id": 1,
+                                                "count": 3,
+                                                "stock": 0,
+                                                "is_bestseller": false,
+                                                "price_per_one": "280"
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Unauthorized"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/auth/login": {
             "post": {
                 "tags": [
@@ -485,6 +554,9 @@
         },
         {
             "name": "Payments"
+        },
+        {
+            "name": "App Settings"
         }
     ]
 }
