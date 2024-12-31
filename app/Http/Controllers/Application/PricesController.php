@@ -354,7 +354,7 @@ class PricesController extends Controller
                 ->get();
 
             $items = $gifts->map(function ($gift) use ($gender) {
-                $price = optional($gift->price->first())->{$gender};
+                $price = $gift->price->{$gender};
 
                 return [
                     'id' => $gift->id,
