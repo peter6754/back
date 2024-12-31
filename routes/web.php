@@ -69,6 +69,10 @@ Route::prefix('application')->middleware('auth')->group(function () {
             ->name('prices.subscription');
         Route::get('service-package', [PricesController::class, 'getPackages'])
             ->name('prices.service-package');
+        Route::get('gifts/categories', [PricesController::class, 'getGiftCategories'])
+            ->name('prices.gift.categories');
+        Route::get('gifts/{id}', [PricesController::class, 'getGifts'])
+            ->name('prices.gifts');
     });
 });
 
