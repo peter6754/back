@@ -1,91 +1,24 @@
 services:
-    laravel.test:
+    mysql-replica:
         build:
-            context: './vendor/laravel/sail/runtimes/8.3'
-            dockerfile: Dockerfile
-            args:
-                WWWGROUP: '${WWWGROUP}'
-        image: 'sail-8.3/app'
-        container_name: admin_panel_laravel
-        extra_hosts:
-            - 'host.docker.internal:host-gateway'
-        ports:
-            - '${APP_PORT:-8787}:80'
-            - '${VITE_PORT:-5173}:${VITE_PORT:-5173}'
+            context: ./deploy/mysql_slave
+        container_name: mysql_replica
         environment:
-            WWWUSER: '${WWWUSER}'
-            LARAVEL_SAIL: 1
-            XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
-            XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
-            IGNITION_LOCAL_SITES_PATH: '${PWD}'
-        volumes:
-            - '.:/var/www/html'
-        networks:
-            prometheus_default:  # Подключение к существующей сети
-        depends_on:
-            - redis
-            - meilisearch
-            - mailpit
-            - selenium
-    redis:
-        image: 'redis:alpine'
-        container_name: admin_panel_redis
+            MYSQL_ROOT_PASSWORD: "reZHoSFM41OhF4ni0q13sRX4JVCjMYKo"
+            # Эти переменные (DATABASE, USER, PASSWORD) обычно используются для инициализации
+            # мастера или для приложений, подключающихся к базе.
+            # Для репликации важны только master-хост и учетные данные репликации.
+            # MYSQL_DATABASE: api_tinderon
+            # MYSQL_USER: api_tinderon
+            # MYSQL_PASSWORD: 0BJTpH8decyEykXp
+            MYSQL_MASTER_HOST: "176.118.167.210"
+            MYSQL_MASTER_USER: "replica"
+            MYSQL_MASTER_PASSWORD: "slTy19g37CTVfmFHd2jDTHiyijtgcsrU"
+            SERVER_ID: 2 # Уникальный ID для этого slave-сервера
         ports:
-            - '${FORWARD_REDIS_PORT:-16379}:6379'
+            - "3307:3306" # Маппинг порта 3306 внутри контейнера на 3307 на хосте
         volumes:
-            - 'sail-redis:/data'
-        networks:
-            prometheus_default:
-        healthcheck:
-            test:
-                - CMD
-                - redis-cli
-                - ping
-            retries: 3
-            timeout: 5s
-    meilisearch:
-        image: 'getmeili/meilisearch:latest'
-        container_name: admin_panel_meilisearch
-        ports:
-            - '${FORWARD_MEILISEARCH_PORT:-7700}:7700'
-        environment:
-            MEILI_NO_ANALYTICS: '${MEILISEARCH_NO_ANALYTICS:-false}'
-        volumes:
-            - 'sail-meilisearch:/meili_data'
-        networks:
-            prometheus_default:
-        healthcheck:
-            test:
-                - CMD
-                - wget
-                - '--no-verbose'
-                - '--spider'
-                - 'http://127.0.0.1:7700/health'
-            retries: 3
-            timeout: 5s
-    mailpit:
-        image: 'axllent/mailpit:latest'
-        container_name: admin_panel_mailpit
-        ports:
-            - '${FORWARD_MAILPIT_PORT:-1025}:1025'
-            - '${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025'
-        networks:
-            prometheus_default:
-    selenium:
-        image: selenium/standalone-chromium
-        container_name: admin_panel_selenium
-        extra_hosts:
-            - 'host.docker.internal:host-gateway'
-        volumes:
-            - '/dev/shm:/dev/shm'
-        networks:
-            prometheus_default:
-networks:
-    prometheus_default:
-        external: true  # Указываем, что сеть уже существует
+            - replica_data:/var/lib/mysql # Сохранение данных slave на хосте
+        restart: unless-stopped # Автоматический перезапуск контейнера, если он останавливается
 volumes:
-
-    sail-redis:
-        driver: local
-    sail-meilisearch:
-        driver: local
+    replica_data: # Объявление volume
