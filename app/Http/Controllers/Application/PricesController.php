@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Application;
 
 use Exception;
+use App\Models\Gifts;
 use Illuminate\Http\Request;
 use App\Models\GiftCategory;
 use App\Models\Subscriptions;
@@ -229,9 +230,11 @@ class PricesController extends Controller
      *                          }
      *                      },
      *                      "popular_gifts": {
-     *                          "image": "2,26f56d34ec55",
-     *                          "category_id": 1,
-     *                          "id": 1
+     *                          {
+     *                              "image": "2,26f56d34ec55",
+     *                              "category_id": 1,
+     *                              "id": 1
+     *                          }
      *                      }
      *                  }
      *              }
@@ -276,6 +279,98 @@ class PricesController extends Controller
             return $this->errorResponse(
                 $e->getMessage(),
                 $e->getCode()
+            );
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @param $id
+     * @OA\Get(
+     *     path="/application/prices/gifts/{id}",
+     *     tags={"App Settings"},
+     *     summary="Price for gift",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(
+     *           name="id",
+     *           in="path",
+     *           description="ID категории",
+     *           required=true,
+     *          @OA\Schema(
+     *              type="integer",
+     *              example=2
+     *          )
+     *     ),
+     *
+     *     @OA\Response(
+     *          response=200,
+     *          description="Successful operation",
+     *          @OA\JsonContent(
+     *              ref="#/components/schemas/SuccessResponse",
+     *              example={
+     *                  "meta": {
+     *                      "error": null,
+     *                      "status": 200
+     *                  },
+     *                  "data": {
+     *                      "type": "Tinderone Plus+",
+     *                      "subscription_services": {
+     *                          {
+     *                              "description": "Безлимит лайков! Ставь столько лайков, сколько захочешь!",
+     *                              "image": "2,277103501936"
+     *                          }
+     *                      },
+     *                      "subscription_packages": {
+     *                          {
+     *                              "id": 1,
+     *                              "is_bestseller": false,
+     *                              "stock": 0,
+     *                              "term": "one_month",
+     *                              "price_per_month": "399"
+     *                          }
+     *                      }
+     *                  }
+     *              }
+     *          )
+     *     ),
+     *
+     *     @OA\Response(
+     *         @OA\JsonContent(ref="#/components/schemas/Unauthorized"),
+     *         description="Unauthorized",
+     *         response=401
+     *     )
+     * )
+     * @return JsonResponse
+     * @throws Exception
+     */
+    public function getGifts($category_id, Request $request): JsonResponse
+    {
+        try {
+            $category_id = (int)preg_replace('/\D/', '', $category_id);
+            $gender = $request->customer['gender'];
+            $gifts = Gifts::with('price')
+                ->where('category_id', $category_id)
+                ->get();
+
+            $items = $gifts->map(function ($gift) use ($gender) {
+                $price = optional($gift->price->first())->{$gender};
+
+                return [
+                    'id' => $gift->id,
+                    'image' => $gift->image,
+                    'message' => $gift->message,
+                    'price' => (string)intval($price),
+                ];
+            });
+
+            return $this->successResponse([
+                'items' => $items
+            ]);
+        } catch (Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage(),
+                (int)$e->getCode()
             );
         }
     }

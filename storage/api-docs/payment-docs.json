@@ -183,11 +183,85 @@
                                                 "image": "1,26f1bdaeb0c8"
                                             }
                                         ],
-                                        "popular_gifts": {
-                                            "image": "2,26f56d34ec55",
-                                            "category_id": 1,
-                                            "id": 1
-                                        }
+                                        "popular_gifts": [
+                                            {
+                                                "image": "2,26f56d34ec55",
+                                                "category_id": 1,
+                                                "id": 1
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Unauthorized"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/application/prices/gifts/{id}": {
+            "get": {
+                "tags": [
+                    "App Settings"
+                ],
+                "summary": "Price for gift",
+                "operationId": "a697835c07f69db051a982814448a8fc",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID категории",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 2
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                },
+                                "example": {
+                                    "meta": {
+                                        "error": null,
+                                        "status": 200
+                                    },
+                                    "data": {
+                                        "type": "Tinderone Plus+",
+                                        "subscription_services": [
+                                            {
+                                                "description": "Безлимит лайков! Ставь столько лайков, сколько захочешь!",
+                                                "image": "2,277103501936"
+                                            }
+                                        ],
+                                        "subscription_packages": [
+                                            {
+                                                "id": 1,
+                                                "is_bestseller": false,
+                                                "stock": 0,
+                                                "term": "one_month",
+                                                "price_per_month": "399"
+                                            }
+                                        ]
                                     }
                                 }
                             }
