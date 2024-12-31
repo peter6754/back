@@ -18,8 +18,8 @@ class PricesController extends Controller
     use ApiResponseTrait;
 
     /**
+     * @param $subscription_id
      * @param Request $request
-     * @param $id
      * @OA\Get(
      *     path="/application/prices/subscriptions/{id}",
      *     tags={"App Settings"},
@@ -79,17 +79,17 @@ class PricesController extends Controller
      * @return JsonResponse
      * @throws Exception
      */
-    public function getSubscriptions($id, Request $request): JsonResponse
+    public function getSubscriptions($subscription_id, Request $request): JsonResponse
     {
         try {
-            $id = (int)preg_replace('/\D/', '', $id);
+            $subscription_id = (int)preg_replace('/\D/', '', $subscription_id);
             $gender = $request->customer['gender'];
 
             $subscription = Subscriptions::with([
                 'services:id,subscription_id,description,image',
                 'packages.price'
             ])
-                ->findOrFail($id);
+                ->findOrFail($subscription_id);
 
             $formattedSubscription = [
                 'type' => $subscription->type,
@@ -284,8 +284,8 @@ class PricesController extends Controller
     }
 
     /**
+     * @param $category_id
      * @param Request $request
-     * @param $id
      * @OA\Get(
      *     path="/application/prices/gifts/{id}",
      *     tags={"App Settings"},
