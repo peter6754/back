@@ -16,12 +16,7 @@ class NotificationManager extends Manager
      */
     public function createOnesignalDriver(): OneSignalProvider
     {
-        $config = config("services.onesignal");
-
-        return new OneSignalProvider(
-            $config['app_id'],
-            $config['rest_api_key']
-        );
+        return new OneSignalProvider();
     }
 
     /**

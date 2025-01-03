@@ -2,44 +2,138 @@
 
 namespace App\Services\Notifications\Providers;
 
-use NotificationChannels\OneSignal\OneSignalChannel;
-use NotificationChannels\OneSignal\OneSignalMessage;
+use GuzzleHttp\Exception\GuzzleException;
+use Illuminate\Support\Facades\Log;
+use GuzzleHttp\Client;
 
 class OneSignalProvider
 {
-    protected $appId;
-    protected $restApiKey;
+    /**
+     * @var string
+     */
+    protected string $apiUrl = 'https://api.onesignal.com/notifications?c=push';
 
-    public function __construct($appId, $restApiKey)
+    /**
+     * @var Client
+     */
+    protected Client $client;
+
+    /**
+     * @var string
+     */
+    protected string $appId;
+
+    /**
+     * @var string
+     */
+    protected string $restApiKey;
+
+    /**
+     * OneSignalProvider constructor.
+     */
+    public function __construct()
     {
-        $this->appId = $appId;
-        $this->restApiKey = $restApiKey;
+        $this->appId = config('services.onesignal.app_id');
+        $this->restApiKey = config('services.onesignal.rest_api_key');
+
+        $this->client = new Client([
+            'headers' => [
+                'Content-Type' => 'application/json',
+                'Authorization' => 'Basic ' . $this->restApiKey,
+            ],
+        ]);
     }
 
-    public function send($to, $notification)
+    /**
+     * @param array $params
+     * @return bool
+     * @throws GuzzleException
+     */
+    public function sendMessage(array $params): bool
     {
-        $message = OneSignalMessage::create()
-            ->setSubject($notification->getTitle())
-            ->setBody($notification->getBody())
-            ->setData('data', $notification->getData());
+        // Default parameters
+        $defaultParams = [
+            'target_channel' => 'push',
+            'app_id' => $this->appId
+        ];
 
-        // Здесь должна быть логика отправки через OneSignal API
-        // Можно использовать официальный SDK или HTTP-клиент
+//        print_r($params);
+        // Merge default parameters with custom ones
+        $requestParams = array_merge($defaultParams, [
+            'contents' => [
+                'en' => $params['body'],
+            ],
+            'headings' => [
+                'en' => $params['title'],
+            ],
+            "include_aliases" => [
+                "onesignal_id" => [
+                    $params['to']
+                ]
+            ]
+        ]);
 
-        return $this->sendViaChannel($to, $message);
-    }
+        // Send request
+        $response = $this->client->post($this->apiUrl, [
+            'json' => $requestParams
+        ]);
 
-    protected function sendViaChannel($to, $message)
-    {
-        // Эмуляция отправки через Laravel Notification Channel
-        $channel = new OneSignalChannel(
-            app('config')->get('services.onesignal')
+        // Response
+        $getResponse = json_decode(
+            $response->getBody(),
+            true
         );
 
-        return $channel->send(new class {
-            public function routeNotificationForOneSignal() {
-                return $this->onesignal_player_id;
-            }
-        }, $message);
+        if (!empty($getResponse['errors'])) {
+            Log::error("Failed to send messages: ", [
+                "request" => $requestParams,
+                "response" => $getResponse
+            ]);
+        }
+
+        // Check if request was successful
+        return isset($getResponse['id']) && !empty($getResponse['recipients']);
+    }
+
+    /**
+     * Send message to specific user
+     * @param string $playerId
+     * @param string $message
+     * @param array $data
+     * @return bool
+     * @throws GuzzleException
+     */
+    public function sendToUser(string $playerId, string $message, array $data = []): bool
+    {
+        $params = [
+            'include_player_ids' => [$playerId],
+            'contents' => [
+                'en' => $message
+            ],
+            'data' => $data
+        ];
+
+        return $this->sendMessage($params);
+    }
+
+    /**
+     * Send message to multiple users
+     * @param array $playerIds
+     * @param string $message
+     * @param array $data
+     * @return bool
+     * @throws GuzzleException
+     */
+    public function sendToUsers(array $playerIds, string $message, array $data = []): bool
+    {
+        $params = [
+            'include_player_ids' => $playerIds,
+            'contents' => [
+                'en' => $message
+            ],
+            'data' => $data
+        ];
+
+        return $this->sendMessage($params);
     }
 }
