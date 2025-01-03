@@ -71,7 +71,10 @@ class NotificationService
      */
     protected function getProvider($token): string
     {
-        if (preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i', $token)) {
+        if (
+            preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i', $token) ||
+            preg_match('/^ExponentToken\[[a-zA-Z0-9_-]+\]$/', $token)
+        ) {
             return 'onesignal';
         } else if (preg_match('/^ExponentPushToken\[[a-zA-Z0-9_-]+\]$/', $token)) {
             return 'expo';
