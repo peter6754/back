@@ -3,24 +3,22 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Requests\SecondaryuserRequest;
+use App\Models\UserInformation;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
-use App\Models\UserInformation;
 
 /**
  * Class SecondaryuserCrudController
- * @package App\Http\Controllers\Admin
+ *
  * @property-read \Backpack\CRUD\app\Library\CrudPanel\CrudPanel $crud
  */
-
-
 class SecondaryuserCrudController extends CrudController
 {
-    use \Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
-    use \Backpack\CRUD\app\Http\Controllers\Operations\UpdateOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\DeleteOperation;
+    use \Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\ShowOperation;
+    use \Backpack\CRUD\app\Http\Controllers\Operations\UpdateOperation;
 
     /**
      * Configure the CrudPanel object. Apply settings to all operations.
@@ -29,12 +27,12 @@ class SecondaryuserCrudController extends CrudController
      */
     public function setup()
     {
-        if (!backpack_user()->can('access secondaryusers')) {
+        if (! backpack_user()->can('access secondaryusers')) {
             abort(403);
         }
 
         CRUD::setModel(\App\Models\Secondaryuser::class);
-        CRUD::setRoute(config('backpack.base.route_prefix') . '/secondaryuser');
+        CRUD::setRoute(config('backpack.base.route_prefix').'/secondaryuser');
         CRUD::setEntityNameStrings('Пользователь', 'Пользователи');
 
         // Для отображения в таблице (списке)
@@ -52,82 +50,129 @@ class SecondaryuserCrudController extends CrudController
                     // Устанавливаем ширину колонки в зависимости от количества изображений
                     $count = $images->count();
                     $width = $count * 70; // 60px ширина изображения + 10px отступ для каждого
-
+    
                     // Начало строки изображений
-                    $imagesHtml = '<div style="display: flex; width: ' . $width . 'px; gap: 5px;">';
+                    $imagesHtml = '<div style="display: flex; width: '.$width.'px; gap: 5px;">';
 
                     // Добавляем каждое изображение
-                    foreach ($images as $image) {
+                    foreach ($images as $idx => $image) {
                         $imageUrl = $image->image_url;
+                        // Передаем массив url и индекс текущего изображения
+                        $allUrls = $images->pluck('image_url')->map(fn ($url) => addslashes($url))->toArray();
                         $imagesHtml .= '
-                    <img src="' . $imageUrl . '" height="80px" width="60px" style="cursor: pointer;" onclick="openGlobalModal(\'' . $imageUrl . '\')">
-                ';
+                        <img src="'.$imageUrl.'" height="80px" width="60px" style="cursor: pointer;" 
+                            onclick="openGlobalModal('.htmlspecialchars(json_encode($allUrls)).', '.$idx.')">
+                    ';
                     }
 
                     $imagesHtml .= '</div>';
 
                     // Скрипт для создания глобального модального окна
                     $imagesHtml .= '
-                <script>
-                    function openGlobalModal(imageUrl) {
-                        // Создаем модальное окно в body
-                        const modal = document.createElement("div");
-                        modal.id = "globalImageModal";
-                        modal.style.position = "fixed";
-                        modal.style.top = 0;
-                        modal.style.left = 0;
-                        modal.style.width = "100%";
-                        modal.style.height = "100%";
-                        modal.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
-                        modal.style.display = "flex";
-                        modal.style.justifyContent = "center";
-                        modal.style.alignItems = "center";
-                        modal.style.zIndex = 99999; // Превышает любые другие z-index
+    <script>
+        function openGlobalModal(imageUrls, currentIndex) {
+            // Удаляем старое модальное окно, если оно есть
+            closeGlobalModal();
 
-                        // Кнопка закрытия
-                        const closeButton = document.createElement("span");
-                        closeButton.innerHTML = "&times;";
-                        closeButton.style.position = "absolute";
-                        closeButton.style.top = "20px";
-                        closeButton.style.right = "30px";
-                        closeButton.style.fontSize = "30px";
-                        closeButton.style.color = "white";
-                        closeButton.style.cursor = "pointer";
-                        closeButton.onclick = function() {
-                            closeGlobalModal();
-                        };
+            const modal = document.createElement("div");
+            modal.id = "globalImageModal";
+            modal.style.position = "fixed";
+            modal.style.top = 0;
+            modal.style.left = 0;
+            modal.style.width = "100%";
+            modal.style.height = "100%";
+            modal.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
+            modal.style.display = "flex";
+            modal.style.justifyContent = "center";
+            modal.style.alignItems = "center";
+            modal.style.zIndex = 99999;
 
-                        // Полноразмерное изображение
-                        const img = document.createElement("img");
-                        img.src = imageUrl;
-                        img.style.maxWidth = "90%";
-                        img.style.maxHeight = "90%";
-                        img.style.borderRadius = "5px";
+            // Кнопка закрытия
+            const closeButton = document.createElement("span");
+            closeButton.innerHTML = "&times;";
+            closeButton.style.position = "absolute";
+            closeButton.style.top = "20px";
+            closeButton.style.right = "30px";
+            closeButton.style.fontSize = "30px";
+            closeButton.style.color = "white";
+            closeButton.style.cursor = "pointer";
+            closeButton.onclick = function() {
+                closeGlobalModal();
+            };
 
-                        // Добавляем элементы в модальное окно
-                        modal.appendChild(closeButton);
-                        modal.appendChild(img);
-                        modal.onclick = function(e) {
-                            if (e.target === modal) {
-                                closeGlobalModal();
-                            }
-                        };
+            // Кнопки влево/вправо
+            const leftButton = document.createElement("span");
+            leftButton.innerHTML = "&#8592;";
+            leftButton.style.position = "absolute";
+            leftButton.style.left = "40px";
+            leftButton.style.top = "50%";
+            leftButton.style.fontSize = "40px";
+            leftButton.style.color = "white";
+            leftButton.style.cursor = "pointer";
+            leftButton.style.userSelect = "none";
+            leftButton.onclick = function(e) {
+                e.stopPropagation();
+                showImage(currentIndex - 1);
+            };
 
-                        // Добавляем модальное окно в body
-                        document.body.appendChild(modal);
-                    }
+            const rightButton = document.createElement("span");
+            rightButton.innerHTML = "&#8594;";
+            rightButton.style.position = "absolute";
+            rightButton.style.right = "40px";
+            rightButton.style.top = "50%";
+            rightButton.style.fontSize = "40px";
+            rightButton.style.color = "white";
+            rightButton.style.cursor = "pointer";
+            rightButton.style.userSelect = "none";
+            rightButton.onclick = function(e) {
+                e.stopPropagation();
+                showImage(currentIndex + 1);
+            };
 
-                    function closeGlobalModal() {
-                        const modal = document.getElementById("globalImageModal");
-                        if (modal) {
-                            document.body.removeChild(modal);
-                        }
-                    }
-                </script>
-            ';
+            // Полноразмерное изображение
+            const img = document.createElement("img");
+            img.style.maxWidth = "90%";
+            img.style.maxHeight = "90%";
+            img.style.borderRadius = "5px";
+
+            function showImage(idx) {
+                if (idx < 0) idx = imageUrls.length - 1;
+                if (idx >= imageUrls.length) idx = 0;
+                currentIndex = idx;
+                img.src = imageUrls[currentIndex];
+            }
+
+            showImage(currentIndex);
+
+            // Добавляем элементы в модальное окно
+            modal.appendChild(closeButton);
+            if (imageUrls.length > 1) {
+                modal.appendChild(leftButton);
+                modal.appendChild(rightButton);
+            }
+            modal.appendChild(img);
+
+            modal.onclick = function(e) {
+                if (e.target === modal) {
+                    closeGlobalModal();
+                }
+            };
+
+            document.body.appendChild(modal);
+        }
+
+        function closeGlobalModal() {
+            const modal = document.getElementById("globalImageModal");
+            if (modal) {
+                document.body.removeChild(modal);
+            }
+        }
+    </script>
+                    ';
 
                     return $imagesHtml;
                 }
+
                 return 'Нет фото';
             },
         ]);
@@ -151,7 +196,7 @@ class SecondaryuserCrudController extends CrudController
                 $verification = $entry->verificationRequest;
 
                 if ($verification) {
-                    $url = url('admin/verification-requests/' . $verification->user_id . '/edit');
+                    $url = url('admin/verification-requests/'.$verification->user_id.'/edit');
                     switch ($verification->status) {
                         case 'initial':
                             $label = '<span style="color: orange;">На проверке</span>';
@@ -163,10 +208,10 @@ class SecondaryuserCrudController extends CrudController
                             $label = '<span style="color: red;">Отклонено</span>';
                             break;
                         default:
-                            $label = '<span>' . ucfirst($verification->status) . '</span>';
+                            $label = '<span>'.ucfirst($verification->status).'</span>';
                     }
 
-                    return '<a href="' . $url . '">' . $label . '</a>';
+                    return '<a href="'.$url.'">'.$label.'</a>';
                 }
 
                 return 'Нет заявки';
@@ -191,7 +236,7 @@ class SecondaryuserCrudController extends CrudController
                 'lesbian' => 'Лесбиянка',
                 'bisexual' => 'Бисексуал',
                 'asexual' => 'Асексуал',
-                'not_decided' => 'Не решено'
+                'not_decided' => 'Не решено',
             ]);
         // Жадная загрузка данных
         CRUD::addClause('with', ['activeSubscription.package.subscription']);
@@ -201,8 +246,8 @@ class SecondaryuserCrudController extends CrudController
             'name' => 'subscription_info',
             'label' => 'Подписка',
             'type' => 'custom_html',
-            'value' => function($entry) {
-                if (!$entry->activeSubscription) {
+            'value' => function ($entry) {
+                if (! $entry->activeSubscription) {
                     return '<span class="text-muted">Нет активной подписки</span>';
                 }
 
@@ -217,19 +262,19 @@ class SecondaryuserCrudController extends CrudController
                     </div>
                 </div>
             ';
-            }
+            },
         ]);
         CRUD::column('last_check')->label('Последняя проверка');
         CRUD::column('is_online')->label('Онлайн статус');
         CRUD::column('phone')->label('Телефон');
         CRUD::column('email')->label('Электронная почта');
-//        CRUD::column('birth_date')->label('Дата рождения');
+        //        CRUD::column('birth_date')->label('Дата рождения');
         CRUD::column('mode')
             ->label('Режим')
             ->type('select_from_array')
             ->options([
                 'authenticated' => 'Аутентифицирован',
-                'deleted' => 'Удалён'
+                'deleted' => 'Удалён',
             ]);
         CRUD::column('registration_date')->label('Дата регистрации');
         CRUD::column('username')->label('Имя пользователя');
@@ -237,76 +282,76 @@ class SecondaryuserCrudController extends CrudController
         CRUD::addField([
             'name' => 'name',
             'label' => 'Имя',
-            'type' => 'text'
+            'type' => 'text',
         ]);
 
         CRUD::addField([
             'name' => 'username',
             'label' => 'Имя пользователя',
-            'type' => 'text'
+            'type' => 'text',
         ]);
 
         CRUD::addField([
             'name' => 'phone',
             'label' => 'Телефон',
-            'type' => 'text'
+            'type' => 'text',
         ]);
 
         CRUD::addField([
             'name' => 'email',
             'label' => 'Электронная почта',
-            'type' => 'email'
+            'type' => 'email',
         ]);
 
         CRUD::addField([
             'name' => 'birth_date',
             'label' => 'Дата рождения',
-            'type' => 'date'
+            'type' => 'date',
         ]);
 
         CRUD::addField([
             'name' => 'age',
             'label' => 'Возраст',
-            'type' => 'number'
+            'type' => 'number',
         ]);
 
         CRUD::addField([
             'name' => 'gender',
             'label' => 'Пол',
             'type' => 'select_from_array',
-            'options' => ['male' => 'Мужчина', 'female' => 'Женщина', 'm_f' => 'М+Ж', 'm_m' => 'М+М', 'f_f' => 'Ж+Ж']
+            'options' => ['male' => 'Мужчина', 'female' => 'Женщина', 'm_f' => 'М+Ж', 'm_m' => 'М+М', 'f_f' => 'Ж+Ж'],
         ]);
 
         CRUD::addField([
             'name' => 'sexual_orientation',
             'label' => 'Сексуальная ориентация',
             'type' => 'select_from_array',
-            'options' => ['hetero' => 'Гетеро', 'gay' => 'Гей', 'lesbian' => 'Лесбиянка', 'bisexual' => 'Бисексуал', 'asexual' => 'Асексуал', 'not_decided' => 'Не решено']
+            'options' => ['hetero' => 'Гетеро', 'gay' => 'Гей', 'lesbian' => 'Лесбиянка', 'bisexual' => 'Бисексуал', 'asexual' => 'Асексуал', 'not_decided' => 'Не решено'],
         ]);
 
         CRUD::addField([
             'name' => 'mode',
             'label' => 'Режим',
             'type' => 'select_from_array',
-            'options' => ['authenticated' => 'Аутентифицирован', 'deleted' => 'Удалён']
+            'options' => ['authenticated' => 'Аутентифицирован', 'deleted' => 'Удалён'],
         ]);
 
         CRUD::addField([
             'name' => 'registration_date',
             'label' => 'Дата регистрации',
-            'type' => 'datetime_picker'
+            'type' => 'datetime_picker',
         ]);
 
         CRUD::addField([
             'name' => 'last_check',
             'label' => 'Последняя проверка',
-            'type' => 'datetime_picker'
+            'type' => 'datetime_picker',
         ]);
 
         CRUD::addField([
             'name' => 'is_online',
             'label' => 'Онлайн статус',
-            'type' => 'boolean'
+            'type' => 'boolean',
         ]);
 
         CRUD::filter('is_online')
@@ -314,31 +359,31 @@ class SecondaryuserCrudController extends CrudController
             ->label('Статус')
             ->values([
                 0 => 'Оффлайн',
-                1 => 'Онлайн'
+                1 => 'Онлайн',
             ]);
 
         CRUD::filter('gender')
             ->type('dropdown')
             ->label('Пол')
             ->values([
-                "female" => "Женщины",
-                "male" => "Мужчины",
-                "f_f" => "Ж+Ж",
-                "m_f" => "М+Ж",
-                "m_m" => "М+М",
+                'female' => 'Женщины',
+                'male' => 'Мужчины',
+                'f_f' => 'Ж+Ж',
+                'm_f' => 'М+Ж',
+                'm_m' => 'М+М',
             ]);
 
         CRUD::filter('age')
             ->type('range')
             ->label('Возраст')
-            ->whenActive(function($value) {
+            ->whenActive(function ($value) {
                 $range = json_decode($value);
-                 if ($range->from) {
-                     CRUD::addClause('where', 'age', '>=', (int) $range->from);
-                 }
-                 if ($range->to) {
-                     CRUD::addClause('where', 'age', '<=', (int) $range->to);
-                 }
+                if ($range->from) {
+                    CRUD::addClause('where', 'age', '>=', (int) $range->from);
+                }
+                if ($range->to) {
+                    CRUD::addClause('where', 'age', '<=', (int) $range->to);
+                }
             });
 
         CRUD::filter('has_subscription')
@@ -348,7 +393,7 @@ class SecondaryuserCrudController extends CrudController
                 1 => 'Да',
                 0 => 'Нет',
             ])
-            ->whenActive(function($value) {
+            ->whenActive(function ($value) {
                 if ($value) {
                     CRUD::addClause('whereHas', 'activeSubscription');
                 } else {
@@ -361,11 +406,12 @@ class SecondaryuserCrudController extends CrudController
      * Define what happens when the List operation is loaded.
      *
      * @see  https://backpackforlaravel.com/docs/crud-operation-list-entries
+     *
      * @return void
      */
     protected function setupListOperation()
     {
-//        CRUD::setFromDb(); // set columns from db columns.
+        //        CRUD::setFromDb(); // set columns from db columns.
 
         /**
          * Columns can be defined using the fluent syntax:
@@ -394,12 +440,13 @@ class SecondaryuserCrudController extends CrudController
      * Define what happens when the Create operation is loaded.
      *
      * @see https://backpackforlaravel.com/docs/crud-operation-create
+     *
      * @return void
      */
     protected function setupCreateOperation()
     {
-//        CRUD::setValidation(SecondaryuserRequest::class);
-//        CRUD::setFromDb(); // set fields from db columns.
+        //        CRUD::setValidation(SecondaryuserRequest::class);
+        //        CRUD::setFromDb(); // set fields from db columns.
 
         /**
          * Fields can be defined using the fluent syntax:
@@ -427,6 +474,7 @@ class SecondaryuserCrudController extends CrudController
      * Define what happens when the Update operation is loaded.
      *
      * @see https://backpackforlaravel.com/docs/crud-operation-update
+     *
      * @return void
      */
     protected function setupUpdateOperation()
