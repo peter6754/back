@@ -38,8 +38,8 @@ class OneSignalProvider
 
         $this->client = new Client([
             'headers' => [
-                'Content-Type' => 'application/json',
                 'Authorization' => 'Basic ' . $this->restApiKey,
+                'Content-Type' => 'application/json'
             ],
         ]);
     }
