@@ -86,56 +86,7 @@ class OneSignalProvider
             true
         );
 
-        if (!empty($getResponse['errors'])) {
-            Log::error("Failed to send messages: ", [
-                "request" => $requestParams,
-                "response" => $getResponse
-            ]);
-        }
-
-        // Check if request was successful
+        // Return
         return isset($getResponse['id']) && !empty($getResponse['recipients']);
-    }
-
-    /**
-     * Send message to specific user
-     * @param string $playerId
-     * @param string $message
-     * @param array $data
-     * @return bool
-     * @throws GuzzleException
-     */
-    public function sendToUser(string $playerId, string $message, array $data = []): bool
-    {
-        $params = [
-            'include_player_ids' => [$playerId],
-            'contents' => [
-                'en' => $message
-            ],
-            'data' => $data
-        ];
-
-        return $this->sendMessage($params);
-    }
-
-    /**
-     * Send message to multiple users
-     * @param array $playerIds
-     * @param string $message
-     * @param array $data
-     * @return bool
-     * @throws GuzzleException
-     */
-    public function sendToUsers(array $playerIds, string $message, array $data = []): bool
-    {
-        $params = [
-            'include_player_ids' => $playerIds,
-            'contents' => [
-                'en' => $message
-            ],
-            'data' => $data
-        ];
-
-        return $this->sendMessage($params);
     }
 }
