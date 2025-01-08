@@ -22,6 +22,18 @@ class AuthController extends Controller
     use ApiResponseTrait;
 
     /**
+     * @var array|array[]
+     */
+    private array $socialProviders = [
+        'google' => [
+            'icon' => 'fab fa-google',
+        ],
+        'apple' => [
+            'icon' => 'fab fa-apple',
+        ],
+    ];
+
+    /**
      * @var AuthService
      */
     protected AuthService $authService;
@@ -145,6 +157,22 @@ class AuthController extends Controller
                 $e->getCode()
             );
         }
+    }
+
+    /**
+     * @return JsonResponse
+     */
+    public function socialLinks(): JsonResponse
+    {
+        // Add dynamic links
+        foreach ($this->socialProviders as $key => &$val) {
+            $val['link'] = url('/social/' . $key);
+        }
+
+        // Response
+        return $this->successResponse(
+            $this->socialProviders
+        );
     }
 
     /**
