@@ -25,11 +25,15 @@ class AuthController extends Controller
      * @var array|array[]
      */
     private array $socialProviders = [
-        'google' => [
+        [
             'icon' => 'fab fa-google',
+            'provider' => 'google',
+            'title' => 'Google'
         ],
-        'apple' => [
+        [
             'icon' => 'fab fa-apple',
+            'provider' => 'apple',
+            'title' => 'Apple'
         ],
     ];
 
@@ -165,8 +169,8 @@ class AuthController extends Controller
     public function socialLinks(): JsonResponse
     {
         // Add dynamic links
-        foreach ($this->socialProviders as $key => &$val) {
-            $val['link'] = url('/social/' . $key);
+        foreach ($this->socialProviders as &$val) {
+            $val['link'] = url('/auth/social/' . $val['provider']);
         }
 
         // Response
