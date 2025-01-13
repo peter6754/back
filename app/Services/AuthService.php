@@ -74,7 +74,7 @@ class AuthService
             $type = 'login';
         } else {
             // Отправка push-уведомления новому пользователю
-            Log::info("Login, send push, code {$code}, user: " . json_encode($user));
+            Log::info("Register, send push, code {$code}, new user: " . $userPhone);
             (new NotificationService())->sendPushNotification($userToken,
                 $code, "Ваш код подтверждения"
             );
