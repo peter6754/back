@@ -99,44 +99,85 @@ class RecommendationService
 
         $query = DB::select("
             WITH
-                `users_in_my_radius` AS (
-                    SELECT u.id FROM users u
-                    WHERE ST_Distance_Sphere(
-                        point(?, ?),
-                        point(u.long, u.lat)
-                    ) / 1000 <= ?
+            users_in_my_radius AS (
+                SELECT
+                    u.id
+                FROM
+                    users u
+                WHERE
+                    ST_Distance_Sphere(
+                        point('?', '?'), point(u.long, u.lat)
+                    ) / 1000 <= '?'
                     AND u.id != '?'
-                ),
-                `my_matches` AS (
-                    SELECT ure.user_id FROM user_reactions ure
-                    LEFT JOIN user_reactions ur ON ur.reactor_id = ure.user_id AND ur.user_id = '?' AND ure.reactor_id = '?'
-                    WHERE ure.user_id != '?' AND ure.type != 'dislike' AND ur.type != 'dislike'
-                ),
-                `users_blocked_by_me` AS (
-                    SELECT phone FROM blocked_contacts
-                    WHERE user_id = '?'
-                ),
-                `users_who_blocked_me` AS (
-                    SELECT user_id FROM blocked_contacts
-                    WHERE phone = '?'
-                )
-            SELECT DISTINCT u.id as id
-            FROM users u
-            LEFT JOIN user_settings us ON us.user_id = u.id
-            WHERE u.id != '?' AND u.lat AND u.long
-                AND (u.id IN (SELECT * FROM users_in_my_radius) OR ?)
-                AND (u.age BETWEEN ? AND ?)
-                AND u.id NOT IN (SELECT * FROM my_matches)
-                AND u.gender IN (" . (empty($preferences) ? 'NULL' : "'" . implode("','", $preferences) . "'") . ")
-                AND u.phone NOT IN (SELECT * FROM users_blocked_by_me)
-                AND u.id NOT IN (SELECT * FROM users_who_blocked_me)
+            ),
+            my_matches AS (
+                SELECT
+                    ure.user_id
+                FROM
+                    user_reactions ure
+                LEFT JOIN user_reactions ur ON ur.reactor_id = ure.user_id
+                    AND ur.user_id = '?'
+                    AND ure.reactor_id = '?'
+            WHERE
+                ure.user_id != '?'
+                AND ure.type != 'dislike'
+                AND ur.type != 'dislike'
+            ),
+            users_blocked_by_me AS (
+                SELECT
+                    phone
+                FROM
+                    blocked_contacts
+                WHERE
+                    user_id = '?'
+            ),
+            users_who_blocked_me AS (
+                SELECT
+                    user_id
+                FROM
+                    blocked_contacts
+                WHERE
+                    phone = '?'
+            ) SELECT DISTINCT
+                u.id AS id
+            FROM
+                users u
+                LEFT JOIN user_settings us ON us.user_id = u.id
+            WHERE
+                u.id != '?'
+                AND u.lat
+                AND u.long
+                AND(u.id IN(
+                        SELECT
+                            * FROM users_in_my_radius)
+                        OR '?')
+                AND(u.age BETWEEN '?'
+                    AND '?')
+                AND u.id NOT IN(
+                    SELECT
+                        * FROM my_matches)
+                AND u.gender IN(" . (empty($preferences) ? 'NULL' : " '" . implode("', '", $preferences) . "' ") . ")
+                AND u.phone NOT IN(
+                    SELECT
+                        * FROM users_blocked_by_me)
+                AND u.id NOT IN(
+                    SELECT
+                        * FROM users_who_blocked_me)
                 AND u.registration_date IS NOT NULL
                 AND u.mode = 'authenticated'
-            GROUP BY id
-            ORDER BY u.is_online DESC,
-                (SELECT MAX(last_activity) FROM user_activity WHERE user_id = u.id) DESC,
-                id ASC
-            LIMIT ?;
+            GROUP BY
+                id
+            ORDER BY
+                u.is_online DESC,
+                (
+                    SELECT
+                        MAX(last_activity)
+                    FROM
+                        user_activity
+                    WHERE
+                        user_id = u.id)
+                    DESC, id ASC
+                LIMIT ?;
         ", [
             $user->long,
             $user->lat,
