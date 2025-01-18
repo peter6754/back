@@ -69,7 +69,7 @@ class ChatMessage extends Model
      */
     public function sender(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'sender_id');
+        return $this->belongsTo(Secondaryuser::class, 'sender_id');
     }
 
     /**
@@ -78,7 +78,7 @@ class ChatMessage extends Model
      */
     public function receiver(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'receiver_id');
+        return $this->belongsTo(Secondaryuser::class, 'receiver_id');
     }
 
     /**

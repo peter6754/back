@@ -99,14 +99,14 @@ class RecommendationsController extends Controller
      */
     public function getRecommendations(Request $request): JsonResponse
     {
-        try {
+//        try {
             return $this->successResponse(
-                $this->recommendations->getRecommendationsV2($request->customer['id'], [])
+                $this->recommendations->getRecommendations($request->customer['id'], [])
             );
-        } catch (Exception $e) {
-            return $this->errorResponse(
-                $e->getMessage()
-            );
-        }
+//        } catch (Exception $e) {
+//            return $this->errorResponse(
+//                $e->getMessage()
+//            );
+//        }
     }
 }

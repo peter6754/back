@@ -220,6 +220,15 @@ class Secondaryuser extends Model
     }
 
     /**
+     * Get the user's preferences.
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function preferences()
+    {
+        return $this->hasMany(UserPreference::class, 'user_id', 'id');
+    }
+
+    /**
      * Get the user's conversations where they are user1.
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
