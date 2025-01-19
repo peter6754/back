@@ -60,9 +60,8 @@ class RecommendationService
         $key = "recommended:{$userId}:{$keyPart1}:{$keyPart2}:{$keyPart3}{$keyPart4}";
 
         try {
-            $forPage = Redis::command('LPOP', [$key, $this->recommendationsCacheSize]);
-//            $forPage = Redis::lRange($key, 0, $this->recommendationsCacheSize - 1);
-//            Redis::lTrim($key, $this->recommendationsCacheSize, -1);
+            $forPage = Redis::lRange($key, 0, $this->recommendationsCacheSize - 1);
+            Redis::lTrim($key, $this->recommendationsCacheSize, -1);
 
             if (empty($forPage)) {
                 $fromDb = $this->getRecommendationsForCache($userId, $query, $this->recommendationsCacheSize);
