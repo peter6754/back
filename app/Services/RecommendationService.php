@@ -40,6 +40,18 @@ class RecommendationService
     }
 
     /**
+     * Временная затычка на несуществующие методы
+     * @param $name
+     * @param $arguments
+     * @return mixed
+     * @throws \Exception
+     */
+    public function __call($name, $arguments)
+    {
+        throw new \Exception("Метод {$name} еще в разработке.");
+    }
+
+    /**
      * @param array $customer
      * @return array
      */
