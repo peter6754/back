@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Recommendations;
 
 use Exception;
-use App\DTO\GetRecommendationsDto;
+use App\DTO\RecommendationsDto;
 use App\Services\RecommendationService;
 use Illuminate\Support\Facades\Cache;
 use App\Http\Traits\ApiResponseTrait;
@@ -53,21 +53,9 @@ class RecommendationsController extends Controller
     public function getTopProfiles(Request $request): JsonResponse
     {
         try {
-            // Checking  cache
-            $cache = 'top-profiles:' . $request->customer['id'];
-            $getData = Cache::get($cache);
-
-            // Cache not exist? run request!!!
-            if (is_null($getData)) {
-                $getData = $this->recommendations->getTopProfiles($request->customer)->toArray();
-                foreach ($getData as &$row) {
-                    $row->blocked_me = (bool)$row->blocked_me;
-                }
-
-                Cache::set($cache, $getData, 15 * 60);
-            }
-
-            return $this->successResponse(["items" => $getData]);
+            return $this->successResponse(
+                $this->recommendations->getTopProfiles($request->customer)
+            );
         } catch (Exception $e) {
             return $this->errorResponse(
                 $e->getMessage()
@@ -75,13 +63,173 @@ class RecommendationsController extends Controller
         }
     }
 
+    /**
+     * @param Request $request
+     * @OA\Delete(
+     *      path="/recommendations/match/{id}",
+     *      tags={"Recommendations"},
+     *      security={{"bearerAuth":{}}},
+     *
+     *       @OA\Parameter(
+     *           name="id",
+     *           in="path",
+     *           required=true,
+     *           description="User ID (UUID)",
+     *           @OA\Schema(
+     *               example="000558ed-d557-4fc0-99da-b23dec6be0bf",
+     *               format="uuid",
+     *               type="string"
+     *           )
+     *      ),
+     *
+     *      @OA\Response(
+     *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse"),
+     *          description="Successful operation",
+     *          response=201,
+     *      ),
+     *
+     *      @OA\Response(
+     *          @OA\JsonContent(ref="#/components/schemas/Unauthorized"),
+     *          description="Unauthorized",
+     *          response=401
+     *      )
+     *  )
+     * @return JsonResponse
+     */
+    public function match(Request $request): JsonResponse
+    {
+        try {
+            // Get queries
+            $query = RecommendationsDto::forActions($request);
+
+            // Return data
+            return $this->successResponse(
+                $this->recommendations->actionMatch($request->customer['id'], $query)
+            );
+        } catch (Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage()
+            );
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @OA\Post(
+     *      path="/recommendations/dislike",
+     *      tags={"Recommendations"},
+     *      security={{"bearerAuth":{}}},
+     *
+     *       @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              @OA\Property(
+     *                  example="13c8c521-c797-4de4-abba-6f2ce0e24c40",
+     *                  description="User ID",
+     *                  property="user_id",
+     *                  format="uuid",
+     *                  type="string"
+     *              )
+     *           )
+     *       ),
+     *
+     *      @OA\Response(
+     *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse"),
+     *          description="Successful operation",
+     *          response=201,
+     *      ),
+     *
+     *      @OA\Response(
+     *          @OA\JsonContent(ref="#/components/schemas/Unauthorized"),
+     *          description="Unauthorized",
+     *          response=401
+     *      )
+     *  )
+     * @return JsonResponse
+     */
+    public function dislike(Request $request): JsonResponse
+    {
+        try {
+            // Get queries
+            $query = RecommendationsDto::forActions($request);
+
+            // Return data
+            return $this->successResponse(
+                $this->recommendations->actionDislike($request->customer['id'], $query)
+            );
+        } catch (Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage()
+            );
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @OA\Post(
+     *      path="/recommendations/like",
+     *      tags={"Recommendations"},
+     *      summary="Get recommendations profiles",
+     *      security={{"bearerAuth":{}}},
+     *
+     *       @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              @OA\Property(
+     *                   example="13c8c521-c797-4de4-abba-6f2ce0e24c40",
+     *                   description="User ID (UUID)",
+     *                   property="user_id",
+     *                   format="uuid",
+     *                   type="string"
+     *               ),
+     *               @OA\Property(
+     *                   description="From top",
+     *                   property="from_top",
+     *                   type="boolean",
+     *                   example="false"
+     *               )
+     *           )
+     *       ),
+     *
+     *      @OA\Response(
+     *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse"),
+     *          description="Successful operation",
+     *          response=201,
+     *      ),
+     *
+     *      @OA\Response(
+     *          @OA\JsonContent(ref="#/components/schemas/Unauthorized"),
+     *          description="Unauthorized",
+     *          response=401
+     *      )
+     *  )
+     * @return JsonResponse
+     */
+    public function like(Request $request): JsonResponse
+    {
+        try {
+            // Get queries
+            $query = RecommendationsDto::forActions($request, [
+                'from_top' => 'required|boolean'
+            ]);
+
+            // Return data
+            return $this->successResponse(
+                $this->recommendations->actionLike($request->customer['id'], $query)
+            );
+        } catch (Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage()
+            );
+        }
+    }
 
     /**
      * @param Request $request
      * @OA\Get(
      *       path="/recommendations",
      *       tags={"Recommendations"},
-     *       summary="Get profiles",
+     *       summary="Get recommendations profiles",
      *       security={{"bearerAuth":{}}},
      *
      *       @OA\Parameter(
@@ -132,13 +280,130 @@ class RecommendationsController extends Controller
      */
     public function getRecommendations(Request $request): JsonResponse
     {
-        // Get queries
-        $query = GetRecommendationsDto::fromRequest($request)->toArray();
-
-
         try {
+            // Get queries
+            $query = RecommendationsDto::forRecommendations($request);
+
+            // Return data
             return $this->successResponse(
                 $this->recommendations->getRecommendations($request->customer['id'], $query)
+            );
+        } catch (Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage()
+            );
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @OA\Post(
+     *      path="/recommendations/superlike",
+     *      tags={"Recommendations"},
+     *      security={{"bearerAuth":{}}},
+     *
+     *       @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *               @OA\Property(
+     *                   example="13c8c521-c797-4de4-abba-6f2ce0e24c40",
+     *                   description="User ID (UUID)",
+     *                   property="user_id",
+     *                   format="uuid",
+     *                   type="string"
+     *                ),
+     *                @OA\Property(
+     *                    description="From top",
+     *                    property="from_top",
+     *                    type="boolean",
+     *                    example="false"
+     *                ),
+     *                @OA\Property(
+     *                    description="Comment",
+     *                    property="comment",
+     *                    type="string",
+     *                    example=""
+     *                )
+     *            )
+     *       ),
+     *
+     *      @OA\Response(
+     *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse"),
+     *          description="Successful operation",
+     *          response=201,
+     *      ),
+     *
+     *      @OA\Response(
+     *          @OA\JsonContent(ref="#/components/schemas/Unauthorized"),
+     *          description="Unauthorized",
+     *          response=401
+     *      )
+     *  )
+     * @return JsonResponse
+     */
+    public function superlike(Request $request): JsonResponse
+    {
+        try {
+            // Get queries
+            $query = RecommendationsDto::forActions($request, [
+                'from_top' => 'required|boolean',
+                'comment' => 'string',
+            ]);
+
+            // Return data
+            return $this->successResponse(
+                $this->recommendations->actionSuperLike($request->customer['id'], $query)
+            );
+        } catch (Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage()
+            );
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @OA\Post(
+     *      path="/recommendations/rollback",
+     *      tags={"Recommendations"},
+     *      security={{"bearerAuth":{}}},
+     *
+     *       @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              @OA\Property(
+     *                  example="13c8c521-c797-4de4-abba-6f2ce0e24c40",
+     *                  description="User ID (UUID)",
+     *                  property="user_id",
+     *                  format="uuid",
+     *                  type="string"
+     *              )
+     *           )
+     *       ),
+     *
+     *      @OA\Response(
+     *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse"),
+     *          description="Successful operation",
+     *          response=201,
+     *      ),
+     *
+     *      @OA\Response(
+     *          @OA\JsonContent(ref="#/components/schemas/Unauthorized"),
+     *          description="Unauthorized",
+     *          response=401
+     *      )
+     *  )
+     * @return JsonResponse
+     */
+    public function rollback(Request $request): JsonResponse
+    {
+        try {
+            // Get queries
+            $query = RecommendationsDto::forActions($request);
+
+            // Return data
+            return $this->successResponse(
+                $this->recommendations->actionRollback($request->customer['id'], $query)
             );
         } catch (Exception $e) {
             return $this->errorResponse(
