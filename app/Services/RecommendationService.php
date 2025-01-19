@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use Illuminate\Redis\Connections\Connection;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Log;
@@ -11,20 +10,23 @@ use Illuminate\Support\Collection;
 use Illuminate\Config\Repository;
 use App\Models\Secondaryuser;
 
+/**
+ *
+ */
 class RecommendationService
 {
     /**
-     * @var Repository|Application|mixed|object|null
+     * @var mixed|Repository|Application|object|null
      */
     private mixed $recommendationsCacheSize;
 
     /**
-     * @var Repository|Application|mixed|object|null
+     * @var mixed|Repository|Application|object|null
      */
     private mixed $recommendationsCacheTTL;
 
     /**
-     * @var Repository|Application|mixed|object|null
+     * @var mixed|Repository|Application|object|null
      */
     private mixed $recommendationsPageSize;
 
@@ -36,61 +38,6 @@ class RecommendationService
         $this->recommendationsCacheSize = config('recommendations.cache_size', 1000);
         $this->recommendationsCacheTTL = config('recommendations.cache_ttl', 14400);
         $this->recommendationsPageSize = config('recommendations.page_size', 10);
-    }
-
-    /**
-     * @param string $userId
-     * @param array $query
-     * @return array|array[]|void
-     */
-    public function getRecommendations(string $userId, array $query)
-    {
-        $user = Secondaryuser::with(['settings', 'preferences'])
-            ->select(['id', 'phone', 'lat', 'long'])
-            ->findOrFail($userId);
-
-        if ($user->preferences->isEmpty()) {
-            return ['items' => []];
-        }
-
-        // Configure cache params
-        $keyPart1 = implode('-', $user->settings->age_range);
-        $keyPart2 = $user->settings->is_global_search ? 'global' : $user->settings->search_radius;
-        $keyPart3 = implode(',', $user->preferences->pluck('gender')->toArray());
-        $keyPart4 = isset($query['interest_id']) ? ':' . $query['interest_id'] : '';
-
-        // Configure cache
-        $key = "recommended:{$userId}:{$keyPart1}:{$keyPart2}:{$keyPart3}{$keyPart4}";
-        $recommendationsCacheSize = $this->recommendationsPageSize;
-
-        try {
-            $forPage = Redis::transaction(function ($redis) use ($key, $recommendationsCacheSize) {
-                $redis->lRange($key, 0, $recommendationsCacheSize - 1);
-                $redis->lTrim($key, $recommendationsCacheSize, -1);
-            })[0];
-
-            if (empty($forPage)) {
-                $fromDb = $this->getRecommendationsForCache($userId, $query, $this->recommendationsCacheSize);
-                $forPage = array_splice($fromDb, 0, $this->recommendationsPageSize);
-
-                if (empty($forPage)) {
-                    return ['items' => []];
-                }
-
-                if (!empty($fromDb)) {
-                    Redis::rpush($key, ...$fromDb);
-                    Redis::expire($key, $this->recommendationsCacheTTL);
-                }
-            }
-
-            return $this->getRecommendationsPage($userId, $forPage);
-        } catch (\Exception $err) {
-            Log::error('getRecommendations_v2 error:', ['user_id' => $userId, 'error' => $err]);
-            echo $err->getMessage();
-//            return [
-//                'message' => $err->getMessage() ?: 'Contact the developers'
-//            ];
-        }
     }
 
     /**
@@ -204,10 +151,64 @@ class RecommendationService
     /**
      * @param string $userId
      * @param array $query
+     * @return array|array[]|void
+     */
+    public function getRecommendations(string $userId, array $query)
+    {
+        $user = Secondaryuser::with(['settings', 'preferences'])
+            ->select(['id', 'phone', 'lat', 'long'])
+            ->findOrFail($userId);
+
+        if ($user->preferences->isEmpty()) {
+            return ['items' => []];
+        }
+
+        // Configure cache params
+        $keyPart1 = implode('-', $user->settings->age_range);
+        $keyPart2 = $user->settings->is_global_search ? 'global' : $user->settings->search_radius;
+        $keyPart3 = implode(',', $user->preferences->pluck('gender')->toArray());
+        $keyPart4 = isset($query['interest_id']) ? ':' . $query['interest_id'] : '';
+
+        // Configure cache
+        $key = "recommended:{$userId}:{$keyPart1}:{$keyPart2}:{$keyPart3}{$keyPart4}";
+        $recommendationsCacheSize = $this->recommendationsPageSize;
+
+        try {
+            $forPage = Redis::transaction(function ($redis) use ($key, $recommendationsCacheSize) {
+                $redis->lRange($key, 0, $recommendationsCacheSize - 1);
+                $redis->lTrim($key, $recommendationsCacheSize, -1);
+            })[0];
+
+            if (empty($forPage)) {
+                $fromDb = $this->getRecommendationsForCache($userId, $query, $this->recommendationsCacheSize);
+                $forPage = array_splice($fromDb, 0, $this->recommendationsPageSize);
+
+                if (empty($forPage)) {
+                    return ['items' => []];
+                }
+
+                if (!empty($fromDb)) {
+                    Redis::rpush($key, ...$fromDb);
+                    Redis::expire($key, $this->recommendationsCacheTTL);
+                }
+            }
+
+            return $this->getRecommendationsPage($userId, $forPage);
+        } catch (\Exception $e) {
+            Log::channel('recommendations')->error('getRecommendations_v2 error: ' . $e->getMessage(), [
+                'user_id' => $userId,
+                'error' => $e
+            ]);
+        }
+    }
+
+    /**
+     * @param string $userId
+     * @param array $query
      * @param int $cacheSize
      * @return array
      */
-    private function getRecommendationsForCache(string $userId, array $query, int $cacheSize)
+    private function getRecommendationsForCache(string $userId, array $query, int $cacheSize): array
     {
         $user = Secondaryuser::with(['settings', 'preferences'])
             ->select(['id', 'phone', 'lat', 'long'])
@@ -294,7 +295,7 @@ class RecommendationService
      * @param $usersIds
      * @return array
      */
-    private function getRecommendationsPage(string $userId, $usersIds)
+    private function getRecommendationsPage(string $userId, $usersIds): array
     {
         $user = Secondaryuser::select(['lat', 'long'])->findOrFail($userId);
 
@@ -349,6 +350,8 @@ class RecommendationService
             ];
         }, $recommendations);
 
-        return ['items' => $response];
+        return [
+            'items' => $response
+        ];
     }
 }
