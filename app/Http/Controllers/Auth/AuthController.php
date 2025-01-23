@@ -202,7 +202,7 @@ class AuthController extends Controller
             Log::debug("Social authentication debug:", $data);
 
             // Set redirect url
-            $redirectUrl = 'https://web.tinderone.ru/';
+            $redirectUrl = 'https://web.tinderone.app/';
             if ($browser->isMobile()) {
                 $redirectUrl = 'tinderone://';
             }
