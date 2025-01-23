@@ -250,7 +250,7 @@ class RecommendationService
     {
         $user = Secondaryuser::with(['deviceTokens', 'userInformation', 'userSettings'])
             ->select(['id', 'email'])
-            ->findOrFail($params['user_id'])->toArray();
+            ->findOrFail($params['user_id']);
 
         $reaction = UserReaction::where('reactor_id', $params['user_id'])
             ->where('user_id', $userId)
