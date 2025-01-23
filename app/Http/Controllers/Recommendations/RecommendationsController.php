@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Recommendations;
 
 use Exception;
 use App\DTO\RecommendationsDto;
+use Illuminate\Support\Facades\Log;
 use App\Services\RecommendationService;
 use Illuminate\Support\Facades\Cache;
 use App\Http\Traits\ApiResponseTrait;
@@ -107,8 +108,12 @@ class RecommendationsController extends Controller
                 $this->recommendations->actionMatch($request->customer['id'], $query)
             );
         } catch (Exception $e) {
+            Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
+                'user_id' => $request->customer['id'],
+                'error' => $e->getMessage()
+            ]);
             return $this->errorResponse(
-                $e->getMessage()
+                "Internal error"
             );
         }
     }
@@ -155,11 +160,15 @@ class RecommendationsController extends Controller
 
             // Return data
             return $this->successResponse(
-                $this->recommendations->actionDislike($request->customer['id'], $query)
+                $this->recommendations->dislike($request->customer['id'], $query)
             );
         } catch (Exception $e) {
+            Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
+                'user_id' => $request->customer['id'],
+                'error' => $e->getMessage()
+            ]);
             return $this->errorResponse(
-                $e->getMessage()
+                "Internal error"
             );
         }
     }
@@ -215,11 +224,15 @@ class RecommendationsController extends Controller
 
             // Return data
             return $this->successResponse(
-                $this->recommendations->actionLike($request->customer['id'], $query)
+                $this->recommendations->like($request->customer['id'], $query)
             );
         } catch (Exception $e) {
+            Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
+                'user_id' => $request->customer['id'],
+                'error' => $e->getMessage()
+            ]);
             return $this->errorResponse(
-                $e->getMessage()
+                "Internal error"
             );
         }
     }
@@ -289,8 +302,12 @@ class RecommendationsController extends Controller
                 $this->recommendations->getRecommendations($request->customer['id'], $query)
             );
         } catch (Exception $e) {
+            Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
+                'user_id' => $request->customer['id'],
+                'error' => $e->getMessage()
+            ]);
             return $this->errorResponse(
-                $e->getMessage()
+                "Internal error"
             );
         }
     }
@@ -346,17 +363,21 @@ class RecommendationsController extends Controller
         try {
             // Get queries
             $query = RecommendationsDto::forActions($request, [
-                'from_top' => 'required|boolean',
+                'from_top' => 'boolean',
                 'comment' => 'string',
             ]);
 
             // Return data
             return $this->successResponse(
-                $this->recommendations->actionSuperLike($request->customer['id'], $query)
+                $this->recommendations->superlike($request->customer['id'], $query)
             );
         } catch (Exception $e) {
+            Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
+                'user_id' => $request->customer['id'],
+                'error' => $e->getMessage()
+            ]);
             return $this->errorResponse(
-                $e->getMessage()
+                "Internal error"
             );
         }
     }
@@ -403,11 +424,15 @@ class RecommendationsController extends Controller
 
             // Return data
             return $this->successResponse(
-                $this->recommendations->actionRollback($request->customer['id'], $query)
+                $this->recommendations->rollback($request->customer['id'], $query)
             );
         } catch (Exception $e) {
+            Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
+                'user_id' => $request->customer['id'],
+                'error' => $e->getMessage()
+            ]);
             return $this->errorResponse(
-                $e->getMessage()
+                "Internal error"
             );
         }
     }

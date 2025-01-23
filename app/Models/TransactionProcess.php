@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
-use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use App\Services\Payments\PaymentsService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class TransactionProcess extends Model
 {
@@ -144,21 +145,21 @@ class TransactionProcess extends Model
             ->first();
 
         return [
-            'count' => (int) $result->count,
             'total' => (float) $result->total,
+            'count' => (int) $result->count
         ];
     }
 
     /**
      * Генерация transaction_id при создании
      */
-    protected static function boot()
+    protected static function boot(): void
     {
         parent::boot();
 
         static::creating(function ($model) {
             if (empty($model->transaction_id)) {
-                $model->transaction_id = \Illuminate\Support\Str::uuid()->toString();
+                $model->transaction_id = Str::uuid()->toString();
             }
         });
     }

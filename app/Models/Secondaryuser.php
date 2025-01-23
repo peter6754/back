@@ -82,6 +82,17 @@ class Secondaryuser extends Model
         return $this->hasOne(UserInformation::class, 'user_id', 'id');
     }
 
+    public function userSettings()
+    {
+        return $this->hasOne(UserSettings::class, 'user_id', 'id');
+    }
+
+    public function deviceTokens()
+    {
+        $getTokens = $this->hasMany(UserDeviceToken::class, 'user_id', 'id');
+        return $this->hasMany(UserDeviceToken::class, 'user_id', 'id');
+    }
+
     public static function getGenderStats(): array
     {
         return [

@@ -49,14 +49,20 @@ class RecommendationsDto extends Data
      */
     public static function forActions($request, array $validator = []): array
     {
-        // Validator rules
-        $request->validate(array_merge([
+        // Request data params
+        $requestData = array_merge([
             'user_id' => 'required|string'
-        ], $validator));
+        ], $validator);
+
+        // Validator rules
+        $request->validate($requestData);
+
+        // Modify values
+        foreach ($requestData as $key => $value) {
+            $requestData[$key] = $request->input($key);
+        }
 
         // Return
-        return [
-            'user_id' => $request->input('user_id')
-        ];
+        return $requestData;
     }
 }
