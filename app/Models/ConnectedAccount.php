@@ -37,6 +37,6 @@ class ConnectedAccount extends Model
      */
     public static function getSupportedProviders(): array
     {
-        return ['google', 'facebook', 'vkontakte', 'apple'];
+        return ['google', 'facebook', 'vkontakte', 'apple', 'telegram'];
     }
 }
