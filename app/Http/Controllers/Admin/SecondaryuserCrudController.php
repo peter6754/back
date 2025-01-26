@@ -126,6 +126,16 @@ class SecondaryuserCrudController extends CrudController
             },
         ]);
 
+        CRUD::column('gender')
+            ->label('Пол')
+            ->type('select_from_array')
+            ->options(['male' => 'М', 'female' => 'Ж', 'm_f' => 'М+Ж', 'm_m' => 'М+М', 'f_f' => 'Ж+Ж'])
+            ->wrapper([
+                'class' => function ($crud, $column, $entry, $related_key) {
+                    return $entry->gender === 'male' ? 'text-primary' : 'text-danger';
+                },
+            ]);
+
         $this->crud->addColumn([
             'name' => 'userInformation.bio',
             'label' => 'О себе',
@@ -134,15 +144,7 @@ class SecondaryuserCrudController extends CrudController
             'attribute' => 'bio',
             'model' => UserInformation::class,
         ]);
-        CRUD::column('gender')
-            ->label('Пол')
-            ->type('select_from_array')
-            ->options(['male' => 'Мужчина', 'female' => 'Женщина', 'm_f' => 'М+Ж', 'm_m' => 'М+М', 'f_f' => 'Ж+Ж'])
-            ->wrapper([
-                'class' => function ($crud, $column, $entry, $related_key) {
-                    return $entry->gender === 'male' ? 'text-primary' : 'text-danger';
-                },
-            ]);
+
         CRUD::column('sexual_orientation')
             ->label('Сексуальная ориентация')
             ->type('select_from_array')
