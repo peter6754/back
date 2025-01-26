@@ -78,9 +78,14 @@ Route::prefix('application')->middleware('auth')->group(function () {
 
 // Auth routes
 Route::prefix('auth')->group(function () {
+    // Phone login
     Route::post('login', [AuthController::class, 'login'])->name('auth.verify');
     Route::post('verify-login', [AuthController::class, 'verify'])->name('auth.login');
 
+    // Telegram
+    Route::post('telegram', [AuthController::class, 'telegram'])->name('auth.telegram');
+
+    // Social
     Route::get('social/list', [AuthController::class, 'socialLinks'])->name('auth.social.list');
     Route::any('social/{provider}/callback', [AuthController::class, 'socialCallback']);
     Route::get('social/{provider}', function ($provider) {

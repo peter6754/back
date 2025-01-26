@@ -25,6 +25,11 @@ class AuthController extends Controller
      * @var array|array[]
      */
     private array $socialProviders = [
+//        [
+//            'icon' => 'fab fa-telegram',
+//            'provider' => 'telegram',
+//            'title' => 'Telegram'
+//        ],
         [
             'icon' => 'fab fa-google',
             'provider' => 'google',
@@ -34,12 +39,7 @@ class AuthController extends Controller
             'icon' => 'fab fa-apple',
             'provider' => 'apple',
             'title' => 'Apple'
-        ],
-//        [
-//            'icon' => 'fab fa-telegram',
-//            'provider' => 'telegram',
-//            'title' => 'Telegram'
-//        ]
+        ]
     ];
 
     /**
