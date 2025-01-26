@@ -253,36 +253,28 @@ class RecommendationService
             ->findOrFail($params['user_id']);
 
         // Проверяем существование реакции
-        $reactionExists = UserReaction::where('reactor_id', $params['user_id'])
+        $reaction = UserReaction::where('reactor_id', $params['user_id'])
             ->where('user_id', $userId)
             ->whereIn('type', ['like', 'superlike'])
-            ->exists();
+            ->first();
 
         $superboom = $user->userInformation->superboom_due_date >= now();
-        if ($reactionExists) {
-            // Обновляем существующую запись
-            UserReaction::where('reactor_id', $params['user_id'])
-                ->where('user_id', $userId)
-                ->update([
-                    'from_top' => $params['from_top'],
-                    'superboom' => $superboom,
-                    'type' => 'like',
-                    'date' => now()
-                ]);
-        } else {
-            // Создаем новую запись
-            UserReaction::create([
+
+        UserReaction::updateOrCreate(
+            [
                 'user_id' => $params['user_id'],
                 'reactor_id' => $userId,
+            ],
+            [
                 'from_top' => $params['from_top'],
                 'superboom' => $superboom,
-                'type' => 'like',
+                'type' => 'superlike',
                 'date' => now()
-            ]);
-        }
+            ]
+        );
 
         return [
-            'is_match' => $reactionExists
+            'is_match' => (bool)$reaction
         ];
     }
 
@@ -347,34 +339,25 @@ class RecommendationService
             ->select(['id', 'email'])
             ->findOrFail($params['user_id']);
 
-        // Проверяем существование реакции
-        $reactionExists = UserReaction::where('reactor_id', $params['user_id'])
+        $reaction = UserReaction::where('reactor_id', $params['user_id'])
             ->where('user_id', $userId)
             ->whereIn('type', ['like', 'superlike'])
-            ->exists();
+            ->first();
 
         $superboom = $user->userInformation->superboom_due_date >= now();
-        if ($reactionExists) {
-            // Обновляем существующую запись
-            UserReaction::where('reactor_id', $params['user_id'])
-                ->where('user_id', $userId)
-                ->update([
-                    'from_top' => $params['from_top'],
-                    'superboom' => $superboom,
-                    'type' => 'superlike',
-                    'date' => now()
-                ]);
-        } else {
-            // Создаем новую запись
-            UserReaction::create([
-                'from_top' => $params['from_top'],
+
+        UserReaction::updateOrCreate(
+            [
                 'user_id' => $params['user_id'],
-                'superboom' => $superboom,
                 'reactor_id' => $userId,
+            ],
+            [
+                'from_top' => $params['from_top'],
+                'superboom' => $superboom,
                 'type' => 'superlike',
                 'date' => now()
-            ]);
-        }
+            ]
+        );
 
         UserInformation::where('user_id', $userId)->decrement('superlikes');
 
@@ -383,7 +366,7 @@ class RecommendationService
         }
 
         return [
-            'is_match' => (bool)$reactionExists
+            'is_match' => (bool)$reaction
         ];
     }
 
