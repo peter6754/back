@@ -229,6 +229,22 @@ class Secondaryuser extends Model
     }
 
     /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function interests()
+    {
+        return $this->hasMany(UserInterests::class);
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function relationshipPreference()
+    {
+        return $this->hasOne(UserRelationshipPreference::class);
+    }
+
+    /**
      * Get the user's conversations where they are user1.
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */

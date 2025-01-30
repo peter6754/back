@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Users\ReferenceDataController;
+use App\Http\Controllers\Users\UserController;
 use OpenApi\Generator;
 use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
@@ -88,6 +90,34 @@ Route::prefix('auth')->group(function () {
             return Socialite::driver($provider)->redirect();
         }
         abort(404);
+    });
+});
+
+// Users routes
+Route::prefix('users')->middleware('auth')->group(function () {
+    Route::put('{user}/information', [UserController::class, 'updateInformation']);
+
+    // Справочные данные
+    Route::prefix('reference-data')->group(function () {
+        Route::get('interests', [ReferenceDataController::class, 'getInterests']);
+        Route::get('relationship-preferences', [ReferenceDataController::class, 'getRelationshipPreferences']);
+        Route::get('genders', [ReferenceDataController::class, 'getGenders']);
+        Route::get('zodiac-signs', [ReferenceDataController::class, 'getZodiacSigns']);
+        Route::get('family-statuses', [ReferenceDataController::class, 'getFamilyStatuses']);
+        Route::get('education', [ReferenceDataController::class, 'getEducationOptions']);
+        Route::get('family', [ReferenceDataController::class, 'getFamilyPlans']);
+        Route::get('communication', [ReferenceDataController::class, 'getCommunicationOptions']);
+        Route::get('love-languages', [ReferenceDataController::class, 'getLoveLanguages']);
+        Route::get('pets', [ReferenceDataController::class, 'getPets']);
+        Route::get('alcohol', [ReferenceDataController::class, 'getAlcohol']);
+        Route::get('smoking', [ReferenceDataController::class, 'getSmoking']);
+        Route::get('sport', [ReferenceDataController::class, 'getSport']);
+        Route::get('food', [ReferenceDataController::class, 'getFood']);
+        Route::get('social-network', [ReferenceDataController::class, 'getSocialNetwork']);
+        Route::get('sleep', [ReferenceDataController::class, 'getSleep']);
+        Route::get('orientations', [ReferenceDataController::class, 'getOrientations']);
+        Route::get('clubs', [ReferenceDataController::class, 'getClubs']);
+
     });
 });
 
