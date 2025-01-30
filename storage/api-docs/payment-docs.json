@@ -676,13 +676,331 @@
                 ]
             }
         },
+        "/recommendations/match/{id}": {
+            "delete": {
+                "tags": [
+                    "Recommendations"
+                ],
+                "operationId": "99c4cdf27e6ef012074bd959ad246447",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "User ID (UUID)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "example": "000558ed-d557-4fc0-99da-b23dec6be0bf"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Unauthorized"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/recommendations/dislike": {
+            "post": {
+                "tags": [
+                    "Recommendations"
+                ],
+                "operationId": "0c4c5d73fbf90146468ead16d80cce6f",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "user_id": {
+                                        "description": "User ID",
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "example": "13c8c521-c797-4de4-abba-6f2ce0e24c40"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Unauthorized"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/recommendations/like": {
+            "post": {
+                "tags": [
+                    "Recommendations"
+                ],
+                "summary": "Get recommendations profiles",
+                "operationId": "2827376c22b7397e57ddcfbfad4eff64",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "user_id": {
+                                        "description": "User ID (UUID)",
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "example": "13c8c521-c797-4de4-abba-6f2ce0e24c40"
+                                    },
+                                    "from_top": {
+                                        "description": "From top",
+                                        "type": "boolean",
+                                        "example": "false"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Unauthorized"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/recommendations": {
             "get": {
                 "tags": [
                     "Recommendations"
                 ],
-                "summary": "Get profiles",
+                "summary": "Get recommendations profiles",
                 "operationId": "4ac6b891d60dfd6730b80c2e3f4fe988",
+                "parameters": [
+                    {
+                        "name": "interest_id",
+                        "in": "query",
+                        "description": "Filter by interest ID",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "123"
+                        }
+                    },
+                    {
+                        "name": "min_photo_count",
+                        "in": "query",
+                        "description": "Minimum number of photos required",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "3"
+                        }
+                    },
+                    {
+                        "name": "is_verified",
+                        "in": "query",
+                        "description": "Filter verified profiles (true/false)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "true"
+                        }
+                    },
+                    {
+                        "name": "has_info",
+                        "in": "query",
+                        "description": "Filter profiles with complete info",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "false"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Unauthorized"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/recommendations/superlike": {
+            "post": {
+                "tags": [
+                    "Recommendations"
+                ],
+                "operationId": "62d3c01431579efa65732b0f951b2dd3",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "user_id": {
+                                        "description": "User ID (UUID)",
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "example": "13c8c521-c797-4de4-abba-6f2ce0e24c40"
+                                    },
+                                    "from_top": {
+                                        "description": "From top",
+                                        "type": "boolean",
+                                        "example": "false"
+                                    },
+                                    "comment": {
+                                        "description": "Comment",
+                                        "type": "string",
+                                        "example": ""
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Unauthorized"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/recommendations/rollback": {
+            "post": {
+                "tags": [
+                    "Recommendations"
+                ],
+                "operationId": "fab71fc279c362595cf7151a509a5adc",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "user_id": {
+                                        "description": "User ID (UUID)",
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "example": "13c8c521-c797-4de4-abba-6f2ce0e24c40"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "201": {
                         "description": "Successful operation",

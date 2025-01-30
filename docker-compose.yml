@@ -8,9 +8,9 @@ services:
             # Эти переменные (DATABASE, USER, PASSWORD) обычно используются для инициализации
             # мастера или для приложений, подключающихся к базе.
             # Для репликации важны только master-хост и учетные данные репликации.
-            # MYSQL_DATABASE: api_tinderon
-            # MYSQL_USER: api_tinderon
-            # MYSQL_PASSWORD: 0BJTpH8decyEykXp
+            MYSQL_DATABASE: api_tinderon
+            MYSQL_USER: api_tinderon
+            MYSQL_PASSWORD: 0BJTpH8decyEykXp
             MYSQL_MASTER_HOST: "176.118.167.210"
             MYSQL_MASTER_USER: "replica"
             MYSQL_MASTER_PASSWORD: "slTy19g37CTVfmFHd2jDTHiyijtgcsrU"
@@ -18,7 +18,5 @@ services:
         ports:
             - "3307:3306" # Маппинг порта 3306 внутри контейнера на 3307 на хосте
         volumes:
-            - replica_data:/var/lib/mysql # Сохранение данных slave на хосте
+            - ./storage/mysql:/var/lib/mysql # Сохранение данных slave на хосте
         restart: unless-stopped # Автоматический перезапуск контейнера, если он останавливается
-volumes:
-    replica_data: # Объявление volume

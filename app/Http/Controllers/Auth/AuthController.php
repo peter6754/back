@@ -25,6 +25,11 @@ class AuthController extends Controller
      * @var array|array[]
      */
     private array $socialProviders = [
+//        [
+//            'icon' => 'fab fa-telegram',
+//            'provider' => 'telegram',
+//            'title' => 'Telegram'
+//        ],
         [
             'icon' => 'fab fa-google',
             'provider' => 'google',
@@ -34,7 +39,7 @@ class AuthController extends Controller
             'icon' => 'fab fa-apple',
             'provider' => 'apple',
             'title' => 'Apple'
-        ],
+        ]
     ];
 
     /**
@@ -202,7 +207,7 @@ class AuthController extends Controller
             Log::debug("Social authentication debug:", $data);
 
             // Set redirect url
-            $redirectUrl = 'https://web.tinderone.ru/';
+            $redirectUrl = 'https://web.tinderone.app/';
             if ($browser->isMobile()) {
                 $redirectUrl = 'tinderone://';
             }

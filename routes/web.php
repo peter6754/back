@@ -19,20 +19,20 @@ Route::prefix('recommendations')->middleware('auth')->group(function () {
     // Get top profiles
     Route::get('top-profiles', [RecommendationsController::class, 'getTopProfiles']);
 
-    // Delete matched user
-    Route::delete('match/{id}', [RecommendationsController::class, 'deleteMatchedUser']);
-
-    // Like action
-    Route::post('like', [RecommendationsController::class, 'like']);
-
-    // Dislike action
-    Route::post('dislike', [RecommendationsController::class, 'dislike']);
+    // Superlike action
+    Route::post('superlike', [RecommendationsController::class, 'superlike']);
 
     // Rollback action
     Route::post('rollback', [RecommendationsController::class, 'rollback']);
 
-    // Superlike action
-    Route::post('superlike', [RecommendationsController::class, 'superlike']);
+    // Delete matched
+    Route::delete('match/{id}', [RecommendationsController::class, 'match']);
+
+    // Dislike action
+    Route::post('dislike', [RecommendationsController::class, 'dislike']);
+
+    // Like action
+    Route::post('like', [RecommendationsController::class, 'like']);
 });
 
 // Payments system routes
@@ -80,14 +80,24 @@ Route::prefix('application')->middleware('auth')->group(function () {
 
 // Auth routes
 Route::prefix('auth')->group(function () {
+    // Phone login
     Route::post('login', [AuthController::class, 'login'])->name('auth.verify');
     Route::post('verify-login', [AuthController::class, 'verify'])->name('auth.login');
 
+    // Telegram
+    Route::post('telegram', [AuthController::class, 'telegram'])->name('auth.telegram');
+
+    // Social
     Route::get('social/list', [AuthController::class, 'socialLinks'])->name('auth.social.list');
     Route::any('social/{provider}/callback', [AuthController::class, 'socialCallback']);
     Route::get('social/{provider}', function ($provider) {
-        if (!empty(config("services.{$provider}.client_id"))) {
-            return Socialite::driver($provider)->redirect();
+        if (
+            !empty(config("services.{$provider}.client_id")) ||
+            !empty(config("services.{$provider}.redirect"))
+        ) {
+            return Socialite::driver($provider)->redirectUrl(
+                url(config("services.{$provider}.redirect"))
+            )->redirect();
         }
         abort(404);
     });
