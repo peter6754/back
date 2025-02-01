@@ -29,6 +29,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withSchedule(function (Schedule $schedule) {
+        // Clear telescope
+        $schedule->command('telescope:prune --hours=72')
+            ->everySixHours();
+
         // Обработка очереди писем каждые 5 минут
         $schedule->command('mail:process-queue')
             ->everyFiveMinutes();
