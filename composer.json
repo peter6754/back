@@ -31,7 +31,8 @@
         "socialiteproviders/telegram": "^4.1",
         "socialiteproviders/google": "^4.1",
         "socialiteproviders/apple": "^5.6",
-        "spatie/laravel-data": "^4.17"
+        "spatie/laravel-data": "^4.17",
+        "unitpay/php-sdk": "dev-master"
     },
     "require-dev": {
         "backpack/generators": "^4.0",

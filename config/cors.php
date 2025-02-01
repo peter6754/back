@@ -32,5 +32,5 @@ return [
     'allowed_origins_patterns' => [],
     'supports_credentials' => false,
     'exposed_headers' => [],
-    'max_age' => 0,
+    'max_age' => 86400
 ];
