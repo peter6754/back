@@ -249,7 +249,7 @@ class RecommendationService
     public function like(string $userId, array $params)
     {
         // Оптимизация: загружаем только необходимые данные
-        $user = Secondaryuser::with(['deviceTokens', 'userInformation', 'userSettings'])
+        $user = Secondaryuser::with(['deviceTokens', 'userInformation'])
             ->select(['id', 'email'])
             ->findOrFail($params['user_id']);
 
@@ -338,7 +338,7 @@ class RecommendationService
      */
     public function superlike(string $userId, array $params)
     {
-        $user = Secondaryuser::with(['deviceTokens', 'userInformation', 'userSettings'])
+        $user = Secondaryuser::with(['deviceTokens', 'userInformation'])
             ->select(['id', 'email'])
             ->findOrFail($params['user_id']);
 
