@@ -249,8 +249,8 @@ class RecommendationService
     public function like(string $userId, array $params)
     {
         // Оптимизация: загружаем только необходимые данные
-        $user = Secondaryuser::select(['id'])
-            ->with(['userInformation:id,user_id,superboom_due_date']) // Только нужные поля
+        $user = Secondaryuser::with(['deviceTokens', 'userInformation', 'userSettings'])
+            ->select(['id', 'email'])
             ->findOrFail($params['user_id']);
 
         // Проверяем существование реакции за один запрос
