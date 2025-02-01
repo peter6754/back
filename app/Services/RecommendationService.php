@@ -248,18 +248,21 @@ class RecommendationService
      */
     public function like(string $userId, array $params)
     {
-        $user = Secondaryuser::with(['deviceTokens', 'userInformation', 'userSettings'])
-            ->select(['id', 'email'])
+        // Оптимизация: загружаем только необходимые данные
+        $user = Secondaryuser::select(['id'])
+            ->with(['userInformation:id,user_id,superboom_due_date']) // Только нужные поля
             ->findOrFail($params['user_id']);
 
-        // Проверяем существование реакции
-        $reaction = UserReaction::where('reactor_id', $params['user_id'])
+        // Проверяем существование реакции за один запрос
+        $reactionExists = UserReaction::where('reactor_id', $params['user_id'])
             ->where('user_id', $userId)
             ->whereIn('type', ['like', 'superlike'])
-            ->first();
+            ->exists();
 
-        $superboom = $user->userInformation->superboom_due_date >= now();
+        // Оптимизация: вычисляем superboom заранее
+        $superboom = $user->userInformation && $user->userInformation->superboom_due_date >= now();
 
+        // Оптимизация: используем insertOrIgnore или прямой insert/update
         UserReaction::updateOrCreate(
             [
                 'user_id' => $params['user_id'],
@@ -268,13 +271,13 @@ class RecommendationService
             [
                 'from_top' => $params['from_top'],
                 'superboom' => $superboom,
-                'type' => 'superlike',
-                'date' => now()
+                'type' => 'like',
+                'date' => now(),
             ]
         );
 
         return [
-            'is_match' => (bool)$reaction
+            'is_match' => $reactionExists,
         ];
     }
 
