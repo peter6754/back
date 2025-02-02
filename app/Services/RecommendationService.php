@@ -219,7 +219,7 @@ class RecommendationService
             })[0];
 
             if (empty($forPage)) {
-                $fromDb = $this->getRecommendationsForCache($userId, $query, $this->recommendationsCacheSize);
+                $fromDb = $this->_getRecommendationsForCache($userId, $query, $this->recommendationsCacheSize);
                 $forPage = array_splice($fromDb, 0, $this->recommendationsPageSize);
 
                 if (empty($forPage)) {
@@ -232,7 +232,7 @@ class RecommendationService
                 }
             }
 
-            return $this->getRecommendationsPage($userId, $forPage);
+            return $this->_getRecommendationsPage($userId, $forPage);
         } catch (\Exception $e) {
             Log::channel('recommendations')->error('getRecommendations_v2 error: ' . $e->getMessage(), [
                 'user_id' => $userId,
@@ -241,19 +241,11 @@ class RecommendationService
         }
     }
 
-
-
-    public function dislike(string $userId, array $params)
-    {
-        ProcessReaction::dispatch(
-            ProcessReaction::ACTION_DISLIKE,
-            $userId,
-            $params
-        )->onQueue('reactions');
-
-        return ['message' => 'Reaction processing started'];
-    }
-
+    /**
+     * @param string $userId
+     * @param array $params
+     * @return array
+     */
     public function like(string $userId, array $params)
     {
         $reactionExists = UserReaction::where('reactor_id', $params['user_id'])
@@ -269,12 +261,6 @@ class RecommendationService
 
         return ['is_match' => $reactionExists];
     }
-
-    /**
-     * @param string $userId
-     * @param array $params
-     * @return array
-     */
     public function like2(string $userId, array $params)
     {
         // Оптимизация: загружаем только необходимые данные
@@ -315,6 +301,16 @@ class RecommendationService
      * @param array $params
      * @return array|null
      */
+    public function dislike(string $userId, array $params)
+    {
+        ProcessReaction::dispatch(
+            ProcessReaction::ACTION_DISLIKE,
+            $userId,
+            $params
+        )->onQueue('reactions');
+
+        return ['message' => 'Reaction processing started'];
+    }
     public function dislike2(string $userId, array $params)
     {
         UserReaction::updateOrCreate(
@@ -336,9 +332,19 @@ class RecommendationService
     /**
      * @param string $userId
      * @param array $params
-     * @return string[]|void
+     * @return string[]
      */
     public function rollback(string $userId, array $params)
+    {
+        ProcessReaction::dispatch(
+            ProcessReaction::ACTION_ROLLBACK,
+            $userId,
+            $params
+        )->onQueue('reactions');
+
+        return ['message' => 'Rollback processing started'];
+    }
+    public function rollback2(string $userId, array $params)
     {
         $lastReacted = UserReaction::where('reactor_id', $userId)
             ->latest('date')
@@ -366,6 +372,21 @@ class RecommendationService
      * @return bool[]|void
      */
     public function superlike(string $userId, array $params)
+    {
+        $reactionExists = UserReaction::where('reactor_id', $params['user_id'])
+            ->where('user_id', $userId)
+            ->whereIn('type', ['like', 'superlike'])
+            ->exists();
+
+        ProcessReaction::dispatch(
+            ProcessReaction::ACTION_SUPERLIKE,
+            $userId,
+            $params
+        )->onQueue('reactions');
+
+        return ['is_match' => $reactionExists];
+    }
+    public function superlike2(string $userId, array $params)
     {
         $user = Secondaryuser::with(['deviceTokens', 'userInformation'])
             ->select(['id', 'email'])
@@ -424,7 +445,7 @@ class RecommendationService
      * @param int $cacheSize
      * @return array
      */
-    private function getRecommendationsForCache(string $userId, array $query, int $cacheSize): array
+    private function _getRecommendationsForCache(string $userId, array $query, int $cacheSize): array
     {
         $user = Secondaryuser::with(['settings', 'preferences'])
             ->select(['id', 'phone', 'lat', 'long'])
@@ -511,7 +532,7 @@ class RecommendationService
      * @param $usersIds
      * @return array
      */
-    private function getRecommendationsPage(string $userId, $usersIds): array
+    private function _getRecommendationsPage(string $userId, $usersIds): array
     {
         $user = Secondaryuser::select(['lat', 'long'])->findOrFail($userId);
 
