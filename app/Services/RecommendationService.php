@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\UserReaction;
+use App\Jobs\ProcessReaction;
 use App\Models\UserInformation;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Redis;
@@ -241,12 +242,40 @@ class RecommendationService
     }
 
 
+
+    public function dislike(string $userId, array $params)
+    {
+        ProcessReaction::dispatch(
+            ProcessReaction::ACTION_DISLIKE,
+            $userId,
+            $params
+        )->onQueue('reactions');
+
+        return ['message' => 'Reaction processing started'];
+    }
+
+    public function like(string $userId, array $params)
+    {
+        $reactionExists = UserReaction::where('reactor_id', $params['user_id'])
+            ->where('user_id', $userId)
+            ->whereIn('type', ['like', 'superlike'])
+            ->exists();
+
+        ProcessReaction::dispatch(
+            ProcessReaction::ACTION_LIKE,
+            $userId,
+            $params
+        )->onQueue('reactions');
+
+        return ['is_match' => $reactionExists];
+    }
+
     /**
      * @param string $userId
      * @param array $params
      * @return array
      */
-    public function like(string $userId, array $params)
+    public function like2(string $userId, array $params)
     {
         // Оптимизация: загружаем только необходимые данные
         $user = Secondaryuser::with(['deviceTokens', 'userInformation'])
@@ -286,7 +315,7 @@ class RecommendationService
      * @param array $params
      * @return array|null
      */
-    public function dislike(string $userId, array $params)
+    public function dislike2(string $userId, array $params)
     {
         UserReaction::updateOrCreate(
             [
