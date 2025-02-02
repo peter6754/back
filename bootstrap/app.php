@@ -29,6 +29,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withSchedule(function (Schedule $schedule) {
+        // Clear reactions
+        $schedule->command('user-reactions:prune --days=90')
+            ->dailyAt('3:00');
+
         // Clear telescope
         $schedule->command('telescope:prune --hours=72')
             ->everySixHours();
