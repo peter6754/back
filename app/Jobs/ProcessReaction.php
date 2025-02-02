@@ -25,12 +25,14 @@ class ProcessReaction implements ShouldQueue
     public function __construct(
         public string $actionType,
         public string $userId,
-        public array $params
-    ) {}
+        public array  $params
+    )
+    {
+    }
 
     public function handle(): array
     {
-        return match($this->actionType) {
+        return match ($this->actionType) {
             self::ACTION_LIKE => $this->processLike(),
             self::ACTION_DISLIKE => $this->processDislike(),
             self::ACTION_SUPERLIKE => $this->processSuperlike(),
@@ -147,6 +149,6 @@ class ProcessReaction implements ShouldQueue
 
     public function failed(\Throwable $exception)
     {
-        Log::error("Reaction processing failed: {$exception->getMessage()}");
+        Log::channel('recommendations')->error("Reaction processing failed: {$exception->getMessage()}");
     }
 }
