@@ -43,7 +43,9 @@ class AuthMiddleware
             }
 
             // Добавляем пользователя в запрос
-            $request->merge(['customer' => $user->toArray()]);
+            $request->setUserResolver(function () use ($user) {
+                return $user;
+            });
 
             return $next($request);
         } catch (\Exception $e) {

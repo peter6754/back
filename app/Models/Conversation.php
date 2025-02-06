@@ -17,7 +17,7 @@ class Conversation extends Model
     protected $table = 'conversations';
 
     /**
-     * Disable auto increment
+     * Disable timestamps
      * @var bool
      */
     public $timestamps = false;
@@ -54,7 +54,7 @@ class Conversation extends Model
      */
     public function user1(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user1_id', 'id');
+        return $this->belongsTo(Secondaryuser::class, 'user1_id', 'id');
     }
 
     /**
@@ -63,7 +63,7 @@ class Conversation extends Model
      */
     public function user2(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user2_id', 'id');
+        return $this->belongsTo(Secondaryuser::class, 'user2_id', 'id');
     }
 
     /**

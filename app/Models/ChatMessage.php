@@ -17,10 +17,10 @@ class ChatMessage extends Model
     protected $table = 'chat_messages';
 
     /**
-     * Disable auto increment
+     * Enable timestamps
      * @var bool
      */
-    public $timestamps = false;
+    public $timestamps = true;
 
     /**
      * The attributes that are mass assignable.

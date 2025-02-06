@@ -133,4 +133,20 @@ trait ApiResponseTrait
             Response::HTTP_UNAUTHORIZED
         );
     }
+
+    /**
+     * Shorthand for success response
+     */
+    protected function success(mixed $data = null, int $httpCode = Response::HTTP_OK): JsonResponse
+    {
+        return $this->successResponse($data, $httpCode);
+    }
+
+    /**
+     * Shorthand for error response
+     */
+    protected function error(string $message, int $httpCode = Response::HTTP_BAD_REQUEST): JsonResponse
+    {
+        return $this->errorResponse($message, 0, $httpCode);
+    }
 }

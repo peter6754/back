@@ -2,11 +2,11 @@
 
 namespace App\Events;
 
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Broadcasting\Channel;
 
 class MessageSent implements ShouldBroadcast
 {
@@ -24,6 +24,15 @@ class MessageSent implements ShouldBroadcast
 
     public function broadcastAs()
     {
-        return 'message';
+        return 'message.sent';
+    }
+
+    public function broadcastWith()
+    {
+        return [
+            'conversation_id' => $this->messageData['conversation_id'],
+            'message' => $this->messageData['data'],
+            'timestamp' => now()->toISOString(),
+        ];
     }
 }

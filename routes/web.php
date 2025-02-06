@@ -1,13 +1,14 @@
 <?php
 
-use OpenApi\Generator;
+use App\Http\Controllers\Application\PricesController;
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Chat\ChatController;
+use App\Http\Controllers\Payments\PaymentsController;
+use App\Http\Controllers\Payments\StatusesController;
+use App\Http\Controllers\Recommendations\RecommendationsController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
-use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\Payments\StatusesController;
-use App\Http\Controllers\Payments\PaymentsController;
-use App\Http\Controllers\Application\PricesController;
-use App\Http\Controllers\Recommendations\RecommendationsController;
+use OpenApi\Generator;
 
 // Recommendations routes
 Route::prefix('recommendations')->middleware('auth')->group(function () {
@@ -61,7 +62,6 @@ Route::prefix('payment')->group(function () {
         ->name('statuses.fail');
 });
 
-
 // Prices routes
 Route::prefix('application')->middleware('auth')->group(function () {
     Route::prefix('prices')->group(function () {
@@ -74,6 +74,30 @@ Route::prefix('application')->middleware('auth')->group(function () {
         Route::get('gifts/{id}', [PricesController::class, 'getGifts'])
             ->name('prices.gifts');
     });
+});
+
+// Chat/Conversations API routes
+Route::prefix('api/conversations')->middleware('auth')->group(function () {
+    // получить все чаты текущего юзера
+    Route::get('/', [ChatController::class, 'getConversations']);
+
+    // Получить непрочитанные сообщения в чате
+    Route::get('/{chat_id}/unread-messages-status', [ChatController::class, 'getUnreadMessagesStatus']);
+    // Создать чат с пользователем
+    Route::post('/{user_id}', [ChatController::class, 'createConversation']);
+
+    // Удалить чат с пользователем
+    Route::delete('/{chat_id}', [ChatController::class, 'deleteConversation']);
+
+    // Закрепить/открепить чат
+    Route::post('/pin/{chat_id}', [ChatController::class, 'togglePinConversation']);
+});
+
+// Chat message routes (WebSocket-enabled)
+Route::prefix('chat')->middleware('auth')->group(function () {
+    Route::post('/send-message', [ChatController::class, 'sendMessage']);
+    Route::post('/send-media', [ChatController::class, 'sendMedia']);
+    Route::post('/send-gift', [ChatController::class, 'sendGift']);
 });
 
 // Auth routes
@@ -90,8 +114,8 @@ Route::prefix('auth')->group(function () {
     Route::any('social/{provider}/callback', [AuthController::class, 'socialCallback']);
     Route::get('social/{provider}', function ($provider) {
         if (
-            !empty(config("services.{$provider}.client_id")) ||
-            !empty(config("services.{$provider}.redirect"))
+            ! empty(config("services.{$provider}.client_id")) ||
+            ! empty(config("services.{$provider}.redirect"))
         ) {
             return Socialite::driver($provider)->redirectUrl(
                 url(config("services.{$provider}.redirect"))
@@ -104,12 +128,11 @@ Route::prefix('auth')->group(function () {
 // Default routes
 Route::get('swagger', function () {
     $getGenerator = Generator::scan([
-        base_path() . "/App/Http/Controllers",
+        base_path().'/App/Http/Controllers',
     ]);
+
     return response($getGenerator->toYaml());
 });
 Route::get('/', function () {
     return view('welcome');
 });
-
-
