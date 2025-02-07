@@ -125,7 +125,7 @@ class TransactionProcessCrudController extends CrudController
             'name' => 'subscription_info',
             'label' => 'Подписка',
             'type' => 'closure',
-            'function' => function($entry) {
+            'function' => function ($entry) {
                 $package = optional($entry->boughtSubscription)->package;
                 $subscription = optional($package)->subscription;
                 $term = optional($package)->term;
@@ -141,6 +141,10 @@ class TransactionProcessCrudController extends CrudController
                 return $subscription->type . ' (' . ($termMap[$term] ?? $term) . ')';
             }
         ]);
+
+        CRUD::filter('id')->type('text')->whenActive(function ($value) {
+            CRUD::addClause('where', 'id', 'LIKE', "$value");
+        });
 
         CRUD::filter('Статус')
             ->type('dropdown')
@@ -193,8 +197,8 @@ class TransactionProcessCrudController extends CrudController
                 'six_months' => '6 мес',
                 'year' => '12 мес',
             ])
-            ->whenActive(function($value) {
-                CRUD::addClause('whereHas', 'boughtSubscription.package', function($q) use ($value) {
+            ->whenActive(function ($value) {
+                CRUD::addClause('whereHas', 'boughtSubscription.package', function ($q) use ($value) {
                     $q->where('term', $value);
                 });
             });
@@ -207,8 +211,8 @@ class TransactionProcessCrudController extends CrudController
                 'Tinderone Gold' => 'Tinderone Gold',
                 'Tinderone Premium' => 'Tinderone Premium',
             ])
-            ->whenActive(function($value) {
-                CRUD::addClause('whereHas', 'boughtSubscription.package.subscription', function($q) use ($value) {
+            ->whenActive(function ($value) {
+                CRUD::addClause('whereHas', 'boughtSubscription.package.subscription', function ($q) use ($value) {
                     $q->where('type', $value);
                 });
             });
@@ -251,6 +255,8 @@ class TransactionProcessCrudController extends CrudController
          * Columns can be defined using the fluent syntax:
          * - CRUD::column('price')->type('number');
          */
+
+        CRUD::column('id')->type('number')->label('ID Заказа');
         CRUD::column('subscription_id')->label('subscription_id')->visibleInTable(false)->visibleInShow(true);
         CRUD::column('subscriber_id')->label('subscriber_id')->visibleInTable(false)->visibleInShow(true);
         CRUD::column('transaction_id')->label('transaction_id')->visibleInTable(false)->visibleInShow(true);
