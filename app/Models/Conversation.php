@@ -67,6 +67,15 @@ class Conversation extends Model
     }
 
     /**
+     * Get all messages for this conversation.
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function messages()
+    {
+        return $this->hasMany(ChatMessage::class, 'conversation_id');
+    }
+
+    /**
      * Scope to find conversation between two users.
      * @param \Illuminate\Database\Eloquent\Builder $query
      * @param string $user1Id

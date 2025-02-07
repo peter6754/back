@@ -10,7 +10,6 @@ use App\Models\Secondaryuser as User;
 use App\Services\ChatService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class ChatController extends Controller
 {
@@ -246,6 +245,160 @@ class ChatController extends Controller
 
         } catch (\Exception $e) {
             return $this->error('Failed to delete conversation', 500);
+        }
+    }
+
+    /**
+     * Get messages from a specific conversation
+     */
+    public function getMessages(Request $request, int $chat_id): JsonResponse
+    {
+        try {
+            $userId = $request->user()->id;
+            $page = (int) $request->get('page', 1);
+            $limit = min((int) $request->get('limit', 30), 100); // Max 100 messages per page
+
+            // Verify that the user has access to this conversation
+            $conversation = Conversation::where('id', $chat_id)
+                ->where(function ($query) use ($userId) {
+                    $query->where('user1_id', $userId)
+                        ->orWhere('user2_id', $userId);
+                })
+                ->first();
+
+            if (!$conversation) {
+                return $this->error('Conversation not found or access denied', 404);
+            }
+
+            // Get messages with pagination
+            $messages = ChatMessage::where('conversation_id', $chat_id)
+                ->with(['sender:id,name'])
+                ->orderBy('id', 'desc')
+                ->offset(($page - 1) * $limit)
+                ->limit($limit)
+                ->get()
+                ->reverse()
+                ->values()
+                ->map(function ($message) {
+                    return [
+                        'id' => $message->id,
+                        'sender_id' => $message->sender_id,
+                        'message' => $message->message,
+                        'type' => $message->type,
+                        'created_at' => $message->created_at,
+                        'is_read' => $message->is_seen,
+                        'attachments' => [], // Add attachment logic if needed
+                        'gift' => $message->gift,
+                        'contact_type' => $message->contact_type,
+                    ];
+                });
+
+            // Mark messages as read for the current user
+            ChatMessage::where('conversation_id', $chat_id)
+                ->where('receiver_id', $userId)
+                ->where('is_seen', false)
+                ->update(['is_seen' => true]);
+
+            return $this->success($messages);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to fetch messages: ' . $e->getMessage());
+            return $this->error('Failed to fetch messages: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Upload media file to a conversation
+     */
+    public function uploadMedia(Request $request, int $chat_id): JsonResponse
+    {
+        try {
+            $userId = $request->user()->id;
+
+            // Verify that the user has access to this conversation
+            $conversation = Conversation::where('id', $chat_id)
+                ->where(function ($query) use ($userId) {
+                    $query->where('user1_id', $userId)
+                        ->orWhere('user2_id', $userId);
+                })
+                ->first();
+
+            if (!$conversation) {
+                return $this->error('Conversation not found or access denied', 404);
+            }
+
+            // Validate file upload
+            $request->validate([
+                'file' => 'required|file|max:10240|mimes:jpg,jpeg,png,gif,mp4,mov,avi,pdf,doc,docx,txt'
+            ]);
+
+            $file = $request->file('file');
+            $fileName = time() . '_' . $file->getClientOriginalName();
+            
+            // Store file in public/storage/chat_media directory
+            $filePath = $file->storeAs('chat_media', $fileName, 'public');
+            $fileUrl = asset('storage/' . $filePath);
+
+            // Determine receiver (the other user in conversation)
+            $receiverId = $conversation->user1_id === $userId 
+                ? $conversation->user2_id 
+                : $conversation->user1_id;
+
+            // Create message record using ORM
+            $message = ChatMessage::create([
+                'conversation_id' => $chat_id,
+                'sender_id' => $userId,
+                'receiver_id' => $receiverId,
+                'message' => $filePath, // Store file path as message content
+                'type' => 'media',
+                'is_seen' => false
+            ]);
+
+            return $this->success([
+                'message_id' => $message->id,
+                'file_url' => $fileUrl,
+                'file_type' => $file->getMimeType()
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->error('Validation failed: ' . implode(', ', $e->validator->errors()->all()), 422);
+        } catch (\Exception $e) {
+            \Log::error('Failed to upload media: ' . $e->getMessage());
+            return $this->error('Failed to upload media', 500);
+        }
+    }
+
+    /**
+     * Mark all messages in a conversation as read
+     */
+    public function markMessagesAsRead(Request $request, int $chat_id): JsonResponse
+    {
+        try {
+            $userId = $request->user()->id;
+
+            // Verify that the user has access to this conversation
+            $conversation = Conversation::where('id', $chat_id)
+                ->where(function ($query) use ($userId) {
+                    $query->where('user1_id', $userId)
+                        ->orWhere('user2_id', $userId);
+                })
+                ->first();
+
+            if (!$conversation) {
+                return $this->error('Conversation not found or access denied', 404);
+            }
+
+            // Mark all unread messages as read for the current user
+            ChatMessage::where('conversation_id', $chat_id)
+                ->where('receiver_id', $userId)
+                ->where('is_seen', false)
+                ->update(['is_seen' => true]);
+
+            return $this->success(['success' => true]);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to mark messages as read: ' . $e->getMessage());
+            return $this->error('Failed to mark messages as read', 500);
         }
     }
 
