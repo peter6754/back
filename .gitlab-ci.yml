@@ -1,7 +1,7 @@
 image: debian:bullseye
 
 before_script:
-  - apt-get update && apt-get install -y openssh-client php-cli
+  - apt-get update && apt-get install -y openssh-client
 
 stages:
   - deploy
