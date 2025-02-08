@@ -7,7 +7,6 @@
     </a>
 </li>
 
-
 @if (backpack_user()->can('access secondaryusers'))
     <x-backpack::menu-item title="Пользователи" icon="la la-question" :link="backpack_url('secondaryuser')"/>
 @endif
@@ -27,6 +26,7 @@
 @if (backpack_user()->can('access bought-subscriptions'))
     <x-backpack::menu-item title="Подписки" icon="la la-question" :link="backpack_url('bought-subscriptions')"/>
 @endif
+
 
 <span class="nav-separator">Администрирование</span>
 @if(backpack_user()->hasRole('Superadmin'))
