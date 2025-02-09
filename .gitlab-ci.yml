@@ -1,18 +1,21 @@
 image: debian:bullseye
 
 before_script:
-  - apt-get update && apt-get install -y openssh-client php-cli
+  - apt-get update && apt-get install -y openssh-client
 
 stages:
   - deploy
 
-deploy_to_production:
+deploy:
   stage: deploy
   script:
     - mkdir -p ~/.ssh
     - echo -e "$GITLAB_PRIVATE_KEY" > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
     - ssh-keyscan -H 176.118.167.210 >> ~/.ssh/known_hosts
-    - ssh root@176.118.167.210 "cd /var/www/admin.tinderone.ru && ./admin_panel_update.sh"
+    - ssh-keyscan -H 176.118.167.118 >> ~/.ssh/known_hosts
+    - ssh root@176.118.167.210 "cd /var/www/admin.tinderone.ru && chmod +x ./deploy.sh && ./deploy.sh"
+    - ssh root@176.118.167.210 "cd /var/www/api.tinderone.app && chmod +x ./deploy.sh && ./deploy.sh"
+    - ssh root@176.118.167.118 "cd /var/www/api.tinderone.app && chmod +x ./deploy.sh && ./deploy.sh"
   only:
     - main

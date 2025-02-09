@@ -7,13 +7,8 @@
     </a>
 </li>
 
-
 @if (backpack_user()->can('access secondaryusers'))
     <x-backpack::menu-item title="Пользователи" icon="la la-question" :link="backpack_url('secondaryuser')"/>
-@endif
-
-@if (backpack_user()->can('access bought-subscriptions'))
-    <x-backpack::menu-item title="Подписки" icon="la la-question" :link="backpack_url('bought-subscriptions')"/>
 @endif
 
 @if (backpack_user()->can('access verification-requests'))
@@ -26,6 +21,14 @@
                            :link="backpack_url('in-queue-for-delete-user')"/>
 @endif
 
+<span class="nav-separator">Финансы и прочее</span>
+<x-backpack::menu-item title="Транзакции" icon="la la-question" :link="backpack_url('transaction-process')" />
+@if (backpack_user()->can('access bought-subscriptions'))
+    <x-backpack::menu-item title="Подписки" icon="la la-question" :link="backpack_url('bought-subscriptions')"/>
+@endif
+
+
+<span class="nav-separator">Администрирование</span>
 @if(backpack_user()->hasRole('Superadmin'))
     <x-backpack::menu-dropdown title="Администраторы" icon="la la-lock">
         <x-backpack::menu-dropdown-item title="Пользователи" icon="la la-user" :link="backpack_url('user')"/>
@@ -34,14 +37,13 @@
     </x-backpack::menu-dropdown>
 @endif
 
-<x-backpack::menu-item title="Статистика(временно)" icon="la la-question" :link="backpack_url('statistics')"/>
-<x-backpack::menu-item title="Транзакции" icon="la la-question" :link="backpack_url('transaction-process')" />
-
 <x-backpack::menu-dropdown title="Почтовая система" icon="la la-envelope">
     <x-backpack::menu-dropdown-item title="Шаблоны писем" icon="la la-file-text-o" :link="backpack_url('mail-template')" />
     <x-backpack::menu-dropdown-item title="Очередь писем" icon="la la-list" :link="backpack_url('mail-queue')" />
     <x-backpack::menu-dropdown-item title="Отправить письмо" icon="la la-paper-plane" :link="backpack_url('send-mail')" />
 </x-backpack::menu-dropdown>
+
+<x-backpack::menu-item title="Статистика(временно)" icon="la la-question" :link="backpack_url('statistics')"/>
 
 <span class="nav-separator">Утилиты</span>
 <x-backpack::menu-item title='Log Manager' icon='la la-terminal' :link="backpack_url('log')" />

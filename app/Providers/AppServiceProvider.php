@@ -68,5 +68,9 @@ class AppServiceProvider extends ServiceProvider
             $schema = filter_var(request()->getHost(), FILTER_VALIDATE_IP) ? "http://" : "https://";
             \URL::forceRootUrl($schema . request()->getHttpHost());
         }
+
+        if ($this->app->environment('production')) {
+           \URL::forceScheme('https');
+        }
     }
 }

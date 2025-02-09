@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Migrate\ProxyController;
 use App\Http\Controllers\Users\ReferenceDataController;
 use App\Http\Controllers\Users\UserController;
 use OpenApi\Generator;
@@ -133,14 +134,19 @@ Route::prefix('users')->middleware('auth')->group(function () {
 });
 
 // Default routes
+
 Route::get('swagger', function () {
     $getGenerator = Generator::scan([
         base_path() . "/App/Http/Controllers",
     ]);
     return response($getGenerator->toYaml());
 });
+
 Route::get('/', function () {
     return view('welcome');
 });
 
-
+// Fallback route - будет срабатывать, если ни один другой маршрут не совпал
+Route::any('{any}', [ProxyController::class, 'handle'])
+    ->where('any', '.*')
+    ->middleware('proxy');

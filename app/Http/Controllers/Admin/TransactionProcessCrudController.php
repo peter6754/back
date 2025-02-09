@@ -39,6 +39,146 @@ class TransactionProcessCrudController extends CrudController
         CRUD::denyAccess(['update', 'delete', 'create']);
         CRUD::orderBy('created_at', 'desc');
 
+        CRUD::addColumn([
+            'name' => 'user_profile',
+            'label' => 'Профиль',
+            'type' => 'custom_html',
+            'escaped' => false,
+            'value' => function ($entry) {
+                $url = url('/admin/secondaryuser/' . $entry->user_id . '/show');
+                return '<a href="' . $url . '" target="_blank">Профиль</a>';
+            },
+        ]);
+
+        CRUD::addColumn([
+            'name' => 'subscription_info',
+            'label' => 'Подписка',
+            'type' => 'closure',
+            'function' => function ($entry) {
+                $package = optional($entry->boughtSubscription)->package;
+                $subscription = optional($package)->subscription;
+                $term = optional($package)->term;
+
+                if (!$subscription || !$term) return '—';
+
+                $termMap = [
+                    'one_month' => '1 мес',
+                    'six_months' => '6 мес',
+                    'year' => '12 мес',
+                ];
+
+                return $subscription->type . ' (' . ($termMap[$term] ?? $term) . ')';
+            }
+        ]);
+
+        CRUD::filter('id')->type('text')->whenActive(function ($value) {
+            CRUD::addClause('where', 'id', 'LIKE', "$value");
+        });
+
+        CRUD::filter('Статус')
+            ->type('dropdown')
+            ->values([
+                PaymentsService::ORDER_STATUS_COMPLETE => 'Успешно',
+                PaymentsService::ORDER_STATUS_PENDING => 'Ожидание',
+                PaymentsService::ORDER_STATUS_CANCEL => 'Закрыто',
+            ])
+            ->whenActive(function ($value) {
+                CRUD::addClause('where', 'status', $value);
+            });
+
+        CRUD::filter('Тип')
+            ->type('dropdown')
+            ->values([
+                PaymentsService::ORDER_PRODUCT_SUBSCRIPTION => 'Подписка',
+                PaymentsService::ORDER_PRODUCT_SERVICE => 'Пакет сервис',
+                PaymentsService::ORDER_PRODUCT_GIFT => 'Подарок',
+            ])
+            ->whenActive(function ($value) {
+                CRUD::addClause('where', 'type', $value);
+            });
+
+        CRUD::filter('created_at')
+            ->type('date_range')
+            ->label('Создано')
+            ->date_range_options([
+                'timePicker' => true,
+                'locale' => ['format' => 'YYYY-MM-DD HH:mm:ss'],
+            ])
+            ->whenActive(function ($value) {
+                $dates = json_decode($value);
+                if (!empty($dates->from) && !empty($dates->to)) {
+                    CRUD::addClause('where', 'created_at', '>=', $dates->from);
+                    CRUD::addClause('where', 'created_at', '<=', $dates->to);
+                }
+            });
+
+        CRUD::filter('email')
+            ->type('text')
+            ->whenActive(function ($value) {
+                CRUD::addClause('where', 'email', 'LIKE', "%$value%");
+            });
+
+        CRUD::filter('term')
+            ->type('dropdown')
+            ->label('Длительность подписки')
+            ->values([
+                'one_month' => '1 мес',
+                'six_months' => '6 мес',
+                'year' => '12 мес',
+            ])
+            ->whenActive(function ($value) {
+                CRUD::addClause('whereHas', 'boughtSubscription.package', function ($q) use ($value) {
+                    $q->where('term', $value);
+                });
+            });
+
+        CRUD::filter('type')
+            ->type('dropdown')
+            ->label('Название пакета')
+            ->values([
+                'Tinderone Plus+' => 'Tinderone Plus+',
+                'Tinderone Gold' => 'Tinderone Gold',
+                'Tinderone Premium' => 'Tinderone Premium',
+            ])
+            ->whenActive(function ($value) {
+                CRUD::addClause('whereHas', 'boughtSubscription.package.subscription', function ($q) use ($value) {
+                    $q->where('type', $value);
+                });
+            });
+
+        CRUD::button('')->stack('line')->view('crud::buttons.quick')->meta([
+            'icon' => 'la la-user-times',
+            'class' => 'btn btn-primary',
+            'access' => true,
+            'wrapper' => [
+                'title' => 'Unsubscribe user',
+                'target' => '_blank',
+                'element' => 'a',
+                'href' => function ($entry) {
+                    if (empty($entry->subscription_id) || empty($entry->subscriber_id)) {
+                        return "javascript:alert('Это не подписка');";
+                    }
+                    $buildParams = http_build_query([
+                        "SubscriptionId" => $entry->subscription_id,
+                        "SubscriberId" => $entry->subscriber_id,
+                    ]);
+                    return url('https://auth.robokassa.ru/RecurringSubscriptionPage/Subscription/Unsubscribe?' . $buildParams);
+
+                },
+//                'href' => url('https://auth.robokassa.ru/RecurringSubscriptionPage/Subscription/Unsubscribe?SubscriptionId='.$entry->sub.'&SubscriberId=e5e44d67-0691-4432-8f03-6bab9424f552'),
+            ]
+        ]);
+
+    }
+
+    /**
+     * Define what happens when the List operation is loaded.
+     * @see  https://backpackforlaravel.com/docs/crud-operation-list-entries
+     * @return void
+     */
+    protected function setupListOperation()
+    {
+
         $today = TransactionProcess::getTodaySubscriptionsStats();
 //        $genders = ['m_f', 'm_m', 'f_f'];
         $todayMen = Transactions::getTodayTransactionsSumForMen();
@@ -109,148 +249,14 @@ class TransactionProcessCrudController extends CrudController
                 ->description('Вчера закончилось подписок'),
         ]);
 
-
-        CRUD::addColumn([
-            'name' => 'user_profile',
-            'label' => 'Профиль',
-            'type' => 'custom_html',
-            'escaped' => false,
-            'value' => function ($entry) {
-                $url = url('/admin/secondaryuser/' . $entry->user_id . '/show');
-                return '<a href="' . $url . '" target="_blank">Профиль</a>';
-            },
-        ]);
-
-        CRUD::addColumn([
-            'name' => 'subscription_info',
-            'label' => 'Подписка',
-            'type' => 'closure',
-            'function' => function($entry) {
-                $package = optional($entry->boughtSubscription)->package;
-                $subscription = optional($package)->subscription;
-                $term = optional($package)->term;
-
-                if (!$subscription || !$term) return '—';
-
-                $termMap = [
-                    'one_month' => '1 мес',
-                    'six_months' => '6 мес',
-                    'year' => '12 мес',
-                ];
-
-                return $subscription->type . ' (' . ($termMap[$term] ?? $term) . ')';
-            }
-        ]);
-
-        CRUD::filter('Статус')
-            ->type('dropdown')
-            ->values([
-                PaymentsService::ORDER_STATUS_COMPLETE => 'Успешно',
-                PaymentsService::ORDER_STATUS_PENDING => 'Ожидание',
-                PaymentsService::ORDER_STATUS_CANCEL => 'Закрыто',
-            ])
-            ->whenActive(function ($value) {
-                CRUD::addClause('where', 'status', $value);
-            });
-
-        CRUD::filter('Тип')
-            ->type('dropdown')
-            ->values([
-                PaymentsService::ORDER_PRODUCT_SUBSCRIPTION => 'Подписка',
-                PaymentsService::ORDER_PRODUCT_SERVICE => 'Пакет сервис',
-                PaymentsService::ORDER_PRODUCT_GIFT => 'Подарок',
-            ])
-            ->whenActive(function ($value) {
-                CRUD::addClause('where', 'type', $value);
-            });
-
-        CRUD::filter('created_at')
-            ->type('date_range')
-            ->label('Создано')
-            ->date_range_options([
-                'timePicker' => true,
-                'locale' => ['format' => 'YYYY-MM-DD HH:mm:ss'],
-            ])
-            ->whenActive(function ($value) {
-                $dates = json_decode($value);
-                if (!empty($dates->from) && !empty($dates->to)) {
-                    CRUD::addClause('where', 'created_at', '>=', $dates->from);
-                    CRUD::addClause('where', 'created_at', '<=', $dates->to);
-                }
-            });
-
-        CRUD::filter('email')
-            ->type('text')
-            ->whenActive(function ($value) {
-                CRUD::addClause('where', 'email', 'LIKE', "%$value%");
-            });
-
-        CRUD::filter('term')
-            ->type('dropdown')
-            ->label('Длительность подписки')
-            ->values([
-                'one_month' => '1 мес',
-                'six_months' => '6 мес',
-                'year' => '12 мес',
-            ])
-            ->whenActive(function($value) {
-                CRUD::addClause('whereHas', 'boughtSubscription.package', function($q) use ($value) {
-                    $q->where('term', $value);
-                });
-            });
-
-        CRUD::filter('type')
-            ->type('dropdown')
-            ->label('Название пакета')
-            ->values([
-                'Tinderone Plus+' => 'Tinderone Plus+',
-                'Tinderone Gold' => 'Tinderone Gold',
-                'Tinderone Premium' => 'Tinderone Premium',
-            ])
-            ->whenActive(function($value) {
-                CRUD::addClause('whereHas', 'boughtSubscription.package.subscription', function($q) use ($value) {
-                    $q->where('type', $value);
-                });
-            });
-
-        CRUD::button('')->stack('line')->view('crud::buttons.quick')->meta([
-            'icon' => 'la la-user-times',
-            'class' => 'btn btn-primary',
-            'access' => true,
-            'wrapper' => [
-                'title' => 'Unsubscribe user',
-                'target' => '_blank',
-                'element' => 'a',
-                'href' => function ($entry) {
-                    if (empty($entry->subscription_id) || empty($entry->subscriber_id)) {
-                        return "javascript:alert('Это не подписка');";
-                    }
-                    $buildParams = http_build_query([
-                        "SubscriptionId" => $entry->subscription_id,
-                        "SubscriberId" => $entry->subscriber_id,
-                    ]);
-                    return url('https://auth.robokassa.ru/RecurringSubscriptionPage/Subscription/Unsubscribe?' . $buildParams);
-
-                },
-//                'href' => url('https://auth.robokassa.ru/RecurringSubscriptionPage/Subscription/Unsubscribe?SubscriptionId='.$entry->sub.'&SubscriberId=e5e44d67-0691-4432-8f03-6bab9424f552'),
-            ]
-        ]);
-
-    }
-
-    /**
-     * Define what happens when the List operation is loaded.
-     * @see  https://backpackforlaravel.com/docs/crud-operation-list-entries
-     * @return void
-     */
-    protected function setupListOperation()
-    {
 //        CRUD::setFromDb(); // set columns from db columns.
 
         /**
          * Columns can be defined using the fluent syntax:
          * - CRUD::column('price')->type('number');
          */
+
+        CRUD::column('id')->type('text')->label('ID Заказа');
         CRUD::column('subscription_id')->label('subscription_id')->visibleInTable(false)->visibleInShow(true);
         CRUD::column('subscriber_id')->label('subscriber_id')->visibleInTable(false)->visibleInShow(true);
         CRUD::column('transaction_id')->label('transaction_id')->visibleInTable(false)->visibleInShow(true);
