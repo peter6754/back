@@ -165,6 +165,7 @@ class RecommendationService
                 ->whereNotNull('u.long')
                 ->where('u.mode', 'authenticated')
                 ->whereNotNull('u.registration_date')
+
                 // блокировка: если нет подписки — фильтруем по bc.user_id
                 ->when(!$myHasSubscription, function ($query) {
                     $query->whereNull('bc.user_id');
