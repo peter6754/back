@@ -169,6 +169,29 @@ class AuthController extends Controller
     }
 
     /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function telegram(Request $request): JsonResponse
+    {
+        try {
+            $validatedData = $request->validate([
+                'initData' => 'required|string'
+            ]);
+
+            return $this->successResponse(
+                $this->authService->telegram($validatedData['initData']),
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage(),
+                $e->getCode()
+            );
+        }
+
+    }
+
+    /**
      * @return JsonResponse
      */
     public function socialLinks(): JsonResponse

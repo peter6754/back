@@ -156,6 +156,27 @@ class AuthService
         ];
     }
 
+    public function telegram(string $params): array
+    {
+        $initData = urldecode($params);
+        parse_str($initData, $parsedData);
+
+        // Проверка наличия хэша
+        if (!isset($parsedData['hash'])) {
+            throw new \Exception("Hash missing");
+        }
+
+        // Проверка подписи
+        if (!$this->verifyTelegramHash($parsedData)) {
+            throw new \Exception("Invalid hash");
+        }
+
+        // Извлечение данных пользователя
+        $userData = json_decode($parsedData['user'], true);
+        return $userData;
+        return [];
+    }
+
     /**
      * @param string $provider
      * @param object $user
@@ -218,6 +239,40 @@ class AuthService
             ]),
             'type' => $type
         ];
+    }
+
+    /**
+     * @param array $data
+     * @return bool
+     */
+    private function verifyTelegramHash(array $data): bool
+    {
+        $receivedHash = $data['hash'];
+        unset($data['hash']);
+
+        // Сортировка параметров по алфавиту
+        ksort($data);
+
+        // Формирование строки для проверки
+        $dataCheckString = collect($data)
+            ->map(fn ($value, $key) => "$key=$value")
+            ->implode("\n");
+
+        // Генерация секретного ключа
+        $secretKey = hash_hmac(
+            'sha256',
+            config('services.telegram.client_secret'),
+            "WebAppData",
+            true
+        );
+
+        // Вычисление хэша
+        $calculatedHash = bin2hex(
+            hash_hmac('sha256', $dataCheckString, $secretKey, true)
+        );
+
+        // Безопасное сравнение хэшей
+        return hash_equals($calculatedHash, $receivedHash);
     }
 
     /**
