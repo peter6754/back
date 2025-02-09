@@ -173,6 +173,73 @@ class AuthService
 
         // Извлечение данных пользователя
         $userData = json_decode($parsedData['user'], true);
+        $name = $userData['first_name'] . " " . $userData['last_name'];
+        $email = $userData['id'] . "@t.me";
+        $provider = "telegram";
+
+        DB::beginTransaction();
+        $account = ConnectedAccount::with("user")
+            ->where('provider', $provider)
+            ->where('email', $email)
+            ->first();
+
+        // Проверяем, не удален ли пользователь
+        if ($account && $account->user->mode === 'deleted') {
+            Log::warning("loginBySocial is FORBIDDEN", [
+                'user' => $account
+            ]);
+
+            throw new \Exception("User is deactivated");
+        }
+        if (empty($account)) {
+            $getUser = Secondaryuser::where('email', $email)->first();
+            if (!empty($getUser)) {
+                throw new \Exception("User already exists " . PHP_EOL .
+                    "account: " . print_r($account, true) . PHP_EOL .
+                    "getUser: " . print_r($getUser, true) . PHP_EOL .
+                    "user: " . print_r($userData, true)
+                );
+            }
+
+            // ToDo: Временная мера (блокировка, разрешаем только авторизацию)
+            return [
+                'type' => 'register'
+            ];
+
+            // Создаем нового пользователя
+            $account = $this->createNewUser(
+                email: $email,
+                provider: $provider,
+                name: $name,
+            );
+
+            $type = 'register';
+        } else {
+            $type = $account->user->registration_date ? 'login' : 'register';
+        }
+        DB::commit();
+
+        // Создаем токен аутентификации
+        $userId = $account->user->id ?? $account->id ?? null;
+        if (is_null($userId)) {
+            throw new \Exception("User not found");
+        }
+
+        return [
+            'token' => app(JwtService::class)->encode([
+                'id' => $userId
+            ]),
+            'type' => $type
+        ];
+
+//        $account = $this->createNewUser(
+//            email: $userData['id'],
+//            provider: "telegram",
+//            name: implode(" ", [
+//                $userData['first_name'],
+//                $userData['last_name']
+//            ])
+//        );
         return $userData;
         return [];
     }
@@ -255,7 +322,7 @@ class AuthService
 
         // Формирование строки для проверки
         $dataCheckString = collect($data)
-            ->map(fn ($value, $key) => "$key=$value")
+            ->map(fn($value, $key) => "$key=$value")
             ->implode("\n");
 
         // Генерация секретного ключа
