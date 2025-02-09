@@ -76,8 +76,8 @@ class RecommendationService
 
         if (empty($topProfiles)) {
             $twoDaysAgo = now()->subDays(2)->toDateTimeString();
-            $myUserId = $customer['id'];
             $myPhone = $customer['phone'];
+            $myUserId = $customer['id'];
             $myLat = $customer['long'];
             $myLng = $customer['lat'];
 
@@ -174,12 +174,12 @@ class RecommendationService
                 ->orderByDesc('like_count')
                 ->limit(15);
 
-            $topProfiles = $query->get();
+            $topProfiles = $query->get()->toArray();
             foreach ($topProfiles as &$row) {
                 $row->blocked_me = (bool)$row->blocked_me;
             }
 
-            Redis::set($key, $topProfiles->toArray());
+            Redis::set($key, $topProfiles);
         }
 
         return [
