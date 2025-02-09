@@ -181,6 +181,7 @@ class AuthController extends Controller
 
             return $this->successResponse(
                 $this->authService->telegram($validatedData['initData']),
+                Response::HTTP_CREATED
             );
         } catch (\Exception $e) {
             return $this->errorResponse(
