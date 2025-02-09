@@ -140,6 +140,14 @@ return [
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => env('LOG_DAILY_DAYS', 14),
             'driver' => 'daily'
+        ],
+
+
+        'proxy' => [
+            'path' => storage_path('logs/proxy.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => env('LOG_DAILY_DAYS', 14),
+            'driver' => 'daily'
         ]
     ],
 
