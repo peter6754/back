@@ -106,7 +106,7 @@ Route::prefix('auth')->group(function () {
 
 // Users routes
 Route::prefix('users')->middleware('auth')->group(function () {
-    Route::get('/info/{id}', [UserController::class, 'getUser']);
+    Route::get('info/{id}', [UserController::class, 'getUser']);
     Route::put('{user}/information', [UserController::class, 'updateInformation']);
 
     // Справочные данные

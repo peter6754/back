@@ -2348,6 +2348,98 @@
                     }
                 ]
             }
+        },
+        "/users/info/{id}": {
+            "get": {
+                "tags": [
+                    "User settings"
+                ],
+                "summary": "Get user profile",
+                "description": "Returns detailed user profile information by user ID",
+                "operationId": "53ad6343eeb960d51fade692a8b35ffd",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "User ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "example": "00012bae-a544-4300-acb4-8b39ca353b8c"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                },
+                                "example": {
+                                    "meta": {
+                                        "error": null,
+                                        "status": 200
+                                    },
+                                    "data": {
+                                        "items": {
+                                            "id": "00012bae-a544-4300-acb4-8b39ca353b8c",
+                                            "name": "Олежа",
+                                            "bio": null,
+                                            "educational_institution": null,
+                                            "role": null,
+                                            "residence": "Благовещенск",
+                                            "company": null,
+                                            "gender": "Мужчина",
+                                            "age": 19,
+                                            "info": [
+                                                "Гетеро",
+                                                "Не женат",
+                                                "Серьезные отношения"
+                                            ],
+                                            "distance": 6666,
+                                            "is_verified": false,
+                                            "images": [
+                                                "45,075c70c6065121",
+                                                "48,075c7142509235",
+                                                "46,075c723825fe52",
+                                                "44,075c7391990dc5"
+                                            ],
+                                            "interests": [
+                                                "Фильмы",
+                                                "Киберспорт",
+                                                "Сериалы",
+                                                "Пиво",
+                                                "Аниме"
+                                            ],
+                                            "gifts": [],
+                                            "gifts_count": 0,
+                                            "feedbacks_count": 0
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Unauthorized"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
