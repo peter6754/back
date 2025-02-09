@@ -48,7 +48,7 @@ class ProxyController extends Controller
             return response(
                 $response->body(),
                 $response->status(),
-                $response->headers()
+//                $response->headers()
             );
         } catch (\Exception $e) {
             return response()->json([
