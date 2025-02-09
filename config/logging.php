@@ -128,13 +128,6 @@ return [
         ],
 
         // Custom logs channels
-        'payments' => [
-            'path' => storage_path('logs/payments.log'),
-            'level' => env('LOG_LEVEL', 'debug'),
-            'days' => env('LOG_DAILY_DAYS', 14),
-            'driver' => 'daily'
-        ],
-
         'recommendations' => [
             'path' => storage_path('logs/recommendations.log'),
             'level' => env('LOG_LEVEL', 'debug'),
@@ -142,6 +135,12 @@ return [
             'driver' => 'daily'
         ],
 
+        'payments' => [
+            'path' => storage_path('logs/payments.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => env('LOG_DAILY_DAYS', 14),
+            'driver' => 'daily'
+        ],
 
         'proxy' => [
             'path' => storage_path('logs/proxy.log'),
@@ -149,6 +148,5 @@ return [
             'days' => env('LOG_DAILY_DAYS', 14),
             'driver' => 'daily'
         ]
-    ],
-
+    ]
 ];
