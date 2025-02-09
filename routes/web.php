@@ -134,7 +134,6 @@ Route::prefix('users')->middleware('auth')->group(function () {
 });
 
 // Default routes
-
 Route::get('swagger', function () {
     $getGenerator = Generator::scan([
         base_path() . "/App/Http/Controllers",
