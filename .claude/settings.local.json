@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php artisan:*)",
+      "Bash(mkdir:*)",
+      "Bash(mysql:*)",
+      "Bash(find:*)",
+      "Bash(composer install:*)",
+      "Bash(php:*)",
+      "Bash(rm:*)",
+      "Bash(vendor/bin/pint:*)",
+      "Bash(curl:*)",
+      "Bash(grep:*)",
+      "Bash(openssl rand:*)",
+      "Bash(rg:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(ls:*)",
+      "Bash(ss:*)",
+      "Bash(kill:*)",
+      "WebFetch(domain:dev.to)"
+    ],
+    "deny": []
+  }
+}
