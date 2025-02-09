@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Backpack\CRUD\app\Models\Traits\CrudTrait;
@@ -244,7 +246,7 @@ class Secondaryuser extends Model
      */
     public function interests()
     {
-        return $this->hasMany(UserInterests::class);
+        return $this->hasMany(UserInterests::class, 'user_id');
     }
 
     /**
@@ -321,5 +323,52 @@ class Secondaryuser extends Model
             'provider' => $data['provider'],
             'name' => $data['name']
         ]);
+    }
+
+    /**
+     * @return HasOneThrough
+     */
+    public function finalPreference(): HasOneThrough
+    {
+        return $this->hasOneThrough(
+            RelationshipPreferences::class,
+            UserRelationshipPreference::class,
+            'user_id',
+            'id',
+            'id',
+            'preference_id'
+        );
+    }
+
+    /**
+     * @return HasMany
+     */
+    public function receivedGifts()
+    {
+        return $this->hasMany(UserGifts::class, 'receiver_id');
+    }
+
+    /**
+     * @return HasMany
+     */
+    public function feedbacks()
+    {
+        return $this->hasMany(UserFeedbacks::class, 'user_id');
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function city()
+    {
+        return $this->hasOne(UserCities::class, 'user_id');
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function pets()
+    {
+        return $this->hasOne(UserPets::class, 'user_id');
     }
 }

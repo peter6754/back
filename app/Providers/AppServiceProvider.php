@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\JwtService;
 use App\Services\AuthService;
+use App\Services\UserService;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use App\Services\Payments\PaymentsService;
@@ -52,6 +53,10 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(\App\Services\MailService::class);
+
+        $this->app->bind(UserService::class, function ($app) {
+            return new UserService();
+        });
     }
 
     /**
