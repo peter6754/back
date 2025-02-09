@@ -19,6 +19,7 @@ return [
         'recommendations',
         'payment/*',
         'auth/*',
+        'user/*',
         '*'
     ],
     'allowed_headers' => ['Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN, cache-control, Login-Token'],
