@@ -148,4 +148,4 @@ Route::get('/', function () {
 // Fallback route - будет срабатывать, если ни один другой маршрут не совпал
 Route::any('{any}', [ProxyController::class, 'handle'])
     ->where('any', '.*')
-    ->middleware('auth');
+    ->middleware('proxy');
