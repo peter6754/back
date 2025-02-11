@@ -73,8 +73,8 @@ class RecommendationService
         // Checking cache
         $key = "top-profiles:" . $customer['id'];
         $topProfiles = Redis::get($key);
-
         if (!is_array($topProfiles)) {
+            unset($topProfiles);
             Redis::del($key);
         }
 
@@ -185,8 +185,7 @@ class RecommendationService
             }
 
 
-            Redis::set($key, $topProfiles);
-            Redis::expire($key, 900);
+            Redis::setex($key, 900, $topProfiles);
         }
 
         return [
