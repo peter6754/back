@@ -47,15 +47,15 @@
 
 <span class="nav-separator">Утилиты</span>
 <x-backpack::menu-item title='Log Manager' icon='la la-terminal' :link="backpack_url('log')" />
-<x-backpack::menu-item title='Backups' icon='la la-hdd-o' :link="backpack_url('backup')" />
-
-<span class="nav-separator">Прочее</span>
 <li class="nav-item">
     <a class="nav-link" href="/admin/telescope" target="_blank">
         <i class="nav-icon la la-bug d-block d-lg-none d-xl-block"></i>
         <span>Telescope</span>
     </a>
 </li>
+<x-backpack::menu-item title='Backups' icon='la la-hdd-o' :link="backpack_url('backup')" />
+
+<span class="nav-separator">Прочее</span>
 <li class="nav-item">
     <a class="nav-link" href="/admin/seaweed" target="_blank">
         <i class="nav-icon la la-code d-block d-lg-none d-xl-block"></i>
