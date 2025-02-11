@@ -73,6 +73,7 @@ class RecommendationService
         // Checking cache
         $key = "top-profiles:" . $customer['id'];
         $topProfiles = Redis::get($key);
+        Redis::expire($key, -1);
 
         if (empty($topProfiles)) {
             $twoDaysAgo = now()->subDays(2)->toDateTimeString();
@@ -180,7 +181,9 @@ class RecommendationService
                 $row->blocked_me = (bool)$row->blocked_me;
             }
 
+
             Redis::set($key, $topProfiles);
+            Redis::expire($key, 900);
         }
 
         return [
