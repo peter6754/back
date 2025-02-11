@@ -73,7 +73,10 @@ class RecommendationService
         // Checking cache
         $key = "top-profiles:" . $customer['id'];
         $topProfiles = Redis::get($key);
-        Redis::expire($key, -1);
+
+        if (!is_array($topProfiles)) {
+            Redis::forget($key);
+        }
 
         if (empty($topProfiles)) {
             $twoDaysAgo = now()->subDays(2)->toDateTimeString();
@@ -265,6 +268,7 @@ class RecommendationService
 
         return ['is_match' => $reactionExists];
     }
+
     public function like2(string $userId, array $params)
     {
         // Оптимизация: загружаем только необходимые данные
@@ -315,6 +319,7 @@ class RecommendationService
 
         return ['message' => 'Reaction processing started'];
     }
+
     public function dislike2(string $userId, array $params)
     {
         UserReaction::updateOrCreate(
@@ -348,6 +353,7 @@ class RecommendationService
 
         return ['message' => 'Rollback processing started'];
     }
+
     public function rollback2(string $userId, array $params)
     {
         $lastReacted = UserReaction::where('reactor_id', $userId)
@@ -390,6 +396,7 @@ class RecommendationService
 
         return ['is_match' => $reactionExists];
     }
+
     public function superlike2(string $userId, array $params)
     {
         $user = Secondaryuser::with(['deviceTokens', 'userInformation'])
