@@ -73,9 +73,14 @@ class RecommendationService
         // Checking cache
         $key = "top-profiles:" . $customer['id'];
         $topProfiles = Redis::get($key);
-        if (!is_array($topProfiles)) {
-            unset($topProfiles);
-            Redis::del($key);
+
+        if (!empty($topProfiles)) {
+            try {
+                $topProfiles = json_decode($topProfiles, true);
+            } catch (\Exception $e) {
+                unset($topProfiles);
+                Redis::del($key);
+            }
         }
 
         if (empty($topProfiles)) {
@@ -179,13 +184,12 @@ class RecommendationService
                 ->orderByDesc('like_count')
                 ->limit(15);
 
-            $topProfiles = $query->get()->toArray();
+            $topProfiles = $query->get();
             foreach ($topProfiles as &$row) {
                 $row->blocked_me = (bool)$row->blocked_me;
             }
 
-
-            Redis::setex($key, 900, $topProfiles);
+            Redis::setex($key, 900, json_encode($topProfiles));
         }
 
         return [
