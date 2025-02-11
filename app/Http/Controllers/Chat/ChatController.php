@@ -7,6 +7,7 @@ use App\Http\Traits\ApiResponseTrait;
 use App\Models\ChatMessage;
 use App\Models\Conversation;
 use App\Models\Secondaryuser as User;
+use App\Models\UserReaction;
 use App\Services\ChatService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -242,6 +243,11 @@ class ChatController extends Controller
             // Check if user exists
             if (! User::find($userId)) {
                 return $this->error('User not found', 404);
+            }
+
+            // Check for mutual likes - conversation can only be created if both users liked each other
+            if (!UserReaction::haveMutualLikes($currentUserId, $userId)) {
+                return $this->error('Conversation can only be created after mutual likes', 403);
             }
 
             // Check if conversation already exists
