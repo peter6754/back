@@ -84,6 +84,9 @@ Route::prefix('api/conversations')->middleware('auth')->group(function () {
     // Получить сообщения в чате
     Route::get('/messages/{chat_id}', [ChatController::class, 'getMessages']);
 
+    // Отправить сообщение в чат текст и файлы
+    Route::post('/send-messages', [ChatController::class, 'sendMessage']);
+
     // Загрузить медиа файл в чат
     Route::post('/{chat_id}/media', [ChatController::class, 'uploadMedia']);
 
@@ -138,4 +141,3 @@ Route::get('swagger', function () {
 Route::get('/', function () {
     return view('welcome');
 });
-

@@ -19,28 +19,83 @@ class ChatController extends Controller
 
     public function sendMessage(Request $request)
     {
-        $validated = $request->validate([
-            'conversation_id' => 'required|integer|exists:conversations,id',
-            'message' => 'required|string',
-            'type' => 'required|string|in:text,contact,media,gift',
-            'gift' => 'nullable|string|required_if:type,gift',
-            'contact_type' => 'nullable|string|required_if:type,contact',
-        ]);
+        try {
+            $userId = $request->user()->id;
+            \Log::info('SendMessage - User ID: ' . $userId);
+            \Log::info('SendMessage - Request data: ' . json_encode($request->all()));
+            
+            // Base validation rules
+            $rules = [
+                'conversation_id' => 'required|integer|exists:conversations,id',
+                'type' => 'required|string|in:text,contact,media,gift',
+                'gift' => 'nullable|string|required_if:type,gift',
+                'contact_type' => 'nullable|string|required_if:type,contact',
+            ];
 
-        $result = $this->chatService->emitMessage(
-            $request->user()->id,
-            $validated['conversation_id'],
-            $validated['message'],
-            $validated['type'],
-            $validated['gift'] ?? null,
-            $validated['contact_type'] ?? null
-        );
+            // Conditional validation based on message type
+            if ($request->get('type') === 'media') {
+                $rules['file'] = 'required|file|max:10240|mimes:jpg,jpeg,png,gif,mp4,mov,avi,pdf,doc,docx,txt';
+                $rules['message'] = 'nullable|string';
+            } else {
+                $rules['message'] = 'required|string';
+                $rules['file'] = 'nullable|file';
+            }
 
-        if ($result['error']) {
-            return $this->error($result['error']['message'], $result['error']['status']);
+            $validated = $request->validate($rules);
+
+            // Handle file upload for media messages
+            $messageContent = $validated['message'] ?? '';
+            $fileUrl = null;
+            $fileType = null;
+            $filePath = null;
+
+            if ($validated['type'] === 'media' && $request->hasFile('file')) {
+                // Handle file upload
+                $file = $request->file('file');
+                $fileName = time() . '_' . $file->getClientOriginalName();
+                
+                // Store file
+                $filePath = $file->storeAs('chat_media', $fileName, 'public');
+                $fileUrl = asset('storage/' . $filePath);
+                $fileType = $file->getMimeType();
+
+                // Use file path as message content for media messages
+                $messageContent = $filePath;
+            }
+
+            // Handle all messages (text, contact, gift, media) via WebSocket
+            $result = $this->chatService->emitMessage(
+                $userId,
+                $validated['conversation_id'],
+                $messageContent,
+                $validated['type'],
+                $validated['gift'] ?? null,
+                $validated['contact_type'] ?? null,
+                false,
+                $fileUrl,
+                $fileType
+            );
+
+            if ($result['error']) {
+                return $this->error($result['error']['message'], $result['error']['status']);
+            }
+
+            $response = ['message' => 'Message sent successfully via WebSocket'];
+            
+            // Add file info for media messages
+            if ($validated['type'] === 'media' && $fileUrl) {
+                $response['file_url'] = $fileUrl;
+                $response['file_type'] = $fileType;
+            }
+            
+            return $this->success($response);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->error('Validation failed: ' . implode(', ', $e->validator->errors()->all()), 422);
+        } catch (\Exception $e) {
+            \Log::error('Failed to send message: ' . $e->getMessage());
+            return $this->error('Failed to send message', 500);
         }
-
-        return $this->success(['message' => 'Message sent successfully via WebSocket']);
     }
 
     public function sendMedia(Request $request)
@@ -280,17 +335,27 @@ class ChatController extends Controller
                 ->reverse()
                 ->values()
                 ->map(function ($message) {
-                    return [
+                    $messageData = [
                         'id' => $message->id,
                         'sender_id' => $message->sender_id,
                         'message' => $message->message,
                         'type' => $message->type,
                         'created_at' => $message->created_at,
                         'is_read' => $message->is_seen,
-                        'attachments' => [], // Add attachment logic if needed
                         'gift' => $message->gift,
                         'contact_type' => $message->contact_type,
                     ];
+
+                    // Add file information for media messages
+                    if ($message->type === 'media' && $message->hasFile()) {
+                        $messageData['file_url'] = $message->getFileUrl();
+                        $messageData['file_extension'] = $message->getFileExtension();
+                        $messageData['is_image'] = $message->isImage();
+                        $messageData['is_video'] = $message->isVideo();
+                        $messageData['is_document'] = $message->isDocument();
+                    }
+
+                    return $messageData;
                 });
 
             // Mark messages as read for the current user
@@ -389,10 +454,19 @@ class ChatController extends Controller
             }
 
             // Mark all unread messages as read for the current user
-            ChatMessage::where('conversation_id', $chat_id)
+            $updatedMessages = ChatMessage::where('conversation_id', $chat_id)
                 ->where('receiver_id', $userId)
                 ->where('is_seen', false)
-                ->update(['is_seen' => true]);
+                ->get();
+
+            if ($updatedMessages->isNotEmpty()) {
+                ChatMessage::where('conversation_id', $chat_id)
+                    ->where('receiver_id', $userId)
+                    ->where('is_seen', false)
+                    ->update(['is_seen' => true]);
+
+                // Messages marked as read - notification could be added here
+            }
 
             return $this->success(['success' => true]);
 
@@ -436,6 +510,133 @@ class ChatController extends Controller
 
         } catch (\Exception $e) {
             return $this->error('Failed to toggle pin status', 500);
+        }
+    }
+
+    /**
+     * Send typing indicator to conversation
+     */
+    public function sendTypingIndicator(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'conversation_id' => 'required|integer|exists:conversations,id',
+                'is_typing' => 'required|boolean',
+            ]);
+
+            $userId = $request->user()->id;
+            $conversationId = $validated['conversation_id'];
+
+            // Verify user has access to conversation
+            $conversation = Conversation::where('id', $conversationId)
+                ->where(function ($query) use ($userId) {
+                    $query->where('user1_id', $userId)
+                        ->orWhere('user2_id', $userId);
+                })
+                ->first();
+
+            if (!$conversation) {
+                return $this->error('Conversation not found or access denied', 404);
+            }
+
+            // Determine receiver
+            $receiverId = $conversation->user1_id === $userId 
+                ? $conversation->user2_id 
+                : $conversation->user1_id;
+
+            // Typing indicator broadcast could be implemented here
+
+            return $this->success(['success' => true]);
+
+        } catch (\Exception $e) {
+            return $this->error('Failed to send typing indicator', 500);
+        }
+    }
+
+    /**
+     * Update user online status
+     */
+    public function updateOnlineStatus(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'is_online' => 'required|boolean',
+            ]);
+
+            $userId = $request->user()->id;
+            $isOnline = $validated['is_online'];
+
+            // Update user online status
+            User::where('id', $userId)->update([
+                'is_online' => $isOnline,
+                'last_seen_at' => $isOnline ? null : now(),
+            ]);
+
+            // Get users who should be notified (users in conversations)
+            $notifyUsers = Conversation::where(function ($query) use ($userId) {
+                $query->where('user1_id', $userId)
+                    ->orWhere('user2_id', $userId);
+            })
+            ->get()
+            ->map(function ($conversation) use ($userId) {
+                return $conversation->user1_id === $userId 
+                    ? $conversation->user2_id 
+                    : $conversation->user1_id;
+            })
+            ->unique()
+            ->values()
+            ->toArray();
+
+            // Online status change broadcast could be implemented here
+
+            return $this->success([
+                'is_online' => $isOnline,
+                'last_seen' => $isOnline ? null : now()->toISOString(),
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->error('Failed to update online status', 500);
+        }
+    }
+
+    /**
+     * Get conversation participants online status
+     */
+    public function getConversationOnlineStatus(Request $request, int $chat_id): JsonResponse
+    {
+        try {
+            $userId = $request->user()->id;
+
+            // Verify user has access to conversation
+            $conversation = Conversation::where('id', $chat_id)
+                ->where(function ($query) use ($userId) {
+                    $query->where('user1_id', $userId)
+                        ->orWhere('user2_id', $userId);
+                })
+                ->first();
+
+            if (!$conversation) {
+                return $this->error('Conversation not found or access denied', 404);
+            }
+
+            // Get the other participant
+            $otherUserId = $conversation->user1_id === $userId 
+                ? $conversation->user2_id 
+                : $conversation->user1_id;
+
+            $otherUser = User::find($otherUserId, ['id', 'name', 'is_online', 'last_seen_at']);
+
+            return $this->success([
+                'user' => [
+                    'id' => $otherUser->id,
+                    'name' => $otherUser->name,
+                    'is_online' => $otherUser->is_online,
+                    'last_seen' => $otherUser->last_seen_at?->toISOString(),
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->error('Failed to get online status', 500);
         }
     }
 }

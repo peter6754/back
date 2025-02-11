@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Secondaryuser as User;
-use App\Events\UnreadMessagesStatus;
 use App\Models\Conversation;
 use App\Events\MessageSent;
 use App\Models\ChatMessage;
@@ -75,6 +74,8 @@ class ChatService
      * @param string|null $gift
      * @param string|null $contactType
      * @param bool $isFirst
+     * @param string|null $fileUrl
+     * @param string|null $fileType
      * @return array[]|null[]
      */
     public function emitMessage(
@@ -84,11 +85,28 @@ class ChatService
         string  $type,
         ?string $gift = null,
         ?string $contactType = null,
-        bool    $isFirst = false
+        bool    $isFirst = false,
+        ?string $fileUrl = null,
+        ?string $fileType = null
     )
     {
         try {
-            $conversation = Conversation::findOrFail($conversationId);
+            // Check if conversation exists and user has access
+            $conversation = Conversation::where('id', $conversationId)
+                ->where(function ($query) use ($senderId) {
+                    $query->where('user1_id', $senderId)
+                          ->orWhere('user2_id', $senderId);
+                })
+                ->first();
+
+            if (!$conversation) {
+                return [
+                    'error' => [
+                        'message' => 'Conversation not found or access denied',
+                        'status' => 404
+                    ]
+                ];
+            }
 
             $receiverId = $conversation->user1_id != $senderId
                 ? $conversation->user1_id
@@ -98,10 +116,19 @@ class ChatService
 //                ->where('user_id', $receiverId)
 //                ->first();
 
-            $senderInfo = User::findOrFail($senderId, ['name', 'age']);
+            $senderInfo = User::find($senderId, ['name', 'age']);
+            
+            if (!$senderInfo) {
+                return [
+                    'error' => [
+                        'message' => 'Sender not found',
+                        'status' => 404
+                    ]
+                ];
+            }
 
             // Create message
-            ChatMessage::create([
+            $chatMessage = ChatMessage::create([
                 'sender_id' => $senderId,
                 'receiver_id' => $receiverId,
                 'message' => $message,
@@ -112,7 +139,7 @@ class ChatService
             ]);
 
             // Broadcast events via WebSocket
-            $this->webSocketService->sendMessageToUser($receiverId, [
+            $messageData = [
                 'conversation_id' => $conversationId,
                 'data' => [
                     'type' => $type,
@@ -125,20 +152,18 @@ class ChatService
                         'age' => $senderInfo->age
                     ]
                 ]
-            ]);
+            ];
+
+            // Add file info for media messages
+            if ($type === 'media' && $fileUrl) {
+                $messageData['data']['file_url'] = $fileUrl;
+                $messageData['data']['file_type'] = $fileType;
+            }
+
+            $this->webSocketService->sendMessageToUser($receiverId, $messageData);
 
             // Also send via traditional broadcasting for backward compatibility
-            broadcast(new MessageSent($receiverId, [
-                'conversation_id' => $conversationId,
-                'data' => [
-                    'type' => $type,
-                    'message' => $message,
-                    'gift' => $gift,
-                    'contact_type' => $contactType
-                ]
-            ]));
-
-            broadcast(new UnreadMessagesStatus($receiverId, true));
+            broadcast(new MessageSent($receiverId, $messageData));
 
             // Send notifications
 //            if (!$isFirst && $receiverSettings->new_messages_push) {
@@ -164,11 +189,11 @@ class ChatService
 
             return ['error' => null];
         } catch (\Exception $e) {
-            echo $e->getMessage();
+            \Log::error('Failed to emit message: ' . $e->getMessage());
             return [
                 'error' => [
-                    'message' => 'Conversation not found',
-                    'status' => 406
+                    'message' => 'Failed to send message: ' . $e->getMessage(),
+                    'status' => 500
                 ]
             ];
         }

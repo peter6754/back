@@ -4,6 +4,7 @@ namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
@@ -19,7 +20,10 @@ class MessageSent implements ShouldBroadcast
 
     public function broadcastOn()
     {
-        return new Channel('user.'.$this->receiverId);
+        return [
+            new PrivateChannel('user.'.$this->receiverId),
+            new PrivateChannel('conversation.'.$this->messageData['conversation_id'])
+        ];
     }
 
     public function broadcastAs()
@@ -33,6 +37,7 @@ class MessageSent implements ShouldBroadcast
             'conversation_id' => $this->messageData['conversation_id'],
             'message' => $this->messageData['data'],
             'timestamp' => now()->toISOString(),
+            'sender_id' => $this->messageData['data']['sender_info']['id'] ?? null,
         ];
     }
 }
