@@ -106,8 +106,12 @@ Route::prefix('auth')->group(function () {
 
 // Users routes
 Route::prefix('users')->middleware('auth')->group(function () {
-    Route::get('info/{id}', [UserController::class, 'getUser']);
+    // Users Profile
     Route::put('{user}/information', [UserController::class, 'updateInformation']);
+    Route::get('info/{id}', [UserController::class, 'getUser']);
+
+    // My Profile
+    Route::get('profile', [UserController::class, 'getProfile']);
 
     // Справочные данные
     Route::prefix('reference-data')->group(function () {
