@@ -75,7 +75,7 @@ class RecommendationService
         $topProfiles = Redis::get($key);
 
         if (!is_array($topProfiles)) {
-            Redis::forget($key);
+            Redis::del($key);
         }
 
         if (empty($topProfiles)) {
