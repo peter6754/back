@@ -383,6 +383,1193 @@
                 }
             }
         },
+        "/api/conversations/send-messages": {
+            "post": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Send a message to a conversation",
+                "description": "Send text, media, gift, or contact message to a conversation",
+                "operationId": "e710cec273ee2c3cade38cb4da480f82",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "conversation_id": {
+                                        "description": "Conversation ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "type": {
+                                        "description": "Message type",
+                                        "type": "string",
+                                        "enum": [
+                                            "text",
+                                            "contact",
+                                            "media",
+                                            "gift"
+                                        ],
+                                        "example": "text"
+                                    },
+                                    "message": {
+                                        "description": "Message text (required for text messages, optional for media)",
+                                        "type": "string",
+                                        "example": "Hello there!"
+                                    },
+                                    "file": {
+                                        "description": "Media file (required for media type)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "gift": {
+                                        "description": "Gift identifier (required for gift type)",
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "contact_type": {
+                                        "description": "Contact type (required for contact type)",
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Message sent successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string",
+                                                    "example": "Message sent successfully via WebSocket"
+                                                },
+                                                "file_url": {
+                                                    "type": "string",
+                                                    "example": "http://example.com/storage/chat_media/file.jpg",
+                                                    "nullable": true
+                                                },
+                                                "file_type": {
+                                                    "type": "string",
+                                                    "example": "image/jpeg",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Conversation not found or access denied"
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    },
+                    "500": {
+                        "description": "Failed to send message"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations": {
+            "get": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Get all conversations for the current user",
+                "description": "Get all conversations for the current user",
+                "operationId": "fe160d44547c780ef80fc6b13cc44192",
+                "responses": {
+                    "200": {
+                        "description": "List of conversations",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "chat_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "user": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string",
+                                                                "example": "user-uuid"
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "John Doe"
+                                                            },
+                                                            "avatar_url": {
+                                                                "type": "string",
+                                                                "nullable": true
+                                                            },
+                                                            "online": {
+                                                                "type": "boolean",
+                                                                "example": true
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "last_message": {
+                                                        "properties": {
+                                                            "text": {
+                                                                "type": "string",
+                                                                "example": "Hello!"
+                                                            },
+                                                            "timestamp": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            }
+                                                        },
+                                                        "type": "object",
+                                                        "nullable": true
+                                                    },
+                                                    "is_pinned": {
+                                                        "type": "boolean",
+                                                        "example": false
+                                                    },
+                                                    "unread_count": {
+                                                        "type": "integer",
+                                                        "example": 2
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/{chat_id}/unread-messages-status": {
+            "get": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Get unread messages count for specific chat",
+                "description": "Get unread messages status for specific chat",
+                "operationId": "77ad8cd3b617ce003cc00797c3135365",
+                "parameters": [
+                    {
+                        "name": "chat_id",
+                        "in": "path",
+                        "description": "Chat ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Unread messages count",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "unread_count": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Conversation not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/{user_id}": {
+            "post": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Create or get existing conversation with a user",
+                "description": "Creates a new conversation or returns existing one. Requires mutual likes between users.",
+                "operationId": "2f02aca6ddc3abb4afbc61015622952c",
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "path",
+                        "description": "Target user ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "user-uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Conversation created or retrieved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "chat_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "created": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Conversation can only be created after mutual likes"
+                    },
+                    "404": {
+                        "description": "User not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/{chat_id}": {
+            "delete": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Delete conversation and all its messages",
+                "description": "Delete conversation",
+                "operationId": "ef53e6da65b4366f91304ba1b7f2ad67",
+                "parameters": [
+                    {
+                        "name": "chat_id",
+                        "in": "path",
+                        "description": "Chat ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "1"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Conversation deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Conversation not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/messages/{chat_id}": {
+            "get": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Get messages from a specific conversation with pagination",
+                "description": "Get messages from a specific conversation",
+                "operationId": "5bfa5c4ab9bef04aa8b1fe3d7d225b3a",
+                "parameters": [
+                    {
+                        "name": "chat_id",
+                        "in": "path",
+                        "description": "Chat ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Messages per page (max 100)",
+                        "schema": {
+                            "type": "integer",
+                            "default": 30,
+                            "example": 30
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of messages",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "sender_id": {
+                                                        "type": "string",
+                                                        "example": "user-uuid"
+                                                    },
+                                                    "message": {
+                                                        "type": "string",
+                                                        "example": "Hello!"
+                                                    },
+                                                    "type": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "text",
+                                                            "media",
+                                                            "gift",
+                                                            "contact"
+                                                        ],
+                                                        "example": "text"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "is_read": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    },
+                                                    "gift": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "contact_type": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "file_url": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "file_extension": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "is_image": {
+                                                        "type": "boolean",
+                                                        "nullable": true
+                                                    },
+                                                    "is_video": {
+                                                        "type": "boolean",
+                                                        "nullable": true
+                                                    },
+                                                    "is_document": {
+                                                        "type": "boolean",
+                                                        "nullable": true
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Conversation not found or access denied"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/{chat_id}/media": {
+            "post": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Upload media file to a conversation",
+                "description": "Upload media file to a conversation",
+                "operationId": "0a97797cf960f3e2771c80735f721b80",
+                "parameters": [
+                    {
+                        "name": "chat_id",
+                        "in": "path",
+                        "description": "Chat ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "file": {
+                                        "description": "Media file (max 10MB, types: jpg,jpeg,png,gif,mp4,mov,avi,pdf,doc,docx,txt)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Media uploaded successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "message_id": {
+                                                    "type": "integer",
+                                                    "example": 123
+                                                },
+                                                "file_url": {
+                                                    "type": "string",
+                                                    "example": "http://example.com/storage/chat_media/file.jpg"
+                                                },
+                                                "file_type": {
+                                                    "type": "string",
+                                                    "example": "image/jpeg"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Conversation not found or access denied"
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/read-messages/{chat_id}": {
+            "post": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Mark all messages in a conversation as read",
+                "description": "Mark all messages in a conversation as read",
+                "operationId": "ab3d7f654b2acfd216fa2ba348b596b9",
+                "parameters": [
+                    {
+                        "name": "chat_id",
+                        "in": "path",
+                        "description": "Chat ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Messages marked as read",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Conversation not found or access denied"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/pin/{chat_id}": {
+            "post": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Pin or unpin a conversation",
+                "description": "Pin or unpin conversation",
+                "operationId": "975ba2d516cb1208a2ee215970a598ff",
+                "parameters": [
+                    {
+                        "name": "chat_id",
+                        "in": "path",
+                        "description": "Chat ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "1"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Pin status toggled",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "pinned": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Conversation not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/typing-indicator": {
+            "post": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Send typing indicator to conversation",
+                "description": "Send typing indicator to conversation",
+                "operationId": "e47ef6aef43cdd84ddc2ca3350d23f02",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "conversation_id": {
+                                        "description": "Conversation ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "is_typing": {
+                                        "description": "Whether user is typing",
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Typing indicator sent",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Conversation not found or access denied"
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/online-status": {
+            "post": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Update user online status",
+                "description": "Update user online status",
+                "operationId": "fec59c974b30222c724c607dc339d3bb",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "is_online": {
+                                        "description": "Online status",
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Online status updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "is_online": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "last_seen": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/{chat_id}/online-status": {
+            "get": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Get conversation participants online status",
+                "description": "Get conversation participants online status",
+                "operationId": "9422f6c42a3d0bc281efc1fb24820e7e",
+                "parameters": [
+                    {
+                        "name": "chat_id",
+                        "in": "path",
+                        "description": "Chat ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Other participant's online status",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "user": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "string",
+                                                            "example": "user-uuid"
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "John Doe"
+                                                        },
+                                                        "is_online": {
+                                                            "type": "boolean",
+                                                            "example": true
+                                                        },
+                                                        "last_seen": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "nullable": true
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Conversation not found or access denied"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/social-accounts": {
+            "get": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Get current user's connected social accounts",
+                "description": "Get current user's connected social accounts",
+                "operationId": "fbb2047ad96f0aa77c5741216e1ea3d1",
+                "responses": {
+                    "200": {
+                        "description": "List of connected social accounts",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "user_id": {
+                                                    "type": "string",
+                                                    "example": "user-uuid"
+                                                },
+                                                "social_accounts": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "provider": {
+                                                                "type": "string",
+                                                                "example": "vkontakte"
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "John Doe"
+                                                            },
+                                                            "email": {
+                                                                "type": "string",
+                                                                "example": "john@example.com"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Failed to get social accounts"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/send-social-contacts": {
+            "get": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Send user's social contacts to chat",
+                "description": "Send user's social contacts to chat",
+                "operationId": "8964b996c24891e33377a19d6b2dac88",
+                "parameters": [
+                    {
+                        "name": "conversation_id",
+                        "in": "query",
+                        "description": "Conversation ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "provider",
+                        "in": "query",
+                        "description": "Social provider",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "vkontakte",
+                                "telegram",
+                                "google",
+                                "apple"
+                            ],
+                            "example": "vkontakte"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Social contact sent successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string",
+                                                    "example": "Social contact sent successfully"
+                                                },
+                                                "provider": {
+                                                    "type": "string",
+                                                    "example": "vkontakte"
+                                                },
+                                                "contact": {
+                                                    "type": "string",
+                                                    "example": "John Doe"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid provider or missing parameters"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Conversation not found or no connected account"
+                    },
+                    "500": {
+                        "description": "Failed to send social contact"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/payment/service-package": {
             "post": {
                 "tags": [
@@ -1118,6 +2305,10 @@
         },
         {
             "name": "App Settings"
+        },
+        {
+            "name": "Chat",
+            "description": "Chat"
         }
     ]
 }

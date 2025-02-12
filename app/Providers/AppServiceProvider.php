@@ -8,8 +8,6 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use App\Services\Payments\PaymentsService;
 use App\Services\External\GreenSMSService;
-use App\Events\MessageReceived;
-use App\Listeners\HandleMessageReceived;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,8 +24,6 @@ class AppServiceProvider extends ServiceProvider
             $event->extendSocialite('apple', \SocialiteProviders\Apple\Provider::class);
         });
 
-        // WebSocket message handling
-        Event::listen(MessageReceived::class, \App\Listeners\BroadcastMessage::class);
 
         // Telescope
         if (class_exists(\Laravel\Telescope\TelescopeServiceProvider::class)) {
@@ -57,7 +53,6 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(\App\Services\MailService::class);
-        $this->app->singleton(\App\Services\WebSocketService::class);
     }
 
     /**

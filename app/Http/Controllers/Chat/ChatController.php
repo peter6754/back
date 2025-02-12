@@ -19,6 +19,80 @@ class ChatController extends Controller
 
     public function __construct(private ChatService $chatService) {}
 
+    /**
+     * Send message to conversation
+     * 
+     * @OA\Post(
+     *     path="/api/conversations/send-messages",
+     *     tags={"Chat"},
+     *     summary="Send a message to a conversation",
+     *     description="Send text, media, gift, or contact message to a conversation",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 @OA\Property(
+     *                     property="conversation_id",
+     *                     type="integer",
+     *                     description="Conversation ID",
+     *                     example=1
+     *                 ),
+     *                 @OA\Property(
+     *                     property="type",
+     *                     type="string",
+     *                     enum={"text", "contact", "media", "gift"},
+     *                     description="Message type",
+     *                     example="text"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="message",
+     *                     type="string",
+     *                     description="Message text (required for text messages, optional for media)",
+     *                     example="Hello there!"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="file",
+     *                     type="string",
+     *                     format="binary",
+     *                     description="Media file (required for media type)"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="gift",
+     *                     type="string",
+     *                     description="Gift identifier (required for gift type)",
+     *                     nullable=true
+     *                 ),
+     *                 @OA\Property(
+     *                     property="contact_type",
+     *                     type="string",
+     *                     description="Contact type (required for contact type)",
+     *                     nullable=true
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Message sent successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="meta", type="object",
+     *                 @OA\Property(property="status", type="integer", example=200)
+     *             ),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="message", type="string", example="Message sent successfully via WebSocket"),
+     *                 @OA\Property(property="file_url", type="string", nullable=true, example="http://example.com/storage/chat_media/file.jpg"),
+     *                 @OA\Property(property="file_type", type="string", nullable=true, example="image/jpeg")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Conversation not found or access denied"),
+     *     @OA\Response(response=422, description="Validation failed"),
+     *     @OA\Response(response=500, description="Failed to send message")
+     * )
+     */
     public function sendMessage(Request $request)
     {
         try {
@@ -135,6 +209,41 @@ class ChatController extends Controller
 
     /**
      * Get all conversations for the current user
+     * 
+     * @OA\Get(
+     *     path="/api/conversations",
+     *     tags={"Chat"},
+     *     summary="Get all conversations for the current user",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of conversations",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="meta", type="object",
+     *                 @OA\Property(property="status", type="integer", example=200)
+     *             ),
+     *             @OA\Property(property="data", type="array",
+     *                 @OA\Items(
+     *                     @OA\Property(property="chat_id", type="integer", example=1),
+     *                     @OA\Property(property="user", type="object",
+     *                         @OA\Property(property="id", type="string", example="user-uuid"),
+     *                         @OA\Property(property="name", type="string", example="John Doe"),
+     *                         @OA\Property(property="avatar_url", type="string", nullable=true),
+     *                         @OA\Property(property="online", type="boolean", example=true)
+     *                     ),
+     *                     @OA\Property(property="last_message", type="object", nullable=true,
+     *                         @OA\Property(property="text", type="string", example="Hello!"),
+     *                         @OA\Property(property="timestamp", type="string", format="date-time")
+     *                     ),
+     *                     @OA\Property(property="is_pinned", type="boolean", example=false),
+     *                     @OA\Property(property="unread_count", type="integer", example=2)
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=500, description="Internal server error")
+     * )
      */
     public function getConversations(Request $request): JsonResponse
     {
@@ -203,6 +312,34 @@ class ChatController extends Controller
 
     /**
      * Get unread messages status for specific chat
+     * 
+     * @OA\Get(
+     *     path="/api/conversations/{chat_id}/unread-messages-status",
+     *     tags={"Chat"},
+     *     summary="Get unread messages count for specific chat",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="chat_id",
+     *         in="path",
+     *         required=true,
+     *         description="Chat ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Unread messages count",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="meta", type="object",
+     *                 @OA\Property(property="status", type="integer", example=200)
+     *             ),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="unread_count", type="integer", example=5)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Conversation not found")
+     * )
      */
     public function getUnreadMessagesStatus(Request $request, int $chat_id): JsonResponse
     {
@@ -235,6 +372,37 @@ class ChatController extends Controller
 
     /**
      * Create or get existing conversation with a user
+     * 
+     * @OA\Post(
+     *     path="/api/conversations/{user_id}",
+     *     tags={"Chat"},
+     *     summary="Create or get existing conversation with a user",
+     *     description="Creates a new conversation or returns existing one. Requires mutual likes between users.",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="user_id",
+     *         in="path",
+     *         required=true,
+     *         description="Target user ID",
+     *         @OA\Schema(type="string", example="user-uuid")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Conversation created or retrieved",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="meta", type="object",
+     *                 @OA\Property(property="status", type="integer", example=200)
+     *             ),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="chat_id", type="integer", example=1),
+     *                 @OA\Property(property="created", type="boolean", example=true)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=403, description="Conversation can only be created after mutual likes"),
+     *     @OA\Response(response=404, description="User not found")
+     * )
      */
     public function createConversation(Request $request, string $userId): JsonResponse
     {
@@ -280,7 +448,35 @@ class ChatController extends Controller
     }
 
     /**
-     * Delete conversation (soft delete)
+     * Delete conversation
+     * 
+     * @OA\Delete(
+     *     path="/api/conversations/{chat_id}",
+     *     tags={"Chat"},
+     *     summary="Delete conversation and all its messages",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="chat_id",
+     *         in="path",
+     *         required=true,
+     *         description="Chat ID",
+     *         @OA\Schema(type="string", example="1")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Conversation deleted",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="meta", type="object",
+     *                 @OA\Property(property="status", type="integer", example=200)
+     *             ),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="success", type="boolean", example=true)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Conversation not found")
+     * )
      */
     public function deleteConversation(Request $request, string $chatId): JsonResponse
     {
@@ -312,6 +508,60 @@ class ChatController extends Controller
 
     /**
      * Get messages from a specific conversation
+     * 
+     * @OA\Get(
+     *     path="/api/conversations/messages/{chat_id}",
+     *     tags={"Chat"},
+     *     summary="Get messages from a specific conversation with pagination",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="chat_id",
+     *         in="path",
+     *         required=true,
+     *         description="Chat ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Page number",
+     *         @OA\Schema(type="integer", example=1, default=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="limit",
+     *         in="query",
+     *         description="Messages per page (max 100)",
+     *         @OA\Schema(type="integer", example=30, default=30)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of messages",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="meta", type="object",
+     *                 @OA\Property(property="status", type="integer", example=200)
+     *             ),
+     *             @OA\Property(property="data", type="array",
+     *                 @OA\Items(
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="sender_id", type="string", example="user-uuid"),
+     *                     @OA\Property(property="message", type="string", example="Hello!"),
+     *                     @OA\Property(property="type", type="string", enum={"text", "media", "gift", "contact"}, example="text"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="is_read", type="boolean", example=true),
+     *                     @OA\Property(property="gift", type="string", nullable=true),
+     *                     @OA\Property(property="contact_type", type="string", nullable=true),
+     *                     @OA\Property(property="file_url", type="string", nullable=true),
+     *                     @OA\Property(property="file_extension", type="string", nullable=true),
+     *                     @OA\Property(property="is_image", type="boolean", nullable=true),
+     *                     @OA\Property(property="is_video", type="boolean", nullable=true),
+     *                     @OA\Property(property="is_document", type="boolean", nullable=true)
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Conversation not found or access denied")
+     * )
      */
     public function getMessages(Request $request, int $chat_id): JsonResponse
     {
@@ -381,6 +631,51 @@ class ChatController extends Controller
 
     /**
      * Upload media file to a conversation
+     * 
+     * @OA\Post(
+     *     path="/api/conversations/{chat_id}/media",
+     *     tags={"Chat"},
+     *     summary="Upload media file to a conversation",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="chat_id",
+     *         in="path",
+     *         required=true,
+     *         description="Chat ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 @OA\Property(
+     *                     property="file",
+     *                     type="string",
+     *                     format="binary",
+     *                     description="Media file (max 10MB, types: jpg,jpeg,png,gif,mp4,mov,avi,pdf,doc,docx,txt)"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Media uploaded successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="meta", type="object",
+     *                 @OA\Property(property="status", type="integer", example=200)
+     *             ),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="message_id", type="integer", example=123),
+     *                 @OA\Property(property="file_url", type="string", example="http://example.com/storage/chat_media/file.jpg"),
+     *                 @OA\Property(property="file_type", type="string", example="image/jpeg")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Conversation not found or access denied"),
+     *     @OA\Response(response=422, description="Validation failed")
+     * )
      */
     public function uploadMedia(Request $request, int $chat_id): JsonResponse
     {
@@ -442,6 +737,34 @@ class ChatController extends Controller
 
     /**
      * Mark all messages in a conversation as read
+     * 
+     * @OA\Post(
+     *     path="/api/conversations/read-messages/{chat_id}",
+     *     tags={"Chat"},
+     *     summary="Mark all messages in a conversation as read",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="chat_id",
+     *         in="path",
+     *         required=true,
+     *         description="Chat ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Messages marked as read",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="meta", type="object",
+     *                 @OA\Property(property="status", type="integer", example=200)
+     *             ),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="success", type="boolean", example=true)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Conversation not found or access denied")
+     * )
      */
     public function markMessagesAsRead(Request $request, int $chat_id): JsonResponse
     {
@@ -485,6 +808,34 @@ class ChatController extends Controller
 
     /**
      * Pin or unpin conversation
+     * 
+     * @OA\Post(
+     *     path="/api/conversations/pin/{chat_id}",
+     *     tags={"Chat"},
+     *     summary="Pin or unpin a conversation",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="chat_id",
+     *         in="path",
+     *         required=true,
+     *         description="Chat ID",
+     *         @OA\Schema(type="string", example="1")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Pin status toggled",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="meta", type="object",
+     *                 @OA\Property(property="status", type="integer", example=200)
+     *             ),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="pinned", type="boolean", example=true)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Conversation not found")
+     * )
      */
     public function togglePinConversation(Request $request, string $chatId): JsonResponse
     {
@@ -522,6 +873,35 @@ class ChatController extends Controller
 
     /**
      * Send typing indicator to conversation
+     * 
+     * @OA\Post(
+     *     path="/api/conversations/typing-indicator",
+     *     tags={"Chat"},
+     *     summary="Send typing indicator to conversation",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="conversation_id", type="integer", example=1, description="Conversation ID"),
+     *             @OA\Property(property="is_typing", type="boolean", example=true, description="Whether user is typing")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Typing indicator sent",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="meta", type="object",
+     *                 @OA\Property(property="status", type="integer", example=200)
+     *             ),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="success", type="boolean", example=true)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Conversation not found or access denied"),
+     *     @OA\Response(response=422, description="Validation failed")
+     * )
      */
     public function sendTypingIndicator(Request $request): JsonResponse
     {
@@ -562,6 +942,34 @@ class ChatController extends Controller
 
     /**
      * Update user online status
+     * 
+     * @OA\Post(
+     *     path="/api/conversations/online-status",
+     *     tags={"Chat"},
+     *     summary="Update user online status",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="is_online", type="boolean", example=true, description="Online status")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Online status updated",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="meta", type="object",
+     *                 @OA\Property(property="status", type="integer", example=200)
+     *             ),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="is_online", type="boolean", example=true),
+     *                 @OA\Property(property="last_seen", type="string", format="date-time", nullable=true)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=422, description="Validation failed")
+     * )
      */
     public function updateOnlineStatus(Request $request): JsonResponse
     {
@@ -608,6 +1016,39 @@ class ChatController extends Controller
 
     /**
      * Get conversation participants online status
+     * 
+     * @OA\Get(
+     *     path="/api/conversations/{chat_id}/online-status",
+     *     tags={"Chat"},
+     *     summary="Get conversation participants online status",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="chat_id",
+     *         in="path",
+     *         required=true,
+     *         description="Chat ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Other participant's online status",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="meta", type="object",
+     *                 @OA\Property(property="status", type="integer", example=200)
+     *             ),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="user", type="object",
+     *                     @OA\Property(property="id", type="string", example="user-uuid"),
+     *                     @OA\Property(property="name", type="string", example="John Doe"),
+     *                     @OA\Property(property="is_online", type="boolean", example=true),
+     *                     @OA\Property(property="last_seen", type="string", format="date-time", nullable=true)
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Conversation not found or access denied")
+     * )
      */
     public function getConversationOnlineStatus(Request $request, int $chat_id): JsonResponse
     {
@@ -649,6 +1090,34 @@ class ChatController extends Controller
 
     /**
      * Get current user's connected social accounts
+     * 
+     * @OA\Get(
+     *     path="/api/conversations/social-accounts",
+     *     tags={"Chat"},
+     *     summary="Get current user's connected social accounts",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of connected social accounts",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="meta", type="object",
+     *                 @OA\Property(property="status", type="integer", example=200)
+     *             ),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="user_id", type="string", example="user-uuid"),
+     *                 @OA\Property(property="social_accounts", type="array",
+     *                     @OA\Items(
+     *                         @OA\Property(property="provider", type="string", example="vkontakte"),
+     *                         @OA\Property(property="name", type="string", example="John Doe"),
+     *                         @OA\Property(property="email", type="string", example="john@example.com")
+     *                     )
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=500, description="Failed to get social accounts")
+     * )
      */
     public function getUserSocialAccounts(Request $request): JsonResponse
     {
@@ -688,6 +1157,45 @@ class ChatController extends Controller
 
     /**
      * Send user's social contacts to chat
+     * 
+     * @OA\Get(
+     *     path="/api/conversations/send-social-contacts",
+     *     tags={"Chat"},
+     *     summary="Send user's social contacts to chat",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="conversation_id",
+     *         in="query",
+     *         required=true,
+     *         description="Conversation ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="provider",
+     *         in="query",
+     *         required=true,
+     *         description="Social provider",
+     *         @OA\Schema(type="string", enum={"vkontakte", "telegram", "google", "apple"}, example="vkontakte")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Social contact sent successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="meta", type="object",
+     *                 @OA\Property(property="status", type="integer", example=200)
+     *             ),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="message", type="string", example="Social contact sent successfully"),
+     *                 @OA\Property(property="provider", type="string", example="vkontakte"),
+     *                 @OA\Property(property="contact", type="string", example="John Doe")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=400, description="Invalid provider or missing parameters"),
+     *     @OA\Response(response=401, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Conversation not found or no connected account"),
+     *     @OA\Response(response=500, description="Failed to send social contact")
+     * )
      */
     public function sendSocialContacts(Request $request): JsonResponse
     {

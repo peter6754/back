@@ -248,32 +248,47 @@ class RecommendationService
      */
     public function like(string $userId, array $params)
     {
-        $user = Secondaryuser::with(['deviceTokens', 'userInformation', 'userSettings'])
-            ->select(['id', 'email'])
-            ->findOrFail($params['user_id']);
+        // Проверяем существование целевого пользователя
+        $targetUser = Secondaryuser::find($params['user_id']);
+        if (!$targetUser) {
+            throw new \Exception('Target user not found');
+        }
 
-        // Проверяем существование реакции
+        // Проверяем, не пытается ли пользователь лайкнуть самого себя
+        if ($userId === $params['user_id']) {
+            throw new \Exception('You cannot like yourself');
+        }
+
+        // Получаем информацию о лайкающем пользователе для superboom
+        $reactorUser = Secondaryuser::with(['userInformation'])->find($userId);
+        
+        // Проверяем существование обратной реакции (взаимный лайк)
         $reactionExists = UserReaction::where('reactor_id', $params['user_id'])
             ->where('user_id', $userId)
             ->whereIn('type', ['like', 'superlike'])
             ->exists();
 
-        $superboom = $user->userInformation->superboom_due_date >= now();
-        if ($reactionExists) {
+        $superboom = $reactorUser && $reactorUser->userInformation && 
+                     $reactorUser->userInformation->superboom_due_date >= now();
+
+        // Проверяем, существует ли уже наша реакция
+        $existingReaction = UserReaction::where('reactor_id', $userId)
+            ->where('user_id', $params['user_id'])
+            ->first();
+
+        if ($existingReaction) {
             // Обновляем существующую запись
-            UserReaction::where('reactor_id', $params['user_id'])
-                ->where('user_id', $userId)
-                ->update([
-                    'from_top' => $params['from_top'],
-                    'superboom' => $superboom,
-                    'type' => 'like',
-                    'date' => now()
-                ]);
+            $existingReaction->update([
+                'from_top' => $params['from_top'],
+                'superboom' => $superboom,
+                'type' => 'like',
+                'date' => now()
+            ]);
         } else {
             // Создаем новую запись
             UserReaction::create([
-                'user_id' => $params['user_id'],
-                'reactor_id' => $userId,
+                'user_id' => $params['user_id'],     // кого лайкаем
+                'reactor_id' => $userId,             // кто лайкает
                 'from_top' => $params['from_top'],
                 'superboom' => $superboom,
                 'type' => 'like',

@@ -139,7 +139,7 @@ Route::prefix('auth')->group(function () {
 // Default routes
 Route::get('swagger', function () {
     $getGenerator = Generator::scan([
-        base_path().'/App/Http/Controllers',
+        base_path().'/app/Http/Controllers',
     ]);
 
     return response($getGenerator->toYaml());

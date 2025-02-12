@@ -53,6 +53,9 @@ class AuthMiddleware
                 return $user;
             });
 
+            // Устанавливаем customer для совместимости с контроллерами
+            $request->customer = $user->toArray();
+
             \Log::info('Auth middleware - Calling next middleware/controller');
             $response = $next($request);
             \Log::info('Auth middleware - Response received: ' . $response->getStatusCode());
