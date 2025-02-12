@@ -3,7 +3,7 @@ git clean -fd
 git pull origin main --force
 chown -R www-data:www-data ./
 
-php composer.phar install
+php composer.phar update
 php artisan view:clear
 php artisan cache:clear
 php artisan route:clear
