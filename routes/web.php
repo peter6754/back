@@ -1,16 +1,16 @@
 <?php
 
-use App\Http\Controllers\Migrate\ProxyController;
+use App\Http\Controllers\Recommendations\RecommendationsController;
 use App\Http\Controllers\Users\ReferenceDataController;
-use App\Http\Controllers\Users\UserController;
-use OpenApi\Generator;
-use Illuminate\Support\Facades\Route;
-use Laravel\Socialite\Facades\Socialite;
-use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Application\PricesController;
 use App\Http\Controllers\Payments\StatusesController;
 use App\Http\Controllers\Payments\PaymentsController;
-use App\Http\Controllers\Application\PricesController;
-use App\Http\Controllers\Recommendations\RecommendationsController;
+use App\Http\Controllers\Migrate\ProxyController;
+use App\Http\Controllers\Users\UserController;
+use App\Http\Controllers\Auth\AuthController;
+use Laravel\Socialite\Facades\Socialite;
+use Illuminate\Support\Facades\Route;
+use OpenApi\Generator;
 
 // Recommendations routes
 Route::prefix('recommendations')->middleware('auth')->group(function () {

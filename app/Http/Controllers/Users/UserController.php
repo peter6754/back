@@ -516,7 +516,6 @@ class UserController extends Controller
     }
 
     /**
-     * @param $id
      * @param Request $request
      * @OA\Get(
      *     path="/users/profile",

@@ -33,7 +33,8 @@
         "socialiteproviders/telegram": "^4.1",
         "socialiteproviders/vkontakte": "^5.0",
         "spatie/laravel-data": "^4.17",
-        "unitpay/php-sdk": "dev-master"
+        "unitpay/php-sdk": "dev-master",
+        "barryvdh/laravel-debugbar": "^3.16"
     },
     "require-dev": {
         "backpack/generators": "^4.0",
