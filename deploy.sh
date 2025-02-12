@@ -1,15 +1,25 @@
-git reset --hard
-git clean -fd
-git pull origin main --force
+#!/bin/bash
+
+# Очистка локальных изменений и принудительное обновление из репозитория
+git reset --hard           # Сброс всех локальных изменений
+git pull origin main --force  # Принудительное обновление из ветки main
+
+# Установка правильных прав для веб-сервера
 chown -R www-data:www-data ./
 
-php composer.phar update
-php artisan view:clear
-php artisan cache:clear
-php artisan route:clear
-php artisan config:clear
-php artisan route:cache
-php artisan config:cache
+# Обновление PHP зависимостей и очистка кеша
+php composer.phar update   # Обновление Composer пакетов
 
-npm install
-npm run build
+# Очистка кеша Laravel
+php artisan view:clear     # Очистка кеша шаблонов
+php artisan cache:clear    # Очистка кеша приложения
+php artisan route:clear    # Очистка кеша маршрутов
+php artisan config:clear   # Очистка кеша конфигурации
+
+# Пересборка кеша (только для production)
+php artisan route:cache    # Кеширование маршрутов
+php artisan config:cache   # Кеширование конфигурации
+
+# Обновление Node.js зависимостей и сборка фронтенда
+npm install                # Установка/обновление npm пакетов
+npm run build              # Сборка фронтенда (production)
