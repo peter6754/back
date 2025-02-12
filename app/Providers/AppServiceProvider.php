@@ -72,5 +72,9 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment('production')) {
            \URL::forceScheme('https');
         }
+
+        if (auth()->check() && auth()->user()->isAdmin()) {
+            \Debugbar::enable();
+        }
     }
 }
