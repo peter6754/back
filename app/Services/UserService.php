@@ -39,7 +39,7 @@ class UserService
                 $this->getUserAgeAndDistance($id, $viewer),
             ];
 
-            list($info, $withQueryRaw) = $results;
+            [$info, $withQueryRaw] = $results;
 
             return $this->formatResponse($info, $withQueryRaw);
         });
