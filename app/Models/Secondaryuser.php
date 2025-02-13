@@ -29,7 +29,7 @@ class Secondaryuser extends Model
     protected $fillable = [
         'id', 'name', 'username', 'phone', 'email', 'birth_date', 'lat', 'long',
         'age', 'gender', 'sexual_orientation', 'mode', 'registration_date',
-        'last_check', 'is_online',
+        'last_check', 'is_online', 'is_bot',
     ];
 
     /**

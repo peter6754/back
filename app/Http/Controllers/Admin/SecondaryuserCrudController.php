@@ -50,7 +50,7 @@ class SecondaryuserCrudController extends CrudController
                     // Устанавливаем ширину колонки в зависимости от количества изображений
                     $count = $images->count();
                     $width = $count * 70; // 60px ширина изображения + 10px отступ для каждого
-    
+
                     // Начало строки изображений
                     $imagesHtml = '<div style="display: flex; width: '.$width.'px; gap: 5px;">';
 
@@ -60,7 +60,7 @@ class SecondaryuserCrudController extends CrudController
                         // Передаем массив url и индекс текущего изображения
                         $allUrls = $images->pluck('image_url')->map(fn ($url) => addslashes($url))->toArray();
                         $imagesHtml .= '
-                        <img src="'.$imageUrl.'" height="80px" width="60px" style="cursor: pointer;" 
+                        <img src="'.$imageUrl.'" height="80px" width="60px" style="cursor: pointer;"
                             onclick="openGlobalModal('.htmlspecialchars(json_encode($allUrls)).', '.$idx.')">
                     ';
                     }
@@ -360,6 +360,13 @@ class SecondaryuserCrudController extends CrudController
             ->values([
                 0 => 'Оффлайн',
                 1 => 'Онлайн',
+            ]);
+
+        CRUD::filter('is_bot')
+            ->type('dropdown')
+            ->label('Бот')
+            ->values([
+                1 => 'Бот',
             ]);
 
         CRUD::filter('gender')
