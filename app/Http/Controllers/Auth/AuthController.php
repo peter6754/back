@@ -176,11 +176,12 @@ class AuthController extends Controller
     {
         try {
             $validatedData = $request->validate([
-                'initData' => 'required|string'
+                'initData' => 'required|string',
+                'appId' => 'string'
             ]);
 
             return $this->successResponse(
-                $this->authService->telegram($validatedData['initData']),
+                $this->authService->telegram($validatedData),
                 Response::HTTP_CREATED
             );
         } catch (\Exception $e) {

@@ -47,10 +47,8 @@ return [
 
     // Oauth settings
     'telegram' => [
-        'bot' => env('TELEGRAM_BOT_NAME'),
-        'client_id' => null,
+        'client_secret_pwa' => env('TELEGRAM_TOKEN_PWA'),
         'client_secret' => env('TELEGRAM_TOKEN'),
-        'redirect' => env('TELEGRAM_REDIRECT_URI'),
     ],
 
     'google' => [

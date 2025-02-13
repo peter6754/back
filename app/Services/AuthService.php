@@ -156,9 +156,9 @@ class AuthService
         ];
     }
 
-    public function telegram(string $params): array
+    public function telegram(array $params): array
     {
-        $initData = urldecode($params);
+        $initData = urldecode($params['initData']);
         parse_str($initData, $parsedData);
 
         // Проверка наличия хэша
@@ -167,7 +167,7 @@ class AuthService
         }
 
         // Проверка подписи
-        if (!$this->verifyTelegramHash($parsedData)) {
+        if (!$this->verifyTelegramHash($parsedData, $params['appId'] ?? "client_secret")) {
             throw new \Exception("Invalid hash");
         }
 
@@ -312,7 +312,7 @@ class AuthService
      * @param array $data
      * @return bool
      */
-    private function verifyTelegramHash(array $data): bool
+    private function verifyTelegramHash(array $data, $appId = "client_secret"): bool
     {
         $receivedHash = $data['hash'];
         unset($data['hash']);
@@ -328,7 +328,7 @@ class AuthService
         // Генерация секретного ключа
         $secretKey = hash_hmac(
             'sha256',
-            config('services.telegram.client_secret'),
+            config('services.telegram.' . $appId),
             "WebAppData",
             true
         );
