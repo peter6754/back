@@ -14,12 +14,14 @@ class UnreadMessagesStatus implements ShouldBroadcast
 
     public function __construct(
         public string $receiverId,
-        public bool $hasUnread
-    ) {}
+        public bool   $hasUnread
+    )
+    {
+    }
 
     public function broadcastOn()
     {
-        return new Channel('user.'.$this->receiverId);
+        return new Channel('user.' . $this->receiverId);
     }
 
     public function broadcastAs()
