@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services;
 
 use App\Models\MailTemplate;
@@ -14,11 +15,12 @@ class MailService
     public function queueFromTemplate(
         string $templateName,
         string $toEmail,
-        array $variables = [],
+        array  $variables = [],
         string $toName = null,
         Carbon $sendAfter = null,
-        array $options = []
-    ) {
+        array  $options = []
+    )
+    {
         $template = MailTemplate::where('name', $templateName)
             ->where('is_active', true)
             ->first();
@@ -60,10 +62,11 @@ class MailService
     public function sendNow(
         string $templateName,
         string $toEmail,
-        array $variables = [],
+        array  $variables = [],
         string $toName = null,
-        array $options = []
-    ) {
+        array  $options = []
+    )
+    {
         $mailQueue = $this->queueFromTemplate(
             $templateName,
             $toEmail,
