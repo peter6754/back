@@ -371,4 +371,9 @@ class Secondaryuser extends Model
     {
         return $this->hasOne(UserPets::class, 'user_id');
     }
+
+    public function sentReactions()
+    {
+        return $this->hasMany(UserReaction::class, 'user_id');
+    }
 }

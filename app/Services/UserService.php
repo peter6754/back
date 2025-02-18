@@ -4,8 +4,11 @@ namespace App\Services;
 
 use App\Helpers\UserInformationTranslator;
 use App\Models\Secondaryuser;
+use Exception;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
+use Log;
 
 class UserService
 {
@@ -187,5 +190,232 @@ class UserService
             'gifts_count' => $info['gifts_count'],
             'feedbacks_count' => $info['feedbacks_count'],
         ];
+    }
+
+    /**
+     * Получить полную информацию о собственном аккаунте пользователя
+     *
+     * @param string $userId
+     * @return array
+     */
+    public function getAccountInformation(string $userId): array
+    {
+        $today = Carbon::today();
+
+
+        $user = Secondaryuser::with([
+            'sentReactions' => function ($query) use ($today) {
+                $query->where('type', 'like')
+                    ->whereDate('date', $today);
+            },
+            'interests.interest',
+            'images',
+            'preferences',
+            'userSettings',
+            'pets',
+            'verificationRequest',
+            'finalPreference',
+            'city',
+            'userInformation'
+        ])->findOrFail($userId);
+
+        $user = $user->toArray();
+        return [
+            'images' => collect($user['images'] ?? [])->map(function ($image) {
+                return [
+                    'id' => $image['id'],
+                    'image' => $image['image']
+                ];
+            }),
+            'pets' => $user['pets'] ? [UserInformationTranslator::translate('pets', $user['pets']['pet'])] : [],
+            'interests' => collect($user['interests'] ?? [])->map(function ($userInterest) {
+                return [
+                    'id' => $userInterest['interest']['id'],
+                    'name' => $userInterest['interest']['name']
+                ];
+            }),
+            'information' => [
+                'id' => $user['id'],
+                'name' => $user['name'],
+                'age' => $user['age'],
+                'email' => $user['email'],
+                'phone' => $user['phone'],
+                'birth_date' => $user['birth_date'],
+                'registration_screen' => $user['registration_screen'],
+                'registration_date' => $user['registration_date'],
+                'show_my_gender' => $user['user_settings']['show_my_gender'] ?? null,
+                'username' => $user['username'],
+                'show_me' => collect($user['preferences'] ?? [])->pluck('gender')->toArray(),
+                'residence' => $user['city']['formatted_address'] ?? null,
+                'bio' => $user['user_information']['bio'] ?? null,
+                'gender' => UserInformationTranslator::translate('genders', $user['gender']),
+                'sexual_orientation' => UserInformationTranslator::translate('orientations', $user['sexual_orientation']),
+                'zodiac_sign' => UserInformationTranslator::translate('zodiac_signs', $user['user_information']['zodiac_sign'] ?? ''),
+                'education' => UserInformationTranslator::translate('education', $user['user_information']['education'] ?? ''),
+                'family' => UserInformationTranslator::translate('family', $user['user_information']['family'] ?? ''),
+                'communication' => UserInformationTranslator::translate('communication', $user['user_information']['communication'] ?? ''),
+                'love_language' => UserInformationTranslator::translate('love_language', $user['user_information']['love_language'] ?? ''),
+                'alcohole' => UserInformationTranslator::translate('alcohol', $user['user_information']['alcohole'] ?? ''),
+                'smoking' => UserInformationTranslator::translate('smoking', $user['user_information']['smoking'] ?? ''),
+                'sport' => UserInformationTranslator::translate('sport', $user['user_information']['sport'] ?? ''),
+                'food' => UserInformationTranslator::translate('food', $user['user_information']['food'] ?? ''),
+                'social_network' => UserInformationTranslator::translate('social_network', $user['user_information']['social_network'] ?? ''),
+                'sleep' => UserInformationTranslator::translate('sleep', $user['user_information']['sleep'] ?? ''),
+                'educational_institution' => $user['user_information']['educational_institution'] ?? null,
+                'family_status' => !empty($user['user_information']['family_status']) ? [
+                    'key' => $user['user_information']['family_status'],
+                    'translation_ru' => UserInformationTranslator::translate(
+                        'family_statuses',
+                        $user['user_information']['family_status'],
+                        $user['gender']
+                    )
+                ] : null,
+                'relationship_preference' => $user['final_preference']['preference'] ?? null,
+                'role' => $user['user_information']['role'] ?? null,
+                'company' => $user['user_information']['company'] ?? null,
+                'superlikes' => $user['user_information']['superlikes'] ?? null,
+                'superbooms' => $user['user_information']['superbooms'] ?? null,
+                ...(in_array($user['gender'], $this->maleGenders) ?
+                    ['likes' => 30 - count($user['sent_reactions'] ?? [])] :
+                    []
+                ),
+                'show_distance_from_me' => $user['user_settings']['show_distance_from_me'] ?? null,
+                'show_my_age' => $user['user_settings']['show_my_age'] ?? null,
+                'show_my_orientation' => $user['user_settings']['show_my_orientation'] ?? null,
+                'is_verified' => ($user['verification_request']['status'] ?? null) === 'approved'
+            ]
+        ];
+    }
+
+    /**
+     * Обновить информацию пользователя
+     *
+     * @param string $userId
+     * @param array $data
+     * @return bool
+     * @throws Exception
+     */
+    public function updateUserInformation(string $userId, array $data): bool
+    {
+        try {
+            DB::beginTransaction();
+
+            $user = Secondaryuser::findOrFail($userId);
+
+            $user->update($this->prepareUserData($data));
+
+            $user->userInformation()->updateOrCreate(
+                ['user_id' => $user->id],
+                $this->prepareUserInformationData($data)
+            );
+
+            if (isset($data['show_my_gender']) || isset($data['show_my_orientation'])) {
+                $user->settings()->updateOrCreate(
+                    ['user_id' => $user->id],
+                    [
+                        'show_my_gender' => $data['show_my_gender'] ?? false,
+                        'show_my_orientation' => $data['show_my_orientation'] ?? false,
+                    ]
+                );
+            }
+
+            if (isset($data['relationship_preference_id'])) {
+                $user->relationshipPreference()->updateOrCreate(
+                    ['user_id' => $user->id],
+                    ['preference_id' => $data['relationship_preference_id']]
+                );
+            }
+
+            if (isset($data['interests'])) {
+                $user->interests()->delete();
+                $interests = array_map(fn($id) => ['interest_id' => $id], $data['interests']);
+                $user->interests()->createMany($interests);
+            }
+
+            if (isset($data['show_me'])) {
+                $user->preferences()->delete();
+                $preferences = array_map(fn($gender) => ['gender' => $gender], $data['show_me']);
+                $user->preferences()->createMany($preferences);
+            }
+
+            if (isset($data['pets'])) {
+                $this->updateUserPets($user, $data['pets']);
+            }
+
+            DB::commit();
+            return true;
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('Ошибка обновления данных пользователя', [
+                'error' => $e->getMessage(),
+                'user_id' => $userId,
+                'data' => $data,
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Обновить питомцев пользователя
+     *
+     * @param Secondaryuser $user
+     * @param array $pets
+     * @return void
+     */
+    private function updateUserPets(Secondaryuser $user, array $pets): void
+    {
+
+        $user->pets()->delete();
+
+        if (!empty($pets)) {
+            $petsData = array_map(fn($pet) => ['pet' => $pet], $pets);
+            $user->pets()->createMany($petsData);
+        }
+    }
+
+    /**
+     * Подготовить данные для основной таблицы пользователей
+     *
+     * @param array $data
+     * @return array
+     */
+    private function prepareUserData(array $data): array
+    {
+        return array_intersect_key($data, array_flip([
+            'email',
+            'birth_date',
+            'gender',
+            'registration_screen'
+        ]));
+    }
+
+    /**
+     * Подготовить данные для таблицы дополнительной информации пользователя
+     *
+     * @param array $data
+     * @return array
+     */
+    private function prepareUserInformationData(array $data): array
+    {
+        return array_intersect_key($data, array_flip([
+            'bio',
+            'sexual_orientation',
+            'zodiac_sign',
+            'education',
+            'educational_institution',
+            'family_status',
+            'family',
+            'communication',
+            'love_language',
+            'alcohole',
+            'smoking',
+            'sport',
+            'food',
+            'social_network',
+            'sleep',
+            'role',
+            'company'
+        ]));
     }
 }

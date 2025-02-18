@@ -43,6 +43,8 @@ class UpdateUserInformationRequest extends FormRequest
             'food' => ['sometimes', Rule::in(array_keys(UserInformationTranslator::getTranslationsForCategory('food')))],
             'social_network' => ['sometimes', Rule::in(array_keys(UserInformationTranslator::getTranslationsForCategory('social_network')))],
             'sleep' => ['sometimes', Rule::in(array_keys(UserInformationTranslator::getTranslationsForCategory('sleep')))],
+            'pets' => 'sometimes|array|max:10',
+            'pets.*' => ['string', Rule::in(array_keys(UserInformationTranslator::getTranslationsForCategory('pets')))],
             'educational_institution' => 'sometimes|string|max:100',
             'role' => 'sometimes|string|max:50',
             'company' => 'sometimes|string|max:50',
@@ -58,7 +60,7 @@ class UpdateUserInformationRequest extends FormRequest
                 UserInformationTranslator::GENDER_MM,
                 UserInformationTranslator::GENDER_FF
             ])],
-            'email' => 'sometimes|email|max:100|unique:users,email,' . $this->user->id,
+            'email' => 'sometimes|email|max:100|unique:users,email,' . ($this->customer['id'] ?? ''),
         ];
     }
 

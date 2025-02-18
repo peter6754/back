@@ -26,25 +26,229 @@ class UserController extends Controller
     }
 
     /**
-     * @param UpdateUserInformationRequest $request
-     * @param Secondaryuser $user
-     * @OA\Put(
-     *     path="/users/{user}/information",
+     * @param $id
+     * @param Request $request
+     * @OA\Get(
+     *     path="/users/info/{id}",
      *     tags={"User settings"},
-     *     summary="Update user information",
-     *     description="Update comprehensive user profile information including personal details, preferences, and settings",
+     *     summary="Get user profile",
+     *     description="Returns detailed user profile information by user ID",
      *     security={{"bearerAuth":{}}},
+     *
      *     @OA\Parameter(
-     *          name="user",
-     *          in="path",
-     *          required=true,
-     *          description="User ID",
-     *          @OA\Schema(
-     *              type="string",
-     *               format="uuid",
-     *               example="000558ed-d557-4fc0-99da-b23dec6be0bf"
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="User ID",
+     *         @OA\Schema(
+     *             type="string",
+     *             format="uuid",
+     *             example="00012bae-a544-4300-acb4-8b39ca353b8c"
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *          response=200,
+     *          description="Successful operation",
+     *          @OA\JsonContent(
+     *              ref="#/components/schemas/SuccessResponse",
+     *              example={
+     *                  "meta": {
+     *                      "error": null,
+     *                      "status": 200
+     *                  },
+     *                  "data": {
+     *                      "items": {
+     *                          "id": "00012bae-a544-4300-acb4-8b39ca353b8c",
+     *                          "name": "Олежа",
+     *                          "bio": null,
+     *                          "educational_institution": null,
+     *                          "role": null,
+     *                          "residence": "Благовещенск",
+     *                          "company": null,
+     *                          "gender": "Мужчина",
+     *                          "age": 19,
+     *                          "info": {
+     *                              "Гетеро",
+     *                              "Не женат",
+     *                              "Серьезные отношения"
+     *                          },
+     *                          "distance": 6666,
+     *                          "is_verified": false,
+     *                          "images": {
+     *                              "45,075c70c6065121",
+     *                              "48,075c7142509235",
+     *                              "46,075c723825fe52",
+     *                              "44,075c7391990dc5"
+     *                          },
+     *                          "interests": {
+     *                              "Фильмы",
+     *                              "Киберспорт",
+     *                              "Сериалы",
+     *                              "Пиво",
+     *                              "Аниме"
+     *                          },
+     *                          "gifts": {},
+     *                          "gifts_count": 0,
+     *                          "feedbacks_count": 0
+     *                      }
+     *                  }
+     *              }
      *          )
      *     ),
+     *
+     *     @OA\Response(
+     *         @OA\JsonContent(ref="#/components/schemas/Unauthorized"),
+     *         description="Unauthorized",
+     *         response=401
+     *     )
+     * )
+     * @return JsonResponse
+     * @throws Exception
+     */
+    public function getUser($id, Request $request): JsonResponse
+    {
+        $viewer = $request->customer;
+        try {
+            return $this->successResponse([
+                'items' => $this->userService->getUser($id, $viewer)
+            ]);
+        } catch (Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage(),
+                (int)$e->getCode()
+            );
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @OA\Get(
+     *     path="/users/profile",
+     *     tags={"User settings"},
+     *     summary="Get my profile",
+     *     description="Returns account information",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Response(
+     *          response=200,
+     *          description="Successful operation",
+     *          @OA\JsonContent(
+     *              ref="#/components/schemas/SuccessResponse",
+     *              example={
+     *                  "meta": {
+     *                      "error": null,
+     *                      "status": 200
+     *                  },
+     *                  "data": {
+     *                      "images": {
+     *                          {
+     *                              "id": 63351,
+     *                              "image": "11,f3dc14b810ca"
+     *                          },
+     *                          {
+     *                              "id": 63350,
+     *                              "image": "4,f3dbd03bce08"
+     *                          }
+     *                      },
+     *                      "pets": {
+     *                          "Кошка"
+     *                      },
+     *                      "interests": {
+     *                          {
+     *                              "id": 2,
+     *                              "name": "Кофе"
+     *                          },
+     *                          {
+     *                              "id": 35,
+     *                              "name": "Ходьба"
+     *                          },
+     *                          {
+     *                              "id": 87,
+     *                              "name": "Настольные игры"
+     *                          }
+     *                      },
+     *                      "information": {
+     *                          "id": "3ade5db5-fe5e-4f8c-a3bf-94d1d6ab1043",
+     *                          "name": "Oleg",
+     *                          "age": 33,
+     *                          "email": "test@test.ru",
+     *                          "phone": "+11111111111",
+     *                          "birth_date": "1994-11-28T22:00:00.000000Z",
+     *                          "registration_screen": null,
+     *                          "registration_date": "2024-08-15T13:29:22.000000Z",
+     *                          "show_my_gender": true,
+     *                          "username": null,
+     *                          "show_me": {
+     *                              "female"
+     *                          },
+     *                          "residence": "Тираспол",
+     *                          "bio": "Люблю путешествовать и читать книги",
+     *                          "gender": "Мужчина",
+     *                          "sexual_orientation": "Гетеро",
+     *                          "zodiac_sign": "Телец",
+     *                          "education": "",
+     *                          "family": "",
+     *                          "communication": "",
+     *                          "love_language": "",
+     *                          "alcohole": "Пью по праздникам",
+     *                          "smoking": "Курю",
+     *                          "sport": "Иногда тренируюсь",
+     *                          "food": "Ем всё",
+     *                          "social_network": "Иногда захожу в соцсети",
+     *                          "sleep": "Я сова",
+     *                          "educational_institution": null,
+     *                          "family_status": {
+     *                              "key": "married",
+     *                              "translation_ru": "Женат"
+     *                          },
+     *                          "relationship_preference": "Новых друзей",
+     *                          "role": null,
+     *                          "company": null,
+     *                          "superlikes": 257,
+     *                          "superbooms": 5,
+     *                          "likes": 30,
+     *                          "show_distance_from_me": true,
+     *                          "show_my_age": true,
+     *                          "show_my_orientation": false,
+     *                          "is_verified": false
+     *                      }
+     *                  }
+     *              }
+     *          )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(ref="#/components/schemas/Unauthorized")
+     *     )
+     * )
+     * @return JsonResponse
+     * @throws Exception
+     */
+    public function getAccountInformation(Request $request): JsonResponse
+    {
+        $user = $request->customer;
+        try {
+            return $this->successResponse($this->userService->getAccountInformation($user['id']));
+        } catch (Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage(),
+                (int)$e->getCode()
+            );
+        }
+    }
+
+    /**
+     * @param UpdateUserInformationRequest $request
+     * @param UserService $userService
+     * @OA\Put(
+     *     path="/users/profile",
+     *     tags={"User settings"},
+     *     summary="Update user information",
+     *     description="Update comprehensive user profile information including personal details, preferences, pets, and settings",
+     *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
      *         required=false,
      *         description="User information to update (all fields are optional)",
@@ -190,6 +394,18 @@ class UserController extends Controller
      *                 )
      *             ),
      *             @OA\Property(
+     *                 property="pets",
+     *                 type="array",
+     *                 maxItems=10,
+     *                 description="User pets (maximum 10)",
+     *                 @OA\Items(
+     *                     type="string",
+     *                     enum={"dog", "cat", "reptile", "amphibian", "bird", "fish", "turtle", "rabbit", "hamster", "i_want", "dont_have"},
+     *                     example="dog",
+     *                     description="Pet type"
+     *                 )
+     *             ),
+     *             @OA\Property(
      *                 property="relationship_preference_id",
      *                 type="integer",
      *                 example=2,
@@ -213,7 +429,7 @@ class UserController extends Controller
      *                 description="Gender preferences for matching",
      *                 @OA\Items(
      *                     type="string",
-     *                     enum={"male", "female", "mf", "mm", "ff"},
+     *                     enum={"male", "female", "m_f", "m_m", "f_f"},
      *                     example="female"
      *                 )
      *             ),
@@ -272,6 +488,14 @@ class UserController extends Controller
      *                     )
      *                 ),
      *                 @OA\Property(
+     *                     property="pets",
+     *                     type="array",
+     *                     @OA\Items(
+     *                         type="string",
+     *                         example="Можно выбрать максимум 10 питомцев"
+     *                     )
+     *                 ),
+     *                 @OA\Property(
      *                     property="email",
      *                     type="array",
      *                     @OA\Items(
@@ -309,287 +533,16 @@ class UserController extends Controller
      * )
      * @return JsonResponse
      */
-    public function updateInformation(UpdateUserInformationRequest $request, Secondaryuser $user): JsonResponse
+    public function updateAccountInformation(UpdateUserInformationRequest $request): JsonResponse
     {
+        $user = $request->customer;
         try {
-            DB::beginTransaction();
-
             $data = $request->validated();
 
-            $user->update($this->prepareUserData($data));
-
-            $user->userInformation()->updateOrCreate(
-                ['user_id' => $user->id],
-                $this->prepareUserInformationData($data)
-            );
-
-            if (isset($data['show_my_gender']) || isset($data['show_my_orientation'])) {
-                $user->settings()->updateOrCreate(
-                    ['user_id' => $user->id],
-                    [
-                        'show_my_gender' => $data['show_my_gender'] ?? false,
-                        'show_my_orientation' => $data['show_my_orientation'] ?? false,
-                    ]
-                );
-            }
-
-            if (isset($data['relationship_preference_id'])) {
-                $user->relationshipPreference()->updateOrCreate(
-                    ['user_id' => $user->id],
-                    ['preference_id' => $data['relationship_preference_id']]
-                );
-            }
-
-            if (isset($data['interests'])) {
-                $user->interests()->delete();
-                $interests = array_map(fn($id) => ['interest_id' => $id], $data['interests']);
-                $user->interests()->createMany($interests);
-            }
-
-            if (isset($data['show_me'])) {
-                $user->preferences()->delete();
-                $preferences = array_map(fn($gender) => ['gender' => $gender], $data['show_me']);
-                $user->preferences()->createMany($preferences);
-            }
-
-            DB::commit();
+            $this->userService->updateUserInformation($user['id'], $data);
 
             return $this->successResponse(['message' => 'Данные успешно обновлены']);
-        } catch (Exception $e) {
-            DB::rollBack();
-            Log::error('Ошибка обновления данных пользователя', [
-                'error' => $e->getMessage(),
-                'user_id' => $user->id,
-                'data' => $data ?? null,
-            ]);
 
-            return $this->errorResponse(
-                $e->getMessage(),
-                (int)$e->getCode()
-            );
-
-        }
-    }
-
-    /**
-     * @param array $data
-     * @return array
-     */
-    private function prepareUserData(array $data): array
-    {
-        $userData = [
-            'gender' => $data['gender'] ?? null,
-            'registration_screen' => $data['registration_screen'] ?? null,
-            'sexual_orientation' => $data['sexual_orientation'] ?? null,
-            'email' => $data['email'] ?? null,
-        ];
-
-        if (isset($data['birth_date'])) {
-            $birthDate = Carbon::parse($data['birth_date']);
-            $userData['birth_date'] = $birthDate;
-            $userData['age'] = Carbon::now()->diffInYears($birthDate);
-        }
-
-        return array_filter($userData);
-    }
-
-    /**
-     * @param array $data
-     * @return array
-     */
-    private function prepareUserInformationData(array $data): array
-    {
-        return array_filter([
-            'bio' => $data['bio'] ?? null,
-            'zodiac_sign' => $data['zodiac_sign'] ?? null,
-            'education' => $data['education'] ?? null,
-            'educational_institution' => $data['educational_institution'] ?? null,
-            'family' => $data['family'] ?? null,
-            'communication' => $data['communication'] ?? null,
-            'love_language' => $data['love_language'] ?? null,
-            'alcohole' => $data['alcohole'] ?? null,
-            'smoking' => $data['smoking'] ?? null,
-            'sport' => $data['sport'] ?? null,
-            'food' => $data['food'] ?? null,
-            'social_network' => $data['social_network'] ?? null,
-            'sleep' => $data['sleep'] ?? null,
-            'family_status' => $data['family_status'] ?? null,
-            'role' => $data['role'] ?? null,
-            'company' => $data['company'] ?? null,
-        ]);
-    }
-
-    /**
-     * @param $id
-     * @param Request $request
-     * @OA\Get(
-     *     path="/users/info/{id}",
-     *     tags={"User settings"},
-     *     summary="Get user profile",
-     *     description="Returns detailed user profile information by user ID",
-     *     security={{"bearerAuth":{}}},
-     *
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         description="User ID",
-     *         @OA\Schema(
-     *             type="string",
-     *             format="uuid",
-     *             example="00012bae-a544-4300-acb4-8b39ca353b8c"
-     *         )
-     *     ),
-     *
-     *     @OA\Response(
-     *          response=200,
-     *          description="Successful operation",
-     *          @OA\JsonContent(
-     *              ref="#/components/schemas/SuccessResponse",
-     *              example={
-     *                  "meta": {
-     *                      "error": null,
-     *                      "status": 200
-     *                  },
-     *                  "data": {
-     *                      "items": {
-     *                          "id": "00012bae-a544-4300-acb4-8b39ca353b8c",
-     *                          "name": "Олежа",
-     *                          "bio": null,
-     *                          "educational_institution": null,
-     *                          "role": null,
-     *                          "residence": "Благовещенск",
-     *                          "company": null,
-     *                          "gender": "Мужчина",
-     *                          "age": 19,
-     *                          "info": {
-     *                              "Гетеро",
-     *                              "Не женат",
-     *                              "Серьезные отношения"
-     *                          },
-     *                          "distance": 6666,
-     *                          "is_verified": false,
-     *                          "images": {
-     *                              "45,075c70c6065121",
-     *                              "48,075c7142509235",
-     *                              "46,075c723825fe52",
-     *                              "44,075c7391990dc5"
-     *                          },
-     *                          "interests": {
-     *                              "Фильмы",
-     *                              "Киберспорт",
-     *                              "Сериалы",
-     *                              "Пиво",
-     *                              "Аниме"
-     *                          },
-     *                          "gifts": {},
-     *                          "gifts_count": 0,
-     *                          "feedbacks_count": 0
-     *                      }
-     *                  }
-     *              }
-     *          )
-     *     ),
-     *
-     *     @OA\Response(
-     *         @OA\JsonContent(ref="#/components/schemas/Unauthorized"),
-     *         description="Unauthorized",
-     *         response=401
-     *     )
-     * )
-     * @return JsonResponse
-     * @throws Exception
-     */
-    public function getUser($id, Request $request): JsonResponse
-    {
-        $viewer = $request->customer;
-        try {
-            return $this->successResponse([
-                'items' => $this->userService->getUser($id, $viewer)
-            ]);
-        } catch (Exception $e) {
-            return $this->errorResponse(
-                $e->getMessage(),
-                (int)$e->getCode()
-            );
-        }
-    }
-
-    /**
-     * @param Request $request
-     * @OA\Get(
-     *     path="/users/profile",
-     *     tags={"User settings"},
-     *     summary="Get my profile",
-     *     description="Returns detailed user profile information by user ID",
-     *     security={{"bearerAuth":{}}},
-     *
-     *     @OA\Response(
-     *          response=200,
-     *          description="Successful operation",
-     *          @OA\JsonContent(
-     *              ref="#/components/schemas/SuccessResponse",
-     *              example={
-     *                  "meta": {
-     *                      "error": null,
-     *                      "status": 200
-     *                  },
-     *                  "data": {
-     *                      "items": {
-     *                          "id": "00012bae-a544-4300-acb4-8b39ca353b8c",
-     *                          "name": "Олежа",
-     *                          "bio": null,
-     *                          "educational_institution": null,
-     *                          "role": null,
-     *                          "residence": "Благовещенск",
-     *                          "company": null,
-     *                          "gender": "Мужчина",
-     *                          "age": 19,
-     *                          "info": {
-     *                              "Гетеро",
-     *                              "Не женат",
-     *                              "Серьезные отношения"
-     *                          },
-     *                          "distance": 6666,
-     *                          "is_verified": false,
-     *                          "images": {
-     *                              "45,075c70c6065121",
-     *                              "48,075c7142509235",
-     *                              "46,075c723825fe52",
-     *                              "44,075c7391990dc5"
-     *                          },
-     *                          "interests": {
-     *                              "Фильмы",
-     *                              "Киберспорт",
-     *                              "Сериалы",
-     *                              "Пиво",
-     *                              "Аниме"
-     *                          },
-     *                          "gifts": {},
-     *                          "gifts_count": 0,
-     *                          "feedbacks_count": 0
-     *                      }
-     *                  }
-     *              }
-     *          )
-     *     ),
-     *
-     *     @OA\Response(
-     *         @OA\JsonContent(ref="#/components/schemas/Unauthorized"),
-     *         description="Unauthorized",
-     *         response=401
-     *     )
-     * )
-     * @return JsonResponse
-     * @throws Exception
-     */
-    public function getProfile(Request $request): JsonResponse
-    {
-        $viewer = $request->customer;
-        try {
-            return $this->successResponse(
-                $this->userService->getUser($viewer['id'], $viewer)
-            );
         } catch (Exception $e) {
             return $this->errorResponse(
                 $e->getMessage(),
