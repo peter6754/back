@@ -1,13 +1,14 @@
 <?php
 
-use OpenApi\Generator;
+use App\Http\Controllers\Application\PricesController;
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Payments\PaymentsController;
+use App\Http\Controllers\Payments\StatusesController;
+use App\Http\Controllers\Recommendations\RecommendationsController;
+use App\Http\Controllers\Users\UsersController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
-use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\Payments\StatusesController;
-use App\Http\Controllers\Payments\PaymentsController;
-use App\Http\Controllers\Application\PricesController;
-use App\Http\Controllers\Recommendations\RecommendationsController;
+use OpenApi\Generator;
 
 // Recommendations routes
 Route::prefix('recommendations')->middleware('auth')->group(function () {
@@ -61,7 +62,6 @@ Route::prefix('payment')->group(function () {
         ->name('statuses.fail');
 });
 
-
 // Prices routes
 Route::prefix('application')->middleware('auth')->group(function () {
     Route::prefix('prices')->group(function () {
@@ -90,8 +90,8 @@ Route::prefix('auth')->group(function () {
     Route::any('social/{provider}/callback', [AuthController::class, 'socialCallback']);
     Route::get('social/{provider}', function ($provider) {
         if (
-            !empty(config("services.{$provider}.client_id")) ||
-            !empty(config("services.{$provider}.redirect"))
+            ! empty(config("services.{$provider}.client_id")) ||
+            ! empty(config("services.{$provider}.redirect"))
         ) {
             return Socialite::driver($provider)->redirectUrl(
                 url(config("services.{$provider}.redirect"))
@@ -101,15 +101,19 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+// who liked you?
+Route::prefix('user')->middleware('auth')->group(function () {
+    Route::get('likes', [UsersController::class, 'getUserLikes']);
+});
+
 // Default routes
 Route::get('swagger', function () {
     $getGenerator = Generator::scan([
-        base_path() . "/App/Http/Controllers",
+        base_path().'/App/Http/Controllers',
     ]);
+
     return response($getGenerator->toYaml());
 });
 Route::get('/', function () {
     return view('welcome');
 });
-
-
