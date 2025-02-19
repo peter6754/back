@@ -11,6 +11,7 @@
         "php": "^8.2",
         "ext-pdo": "*",
         "ext-simplexml": "*",
+        "ext-zip": "*",
         "backpack/backupmanager": "^5.0",
         "backpack/crud": "^6.7",
         "backpack/logmanager": "^5.0",
