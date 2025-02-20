@@ -46,34 +46,46 @@ class ProcessReaction implements ShouldQueue
         $reactionExists = $this->checkExistingReaction();
         $superboom = $this->getSuperboomStatus();
 
-        UserReaction::updateOrCreate(
-            [
-                'user_id' => $this->params['user_id'],
-                'reactor_id' => $this->userId,
-            ],
-            [
+        $reaction = UserReaction::firstOrNew([
+            'user_id' => $this->params['user_id'],
+            'reactor_id' => $this->userId,
+        ]);
+
+        if ($reaction->exists) {
+            $reaction->from_top = $this->params['from_top'] ?? false;
+            $reaction->superboom = $superboom;
+            $reaction->type = 'like';
+            $reaction->date = now();
+            $reaction->save();
+        } else {
+            $reaction->fill([
                 'from_top' => $this->params['from_top'] ?? false,
                 'superboom' => $superboom,
                 'type' => 'like',
-                'date' => now(),
-            ]
-        );
+                'date' => now()
+            ])->save();
+        }
 
         return ['is_match' => $reactionExists];
     }
 
     private function processDislike(): array
     {
-        UserReaction::updateOrCreate(
-            [
-                'user_id' => $this->params['user_id'],
-                'reactor_id' => $this->userId,
-            ],
-            [
+        $reaction = UserReaction::firstOrNew([
+            'user_id' => $this->params['user_id'],
+            'reactor_id' => $this->userId,
+        ]);
+
+        if ($reaction->exists) {
+            $reaction->type = 'dislike';
+            $reaction->date = now();
+            $reaction->save();
+        } else {
+            $reaction->fill([
                 'type' => 'dislike',
                 'date' => now()
-            ]
-        );
+            ])->save();
+        }
 
         return ['message' => 'Reaction sent successfully'];
     }
@@ -83,18 +95,25 @@ class ProcessReaction implements ShouldQueue
         $reactionExists = $this->checkExistingReaction();
         $superboom = $this->getSuperboomStatus();
 
-        UserReaction::updateOrCreate(
-            [
-                'user_id' => $this->params['user_id'],
-                'reactor_id' => $this->userId,
-            ],
-            [
+        $reaction = UserReaction::firstOrNew([
+            'user_id' => $this->params['user_id'],
+            'reactor_id' => $this->userId,
+        ]);
+
+        if ($reaction->exists) {
+            $reaction->from_top = $this->params['from_top'] ?? false;
+            $reaction->superboom = $superboom;
+            $reaction->type = 'superlike';
+            $reaction->date = now();
+            $reaction->save();
+        } else {
+            $reaction->fill([
                 'from_top' => $this->params['from_top'] ?? false,
                 'superboom' => $superboom,
                 'type' => 'superlike',
                 'date' => now()
-            ]
-        );
+            ])->save();
+        }
 
         UserInformation::where('user_id', $this->userId)->decrement('superlikes');
 
