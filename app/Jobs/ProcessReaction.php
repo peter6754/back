@@ -178,31 +178,19 @@ class ProcessReaction implements ShouldQueue
      */
     private function updateOrCreateReaction(array $attributes, array $values): UserReaction
     {
-        return DB::transaction(function () use ($attributes, $values) {
-            // Пытаемся найти существующую запись
-            $reaction = UserReaction::where($attributes)->first();
+        // Сначала пытаемся обновить
+        if (UserReaction::where($attributes)->exists()) {
+            UserReaction::where($attributes)->update($values);
+            return UserReaction::where($attributes)->first();
+        }
 
-            if ($reaction) {
-                // Явно обновляем поля без использования update()
-                foreach ($values as $key => $value) {
-                    $reaction->{$key} = $value;
-                }
-                $reaction->save(); // Сохраняем изменения
-                return $reaction->fresh(); // Возвращаем обновленную запись
-            }
-
-            // Создаем новую запись со значениями по умолчанию
-            $defaultValues = [
-                'superboom' => false,
-                'from_top' => false,
-                'is_notified' => false,
-                'from_reels' => false,
-            ];
-
-            $data = array_merge($attributes, $defaultValues, $values);
-
-            return UserReaction::create($data);
-        });
+        // Если нет - создаем
+        return UserReaction::create(array_merge($attributes, [
+            'superboom' => false,
+            'from_top' => false,
+            'is_notified' => false,
+            'from_reels' => false,
+        ], $values));
     }
 
     /**

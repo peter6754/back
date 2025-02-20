@@ -272,41 +272,6 @@ class RecommendationService
         return ['is_match' => $reactionExists];
     }
 
-    public function like2(string $userId, array $params)
-    {
-        // Оптимизация: загружаем только необходимые данные
-        $user = Secondaryuser::with(['deviceTokens', 'userInformation'])
-            ->select(['id', 'email'])
-            ->findOrFail($params['user_id']);
-
-        // Проверяем существование реакции за один запрос
-        $reactionExists = UserReaction::where('reactor_id', $params['user_id'])
-            ->where('user_id', $userId)
-            ->whereIn('type', ['like', 'superlike'])
-            ->exists();
-
-        // Оптимизация: вычисляем superboom заранее
-        $superboom = $user->userInformation && $user->userInformation->superboom_due_date >= now();
-
-        // Оптимизация: используем insertOrIgnore или прямой insert/update
-        UserReaction::updateOrCreate(
-            [
-                'user_id' => $params['user_id'],
-                'reactor_id' => $userId,
-            ],
-            [
-                'from_top' => $params['from_top'],
-                'superboom' => $superboom,
-                'type' => 'like',
-                'date' => now(),
-            ]
-        );
-
-        return [
-            'is_match' => $reactionExists,
-        ];
-    }
-
     /**
      * @param string $userId
      * @param array $params
@@ -323,24 +288,6 @@ class RecommendationService
         return ['message' => 'Reaction processing started'];
     }
 
-    public function dislike2(string $userId, array $params)
-    {
-        UserReaction::updateOrCreate(
-            [
-                'user_id' => $params['user_id'],
-                'reactor_id' => $userId,
-            ],
-            [
-                'type' => 'dislike',
-                'date' => now()
-            ]
-        );
-
-        return [
-            'message' => 'Reaction sent successfully'
-        ];
-    }
-
     /**
      * @param string $userId
      * @param array $params
@@ -355,28 +302,6 @@ class RecommendationService
         )->onQueue('reactions');
 
         return ['message' => 'Rollback processing started'];
-    }
-
-    public function rollback2(string $userId, array $params)
-    {
-        $lastReacted = UserReaction::where('reactor_id', $userId)
-            ->latest('date')
-            ->first(['user_id']);
-
-        if (!$lastReacted || $lastReacted->user_id != $params['user_id']) {
-            throw new \Exception('Your last reaction doesn\'t match to the given user_id');
-        }
-
-        DB::table('user_reactions')
-            ->where('reactor_id', $userId)
-            ->where('user_id', $params['user_id'])
-            ->orderBy('date', 'desc')
-            ->limit(1)
-            ->delete();
-
-        return [
-            'message' => 'Rollbacked successfully'
-        ];
     }
 
     /**
@@ -398,43 +323,6 @@ class RecommendationService
         )->onQueue('reactions');
 
         return ['is_match' => $reactionExists];
-    }
-
-    public function superlike2(string $userId, array $params)
-    {
-        $user = Secondaryuser::with(['deviceTokens', 'userInformation'])
-            ->select(['id', 'email'])
-            ->findOrFail($params['user_id']);
-
-        $reaction = UserReaction::where('reactor_id', $params['user_id'])
-            ->where('user_id', $userId)
-            ->whereIn('type', ['like', 'superlike'])
-            ->first();
-
-        $superboom = $user->userInformation->superboom_due_date >= now();
-
-        UserReaction::updateOrCreate(
-            [
-                'user_id' => $params['user_id'],
-                'reactor_id' => $userId,
-            ],
-            [
-                'from_top' => $params['from_top'],
-                'superboom' => $superboom,
-                'type' => 'superlike',
-                'date' => now()
-            ]
-        );
-
-        UserInformation::where('user_id', $userId)->decrement('superlikes');
-
-        if (!empty($params['comment'])) {
-            $this->leaveComment($params['comment'], $userId, $params['user_id']);
-        }
-
-        return [
-            'is_match' => (bool)$reaction
-        ];
     }
 
     /**
