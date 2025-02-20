@@ -30,6 +30,10 @@ class ProcessReaction implements ShouldQueue
     {
     }
 
+    /**
+     * @return bool[]|string[]
+     * @throws \Throwable
+     */
     public function handle(): array
     {
         return match ($this->actionType) {
@@ -41,79 +45,63 @@ class ProcessReaction implements ShouldQueue
         };
     }
 
+    /**
+     * @return bool[]
+     * @throws \Throwable
+     */
     private function processLike(): array
     {
         $reactionExists = $this->checkExistingReaction();
         $superboom = $this->getSuperboomStatus();
 
-        $reaction = UserReaction::firstOrNew([
+        $this->updateOrCreateReaction([
             'user_id' => $this->params['user_id'],
             'reactor_id' => $this->userId,
+        ], [
+            'from_top' => $this->params['from_top'] ?? false,
+            'superboom' => $superboom,
+            'type' => 'like',
+            'date' => now(),
         ]);
-
-        if ($reaction->exists) {
-            $reaction->from_top = $this->params['from_top'] ?? false;
-            $reaction->superboom = $superboom;
-            $reaction->type = 'like';
-            $reaction->date = now();
-            $reaction->save();
-        } else {
-            $reaction->fill([
-                'from_top' => $this->params['from_top'] ?? false,
-                'superboom' => $superboom,
-                'type' => 'like',
-                'date' => now()
-            ])->save();
-        }
 
         return ['is_match' => $reactionExists];
     }
 
+    /**
+     * @return string[]
+     * @throws \Throwable
+     */
     private function processDislike(): array
     {
-        $reaction = UserReaction::firstOrNew([
+        $this->updateOrCreateReaction([
             'user_id' => $this->params['user_id'],
             'reactor_id' => $this->userId,
+        ], [
+            'type' => 'dislike',
+            'date' => now()
         ]);
-
-        if ($reaction->exists) {
-            $reaction->type = 'dislike';
-            $reaction->date = now();
-            $reaction->save();
-        } else {
-            $reaction->fill([
-                'type' => 'dislike',
-                'date' => now()
-            ])->save();
-        }
 
         return ['message' => 'Reaction sent successfully'];
     }
 
+    /**
+     * @return bool[]
+     * @throws \Throwable
+     */
     private function processSuperlike(): array
     {
         $reactionExists = $this->checkExistingReaction();
         $superboom = $this->getSuperboomStatus();
 
-        $reaction = UserReaction::firstOrNew([
+        $this->updateOrCreateReaction([
             'user_id' => $this->params['user_id'],
             'reactor_id' => $this->userId,
+        ], [
+            'from_top' => $this->params['from_top'] ?? false,
+            'superboom' => $superboom,
+            'type' => 'superlike',
+            'date' => now()
         ]);
-
-        if ($reaction->exists) {
-            $reaction->from_top = $this->params['from_top'] ?? false;
-            $reaction->superboom = $superboom;
-            $reaction->type = 'superlike';
-            $reaction->date = now();
-            $reaction->save();
-        } else {
-            $reaction->fill([
-                'from_top' => $this->params['from_top'] ?? false,
-                'superboom' => $superboom,
-                'type' => 'superlike',
-                'date' => now()
-            ])->save();
-        }
 
         UserInformation::where('user_id', $this->userId)->decrement('superlikes');
 
@@ -124,6 +112,10 @@ class ProcessReaction implements ShouldQueue
         return ['is_match' => $reactionExists];
     }
 
+    /**
+     * @return string[]
+     * @throws \Exception
+     */
     private function processRollback(): array
     {
         $lastReacted = UserReaction::where('reactor_id', $this->userId)
@@ -144,6 +136,9 @@ class ProcessReaction implements ShouldQueue
         return ['message' => 'Rollbacked successfully'];
     }
 
+    /**
+     * @return bool
+     */
     private function checkExistingReaction(): bool
     {
         return UserReaction::where('reactor_id', $this->params['user_id'])
@@ -152,6 +147,9 @@ class ProcessReaction implements ShouldQueue
             ->exists();
     }
 
+    /**
+     * @return bool
+     */
     private function getSuperboomStatus(): bool
     {
         $user = Secondaryuser::with(['userInformation'])
@@ -161,11 +159,51 @@ class ProcessReaction implements ShouldQueue
         return $user->userInformation && $user->userInformation->superboom_due_date >= now();
     }
 
+    /**
+     * @param string $comment
+     * @param string $authorId
+     * @param string $recipientId
+     * @return void
+     */
     private function leaveComment(string $comment, string $authorId, string $recipientId)
     {
         // Реализация добавления комментария
     }
 
+    /**
+     * @param array $attributes
+     * @param array $values
+     * @return UserReaction
+     * @throws \Throwable
+     */
+    private function updateOrCreateReaction(array $attributes, array $values): UserReaction
+    {
+        return DB::transaction(function () use ($attributes, $values) {
+            // Пытаемся найти существующую запись
+            $reaction = UserReaction::where($attributes)->first();
+
+            if ($reaction) {
+                // Обновляем существующую запись
+                $reaction->update($values);
+                return $reaction;
+            }
+
+            // Создаем новую запись со значениями по умолчанию
+            $defaultValues = [
+                'superboom' => false,
+                'from_top' => false,
+                'is_notified' => false,
+                'from_reels' => false,
+            ];
+
+            return UserReaction::create(array_merge($attributes, $defaultValues, $values));
+        });
+    }
+
+    /**
+     * @param \Throwable $exception
+     * @return void
+     */
     public function failed(\Throwable $exception)
     {
         Log::channel('recommendations')->error("Reaction processing failed: {$exception->getMessage()}");
