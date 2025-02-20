@@ -34,6 +34,7 @@
         "unitpay/php-sdk": "dev-master",
         "barryvdh/laravel-debugbar": "^3.16",
         "ext-simplexml": "*",
+        "ext-mbstring": "*",
         "ext-curl": "*",
         "ext-pdo": "*",
         "ext-zip": "*",
