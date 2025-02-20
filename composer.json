@@ -35,6 +35,7 @@
         "barryvdh/laravel-debugbar": "^3.16",
         "ext-simplexml": "*",
         "ext-mbstring": "*",
+        "ext-redis": "*",
         "ext-curl": "*",
         "ext-pdo": "*",
         "ext-zip": "*",
