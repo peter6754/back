@@ -50,7 +50,6 @@ class AuthService
      */
     public function login(array $params): array
     {
-        $deviceInfo = $params['device_info'] ?? null;
         $userToken = $params['device_token'] ?? null;
         $userPhone = $params['phone'];
         $code = (string)rand(1000, 9999);
@@ -85,7 +84,6 @@ class AuthService
             'message' => 'Verification code was sent to your phone',
             'type' => $type,
             'token' => app(JwtService::class)->encode([
-                'device' => $deviceInfo,
                 'phone' => $userPhone,
                 'code' => $hashedCode
             ], 9 * 60)
