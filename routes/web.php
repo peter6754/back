@@ -1,13 +1,19 @@
 <?php
 
-use OpenApi\Generator;
+use App\Http\Controllers\Users\UserController;
+use App\Http\Controllers\Users\UsersController;
+use App\Http\Controllers\Migrate\ProxyController;
+use App\Http\Controllers\Users\SettingsController;
+use App\Http\Controllers\Application\PricesController;
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Chat\ChatController;
+use App\Http\Controllers\Payments\PaymentsController;
+use App\Http\Controllers\Payments\StatusesController;
+use App\Http\Controllers\Users\ReferenceDataController;
+use App\Http\Controllers\Recommendations\RecommendationsController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
-use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\Payments\StatusesController;
-use App\Http\Controllers\Payments\PaymentsController;
-use App\Http\Controllers\Application\PricesController;
-use App\Http\Controllers\Recommendations\RecommendationsController;
+use OpenApi\Generator;
 
 // Recommendations routes
 Route::prefix('recommendations')->middleware('auth')->group(function () {
@@ -125,8 +131,8 @@ Route::prefix('auth')->group(function () {
     Route::any('social/{provider}/callback', [AuthController::class, 'socialCallback']);
     Route::get('social/{provider}', function ($provider) {
         if (
-            ! empty(config("services.{$provider}.client_id")) ||
-            ! empty(config("services.{$provider}.redirect"))
+            !empty(config("services.{$provider}.client_id")) ||
+            !empty(config("services.{$provider}.redirect"))
         ) {
             return Socialite::driver($provider)->redirectUrl(
                 url(config("services.{$provider}.redirect"))
@@ -186,6 +192,11 @@ Route::get('swagger', function () {
     ]);
 
     return response($getGenerator->toYaml());
+});
+
+Route::get('/test', function () {
+    $model = new \App\Models\UserReaction();
+    dd($model->getFillable());
 });
 
 Route::get('/', function () {
