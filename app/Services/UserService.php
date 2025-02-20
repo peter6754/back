@@ -229,13 +229,6 @@ class UserService
                     'image' => $image['image']
                 ];
             }),
-            'pets' => $user['pets'] ? [UserInformationTranslator::translate('pets', $user['pets']['pet'])] : [],
-            'interests' => collect($user['interests'] ?? [])->map(function ($userInterest) {
-                return [
-                    'id' => $userInterest['interest']['id'],
-                    'name' => $userInterest['interest']['name']
-                ];
-            }),
             'information' => [
                 'id' => $user['id'],
                 'name' => $user['name'],
@@ -250,19 +243,70 @@ class UserService
                 'show_me' => collect($user['preferences'] ?? [])->pluck('gender')->toArray(),
                 'residence' => $user['city']['formatted_address'] ?? null,
                 'bio' => $user['user_information']['bio'] ?? null,
-                'gender' => UserInformationTranslator::translate('genders', $user['gender']),
-                'sexual_orientation' => UserInformationTranslator::translate('orientations', $user['sexual_orientation']),
-                'zodiac_sign' => UserInformationTranslator::translate('zodiac_signs', $user['user_information']['zodiac_sign'] ?? ''),
-                'education' => UserInformationTranslator::translate('education', $user['user_information']['education'] ?? ''),
-                'family' => UserInformationTranslator::translate('family', $user['user_information']['family'] ?? ''),
-                'communication' => UserInformationTranslator::translate('communication', $user['user_information']['communication'] ?? ''),
-                'love_language' => UserInformationTranslator::translate('love_language', $user['user_information']['love_language'] ?? ''),
-                'alcohole' => UserInformationTranslator::translate('alcohol', $user['user_information']['alcohole'] ?? ''),
-                'smoking' => UserInformationTranslator::translate('smoking', $user['user_information']['smoking'] ?? ''),
-                'sport' => UserInformationTranslator::translate('sport', $user['user_information']['sport'] ?? ''),
-                'food' => UserInformationTranslator::translate('food', $user['user_information']['food'] ?? ''),
-                'social_network' => UserInformationTranslator::translate('social_network', $user['user_information']['social_network'] ?? ''),
-                'sleep' => UserInformationTranslator::translate('sleep', $user['user_information']['sleep'] ?? ''),
+                'gender' => !empty($user['gender']) ? [
+                    'key' => $user['gender'],
+                    'translation_ru' => UserInformationTranslator::translate('genders', $user['gender'])
+                ] : null,
+
+                'sexual_orientation' => !empty($user['sexual_orientation']) ? [
+                    'key' => $user['sexual_orientation'],
+                    'translation_ru' => UserInformationTranslator::translate('orientations', $user['sexual_orientation'])
+                ] : null,
+
+                'zodiac_sign' => !empty($user['user_information']['zodiac_sign']) ? [
+                    'key' => $user['user_information']['zodiac_sign'],
+                    'translation_ru' => UserInformationTranslator::translate('zodiac_signs', $user['user_information']['zodiac_sign'])
+                ] : null,
+
+                'education' => !empty($user['user_information']['education']) ? [
+                    'key' => $user['user_information']['education'],
+                    'translation_ru' => UserInformationTranslator::translate('education', $user['user_information']['education'])
+                ] : null,
+
+                'family' => !empty($user['user_information']['family']) ? [
+                    'key' => $user['user_information']['family'],
+                    'translation_ru' => UserInformationTranslator::translate('family', $user['user_information']['family'])
+                ] : null,
+
+                'communication' => !empty($user['user_information']['communication']) ? [
+                    'key' => $user['user_information']['communication'],
+                    'translation_ru' => UserInformationTranslator::translate('communication', $user['user_information']['communication'])
+                ] : null,
+
+                'love_language' => !empty($user['user_information']['love_language']) ? [
+                    'key' => $user['user_information']['love_language'],
+                    'translation_ru' => UserInformationTranslator::translate('love_language', $user['user_information']['love_language'])
+                ] : null,
+
+                'alcohole' => !empty($user['user_information']['alcohole']) ? [
+                    'key' => $user['user_information']['alcohole'],
+                    'translation_ru' => UserInformationTranslator::translate('alcohol', $user['user_information']['alcohole'])
+                ] : null,
+
+                'smoking' => !empty($user['user_information']['smoking']) ? [
+                    'key' => $user['user_information']['smoking'],
+                    'translation_ru' => UserInformationTranslator::translate('smoking', $user['user_information']['smoking'])
+                ] : null,
+
+                'sport' => !empty($user['user_information']['sport']) ? [
+                    'key' => $user['user_information']['sport'],
+                    'translation_ru' => UserInformationTranslator::translate('sport', $user['user_information']['sport'])
+                ] : null,
+
+                'food' => !empty($user['user_information']['food']) ? [
+                    'key' => $user['user_information']['food'],
+                    'translation_ru' => UserInformationTranslator::translate('food', $user['user_information']['food'])
+                ] : null,
+
+                'social_network' => !empty($user['user_information']['social_network']) ? [
+                    'key' => $user['user_information']['social_network'],
+                    'translation_ru' => UserInformationTranslator::translate('social_network', $user['user_information']['social_network'])
+                ] : null,
+
+                'sleep' => !empty($user['user_information']['sleep']) ? [
+                    'key' => $user['user_information']['sleep'],
+                    'translation_ru' => UserInformationTranslator::translate('sleep', $user['user_information']['sleep'])
+                ] : null,
                 'educational_institution' => $user['user_information']['educational_institution'] ?? null,
                 'family_status' => !empty($user['user_information']['family_status']) ? [
                     'key' => $user['user_information']['family_status'],
@@ -272,6 +316,13 @@ class UserService
                         $user['gender']
                     )
                 ] : null,
+                'pets' => $user['pets'] ? [UserInformationTranslator::translate('pets', $user['pets']['pet'])] : [],
+                'interests' => collect($user['interests'] ?? [])->map(function ($userInterest) {
+                    return [
+                        'id' => $userInterest['interest']['id'],
+                        'name' => $userInterest['interest']['name']
+                    ];
+                }),
                 'relationship_preference' => $user['final_preference']['preference'] ?? null,
                 'role' => $user['user_information']['role'] ?? null,
                 'company' => $user['user_information']['company'] ?? null,
