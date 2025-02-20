@@ -1,16 +1,13 @@
 <?php
 
-use App\Http\Controllers\Recommendations\RecommendationsController;
-use App\Http\Controllers\Users\ReferenceDataController;
 use App\Http\Controllers\Application\PricesController;
-use App\Http\Controllers\Payments\StatusesController;
-use App\Http\Controllers\Payments\PaymentsController;
-use App\Http\Controllers\Users\SettingsController;
-use App\Http\Controllers\Migrate\ProxyController;
-use App\Http\Controllers\Users\UserController;
 use App\Http\Controllers\Auth\AuthController;
-use Laravel\Socialite\Facades\Socialite;
+use App\Http\Controllers\Chat\ChatController;
+use App\Http\Controllers\Payments\PaymentsController;
+use App\Http\Controllers\Payments\StatusesController;
+use App\Http\Controllers\Recommendations\RecommendationsController;
 use Illuminate\Support\Facades\Route;
+use Laravel\Socialite\Facades\Socialite;
 use OpenApi\Generator;
 
 // Recommendations routes
@@ -80,6 +77,41 @@ Route::prefix('application')->middleware('auth')->group(function () {
     });
 });
 
+// Chat/Conversations API routes
+Route::prefix('api/conversations')->middleware('auth')->group(function () {
+    // получить все чаты текущего юзера
+    Route::get('/', [ChatController::class, 'getConversations']);
+
+    // Получить сообщения в чате
+    Route::get('/messages/{chat_id}', [ChatController::class, 'getMessages']);
+
+    // Отправить сообщение в чат текст и файлы
+    Route::post('/send-messages', [ChatController::class, 'sendMessage']);
+
+    // Загрузить медиа файл в чат
+    Route::post('/{chat_id}/media', [ChatController::class, 'uploadMedia']);
+
+    // Отметить все сообщения в чате как прочитанные
+    Route::post('/read-messages/{chat_id}', [ChatController::class, 'markMessagesAsRead']);
+
+    // Получить непрочитанные сообщения в чате
+    Route::get('/{chat_id}/unread-messages-status', [ChatController::class, 'getUnreadMessagesStatus']);
+    // Создать чат с пользователем
+    Route::post('/{user_id}', [ChatController::class, 'createConversation']);
+
+    // Удалить чат с пользователем
+    Route::delete('/{chat_id}', [ChatController::class, 'deleteConversation']);
+
+    // Закрепить/открепить чат
+    Route::post('/pin/{chat_id}', [ChatController::class, 'togglePinConversation']);
+
+    // Получить социальные сети пользователя
+    Route::get('/social-accounts', action: [ChatController::class, 'getUserSocialAccounts']);
+
+    // Отправить социальные контакты в чат
+    Route::get('/send-social-contacts', [ChatController::class, 'sendSocialContacts']);
+});
+
 // Auth routes
 Route::prefix('auth')->group(function () {
     // Phone login
@@ -146,8 +178,9 @@ Route::prefix('users')->middleware('auth')->group(function () {
 // Default routes
 Route::get('swagger', function () {
     $getGenerator = Generator::scan([
-        base_path() . "/App/Http/Controllers",
+        base_path().'/app/Http/Controllers',
     ]);
+
     return response($getGenerator->toYaml());
 });
 

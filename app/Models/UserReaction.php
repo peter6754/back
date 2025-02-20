@@ -132,4 +132,27 @@ class UserReaction extends Model
                 ->positive()
                 ->exists();
     }
+
+    /**
+     * Check if two users have mutual likes (static method).
+     *
+     * @param string $userId1
+     * @param string $userId2
+     * @return bool
+     */
+    public static function haveMutualLikes(string $userId1, string $userId2): bool
+    {
+        // Check if user1 liked user2 AND user2 liked user1
+        $user1LikesUser2 = self::where('reactor_id', $userId1)
+            ->where('user_id', $userId2)
+            ->positive()
+            ->exists();
+
+        $user2LikesUser1 = self::where('reactor_id', $userId2)
+            ->where('user_id', $userId1)
+            ->positive()
+            ->exists();
+
+        return $user1LikesUser2 && $user2LikesUser1;
+    }
 }

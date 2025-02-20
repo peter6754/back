@@ -30,22 +30,36 @@ class AuthMiddleware
     {
         try {
             $token = $request->bearerToken() ?? env('JWT_DEBUG', '');
+            \Log::info('Auth middleware - Token: ' . substr($token, 0, 50) . '...');
 
             // Проверяем и декодируем токен
             if (!$payload = $this->jwtService->decode($token)) {
+                \Log::error('Auth middleware - Failed to decode token');
                 throw new \Exception('Unauthorized');
             }
 
+            \Log::info('Auth middleware - Decoded payload: ' . json_encode($payload));
+
             // Получаем пользователя
+            \Log::info('Auth middleware - Looking for user ID: ' . $payload['id']);
             $user = Secondaryuser::find($payload['id']);
+            \Log::info('Auth middleware - User found: ' . ($user ? 'YES' : 'NO'));
             if (!$user) {
                 throw new \Exception('User not found');
             }
 
             // Добавляем пользователя в запрос
-            $request->merge(['customer' => $user->toArray()]);
+            $request->setUserResolver(function () use ($user) {
+                return $user;
+            });
 
-            return $next($request);
+            // Устанавливаем customer для совместимости с контроллерами
+            $request->customer = $user->toArray();
+
+            \Log::info('Auth middleware - Calling next middleware/controller');
+            $response = $next($request);
+            \Log::info('Auth middleware - Response received: ' . $response->getStatusCode());
+            return $response;
         } catch (\Exception $e) {
             return $this->errorUnauthorized();
         }
