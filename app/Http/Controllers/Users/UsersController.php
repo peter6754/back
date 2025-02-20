@@ -74,10 +74,7 @@ class UsersController extends Controller
     {
         try {
             // Получаем текущего пользователя
-            $user = Auth::user();
-            if (! $user) {
-                return response()->json(['error' => 'Unauthorized'], 401);
-            }
+            $user = $request->customer;
 
             // Получаем параметр фильтра
             $filter = $request->get('filter');
@@ -148,35 +145,35 @@ class UsersController extends Controller
                 'u.id',
                 'u.name',
                 DB::raw('(SELECT image FROM user_images WHERE user_id = u.id LIMIT 1) as image'),
-                DB::raw('CASE 
+                DB::raw('CASE
                     WHEN EXISTS(
-                        SELECT 1 FROM bought_subscriptions bs 
-                        JOIN transactions t ON t.id = bs.transaction_id 
+                        SELECT 1 FROM bought_subscriptions bs
+                        JOIN transactions t ON t.id = bs.transaction_id
                         WHERE t.user_id = u.id AND bs.due_date > NOW()
-                    ) AND us.show_my_age = 0 THEN NULL 
-                    ELSE u.age 
+                    ) AND us.show_my_age = 0 THEN NULL
+                    ELSE u.age
                 END as age'),
-                DB::raw('CASE 
+                DB::raw('CASE
                     WHEN EXISTS(
-                        SELECT 1 FROM bought_subscriptions bs 
-                        JOIN transactions t ON t.id = bs.transaction_id 
+                        SELECT 1 FROM bought_subscriptions bs
+                        JOIN transactions t ON t.id = bs.transaction_id
                         WHERE t.user_id = u.id AND bs.due_date > NOW()
-                    ) AND us.show_distance_from_me = 0 THEN NULL 
+                    ) AND us.show_distance_from_me = 0 THEN NULL
                     ELSE ROUND(
                         (6371 * acos(
-                            cos(radians('.$user->lat.')) * cos(radians(u.lat)) * 
-                            cos(radians(u.long) - radians('.$user->long.')) + 
+                            cos(radians('.$user->lat.')) * cos(radians(u.lat)) *
+                            cos(radians(u.long) - radians('.$user->long.')) +
                             sin(radians('.$user->lat.')) * sin(radians(u.lat))
                         )), 0
-                    ) 
+                    )
                 END as distance'),
                 DB::raw('EXISTS(
-                    SELECT 1 FROM user_reactions ur2 
+                    SELECT 1 FROM user_reactions ur2
                     WHERE ur2.user_id = "'.$user->id.'" AND ur2.reactor_id = u.id AND ur2.type = "superlike"
                 ) as superliked_me'),
-                DB::raw('CASE 
-                    WHEN us.status_online = 1 THEN u.is_online 
-                    ELSE 0 
+                DB::raw('CASE
+                    WHEN us.status_online = 1 THEN u.is_online
+                    ELSE 0
                 END as is_online'),
             ])
             ->leftJoin('user_settings as us', 'us.user_id', '=', 'u.id')

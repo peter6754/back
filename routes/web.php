@@ -181,7 +181,8 @@ Route::prefix('users')->middleware('auth')->group(function () {
 });
 
 // who liked you?
-Route::prefix('user')->middleware('auth')->group(function () {
+
+Route::prefix('users')->middleware('auth')->group(function () {
     Route::get('likes', [UsersController::class, 'getUserLikes']);
 });
 
