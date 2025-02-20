@@ -2063,6 +2063,96 @@
                 ]
             }
         },
+        "/users/settings/token": {
+            "post": {
+                "tags": [
+                    "User settings"
+                ],
+                "summary": "Add / Register device token",
+                "operationId": "5a3849b8ab51e87aff067d74dbe87f21",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "token"
+                                ],
+                                "properties": {
+                                    "token": {
+                                        "description": "Device Token",
+                                        "type": "string",
+                                        "example": "20bdb8fb3bdadc1bef037eefcaeb56ad6e57f3241c99e734062b6ee829271b71"
+                                    },
+                                    "application": {
+                                        "description": "Application",
+                                        "type": "string",
+                                        "example": "AppStore 1.2.3"
+                                    },
+                                    "device": {
+                                        "description": "Device Name",
+                                        "type": "string",
+                                        "example": "iPhone 15"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "User settings"
+                ],
+                "summary": "Remove device token",
+                "operationId": "ee82101a83ef018306a1e8cbd62fcd80",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "token"
+                                ],
+                                "properties": {
+                                    "token": {
+                                        "description": "Device Token",
+                                        "type": "string",
+                                        "example": "20bdb8fb3bdadc1bef037eefcaeb56ad6e57f3241c99e734062b6ee829271b71"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/users/info/{id}": {
             "get": {
                 "tags": [

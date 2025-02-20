@@ -5,6 +5,7 @@ use App\Http\Controllers\Users\ReferenceDataController;
 use App\Http\Controllers\Application\PricesController;
 use App\Http\Controllers\Payments\StatusesController;
 use App\Http\Controllers\Payments\PaymentsController;
+use App\Http\Controllers\Users\SettingsController;
 use App\Http\Controllers\Migrate\ProxyController;
 use App\Http\Controllers\Users\UserController;
 use App\Http\Controllers\Auth\AuthController;
@@ -113,6 +114,12 @@ Route::prefix('users')->middleware('auth')->group(function () {
     Route::get('profile', [UserController::class, 'getAccountInformation']);
     Route::put('profile', [UserController::class, 'updateAccountInformation']);
 
+    // Settings
+    Route::prefix('settings')->group(function () {
+        Route::delete('token', [SettingsController::class, 'deleteToken']);
+        Route::post('token', [SettingsController::class, 'addToken']);
+    });
+
     // Справочные данные
     Route::prefix('reference-data')->group(function () {
         Route::get('interests', [ReferenceDataController::class, 'getInterests']);
@@ -133,7 +140,6 @@ Route::prefix('users')->middleware('auth')->group(function () {
         Route::get('sleep', [ReferenceDataController::class, 'getSleep']);
         Route::get('orientations', [ReferenceDataController::class, 'getOrientations']);
         Route::get('clubs', [ReferenceDataController::class, 'getClubs']);
-
     });
 });
 

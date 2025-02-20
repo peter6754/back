@@ -28,7 +28,9 @@ class UserDeviceToken extends Model
      * @var array
      */
     protected $fillable = [
+        'application',
         'user_id',
+        'device',
         'token'
     ];
 
@@ -46,7 +48,7 @@ class UserDeviceToken extends Model
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(Secondaryuser::class, 'user_id');
     }
 
     /**
@@ -64,28 +66,27 @@ class UserDeviceToken extends Model
      * Add a new device token for a user.
      *
      * @param string $userId
-     * @param string $token
+     * @param array $query
      * @return UserDeviceToken
      */
-    public static function addToken(string $userId, string $token): UserDeviceToken
+    public static function addToken(string $userId, array $query): UserDeviceToken
     {
-        return static::firstOrCreate([
-            'user_id' => $userId,
-            'token' => $token
-        ]);
+        return static::updateOrCreate([
+            'token' => $query['token'],
+            'user_id' => $userId
+        ], $query);
     }
 
     /**
      * Remove a device token.
-     *
      * @param string $userId
-     * @param string $token
+     * @param array $query
      * @return bool
      */
-    public static function removeToken(string $userId, string $token): bool
+    public static function removeToken(string $userId, array $query): bool
     {
         return (bool) static::where('user_id', $userId)
-            ->where('token', $token)
+            ->where('token', $query['token'])
             ->delete();
     }
 
