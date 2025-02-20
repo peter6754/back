@@ -50,8 +50,8 @@ class AuthService
      */
     public function login(array $params): array
     {
-        $userToken = $params['device_token'];
-        $deviceInfo = $params['device_info'];
+        $deviceInfo = $params['device_info'] ?? null;
+        $userToken = $params['device_token'] ?? null;
         $userPhone = $params['phone'];
         $code = (string)rand(1000, 9999);
 

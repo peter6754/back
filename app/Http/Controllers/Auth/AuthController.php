@@ -99,7 +99,7 @@ class AuthController extends Controller
             $validatedData = $request->validate([
                 'device_token' => 'string|nullable',
                 'device_info' => 'string|nullable',
-                'phone' => 'required'
+                'phone' => 'string|required'
             ]);
 
             return $this->successResponse(
