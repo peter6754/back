@@ -1,10 +1,14 @@
 <?php
 
+use App\Http\Controllers\Users\UserController;
+use App\Http\Controllers\Migrate\ProxyController;
+use App\Http\Controllers\Users\SettingsController;
 use App\Http\Controllers\Application\PricesController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Chat\ChatController;
 use App\Http\Controllers\Payments\PaymentsController;
 use App\Http\Controllers\Payments\StatusesController;
+use App\Http\Controllers\Users\ReferenceDataController;
 use App\Http\Controllers\Recommendations\RecommendationsController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
