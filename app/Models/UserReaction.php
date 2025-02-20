@@ -34,7 +34,8 @@ class UserReaction extends Model
         'superboom',
         'from_top',
         'is_notified',
-        'from_reels'
+        'from_reels',
+        'date'
     ];
 
     /**
