@@ -15,9 +15,8 @@ class UsersController extends Controller
 {
     /**
      * Get user likes with filtering options
-     *
      * @OA\Get(
-     *     path="/user/likes",
+     *     path="/users/likes",
      *     summary="Get user likes",
      *     description="Retrieve users who liked the authenticated user with various filtering options",
      *     operationId="getUserLikes",
@@ -111,10 +110,10 @@ class UsersController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'image' => $user->image,
-                    'age' => $user->age ? (int) $user->age : null,
-                    'distance' => $user->distance ? (int) $user->distance : null,
-                    'superliked_me' => (bool) $user->superliked_me,
-                    'is_online' => (bool) $user->is_online,
+                    'age' => $user->age ? (int)$user->age : null,
+                    'distance' => $user->distance ? (int)$user->distance : null,
+                    'superliked_me' => (bool)$user->superliked_me,
+                    'is_online' => (bool)$user->is_online,
                 ];
             });
 
@@ -125,17 +124,16 @@ class UsersController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'code' => 5000,
-                'message' => 'Something went wrong: '.$e->getMessage(),
+                'message' => 'Something went wrong: ' . $e->getMessage(),
             ], 500);
         }
     }
 
     /**
      * Build Eloquent query for getting user likes
-     *
-     * @param  Users  $user
-     * @param  string|null  $filter
-     * @param  LikeSettings|null  $userSettings
+     * @param Users $user
+     * @param string|null $filter
+     * @param LikeSettings|null $userSettings
      */
     private function buildGetLikesQuery($user, $filter, $userSettings): array
     {
@@ -161,15 +159,15 @@ class UsersController extends Controller
                     ) AND us.show_distance_from_me = 0 THEN NULL
                     ELSE ROUND(
                         (6371 * acos(
-                            cos(radians('.$user->lat.')) * cos(radians(u.lat)) *
-                            cos(radians(u.long) - radians('.$user->long.')) +
-                            sin(radians('.$user->lat.')) * sin(radians(u.lat))
+                            cos(radians(' . $user->lat . ')) * cos(radians(u.lat)) *
+                            cos(radians(u.long) - radians(' . $user->long . ')) +
+                            sin(radians(' . $user->lat . ')) * sin(radians(u.lat))
                         )), 0
                     )
                 END as distance'),
                 DB::raw('EXISTS(
                     SELECT 1 FROM user_reactions ur2
-                    WHERE ur2.user_id = "'.$user->id.'" AND ur2.reactor_id = u.id AND ur2.type = "superlike"
+                    WHERE ur2.user_id = "' . $user->id . '" AND ur2.reactor_id = u.id AND ur2.type = "superlike"
                 ) as superliked_me'),
                 DB::raw('CASE
                     WHEN us.status_online = 1 THEN u.is_online
@@ -215,12 +213,12 @@ class UsersController extends Controller
         if ($userSettings) {
             // Фильтр по настройкам пользователя
             if ($userSettings->radius) {
-                $query->whereRaw('(6371 * acos(cos(radians('.$user->lat.')) * cos(radians(u.lat)) * cos(radians(u.long) - radians('.$user->long.')) + sin(radians('.$user->lat.')) * sin(radians(u.lat)))) <= '.$userSettings->radius);
+                $query->whereRaw('(6371 * acos(cos(radians(' . $user->lat . ')) * cos(radians(u.lat)) * cos(radians(u.long) - radians(' . $user->long . ')) + sin(radians(' . $user->lat . ')) * sin(radians(u.lat)))) <= ' . $userSettings->radius);
             }
 
             if ($userSettings->age_range) {
                 $ageRange = explode('-', $userSettings->age_range);
-                $query->whereBetween('u.age', [(int) $ageRange[0], (int) $ageRange[1]]);
+                $query->whereBetween('u.age', [(int)$ageRange[0], (int)$ageRange[1]]);
             }
 
             if ($userSettings->verified) {
@@ -252,7 +250,7 @@ class UsersController extends Controller
             // Простые фильтры
             switch ($filter) {
                 case 'by_distance':
-                    $query->whereRaw('(6371 * acos(cos(radians('.$user->lat.')) * cos(radians(u.lat)) * cos(radians(u.long) - radians('.$user->long.')) + sin(radians('.$user->lat.')) * sin(radians(u.lat)))) <= 30');
+                    $query->whereRaw('(6371 * acos(cos(radians(' . $user->lat . ')) * cos(radians(u.lat)) * cos(radians(u.long) - radians(' . $user->long . ')) + sin(radians(' . $user->lat . ')) * sin(radians(u.lat)))) <= 30');
                     break;
                 case 'by_verification_status':
                     $query->whereExists(function ($query) {

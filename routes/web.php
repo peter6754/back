@@ -150,6 +150,7 @@ Route::prefix('users')->middleware('auth')->group(function () {
     // My Profile
     Route::get('profile', [UserController::class, 'getAccountInformation']);
     Route::put('profile', [UserController::class, 'updateAccountInformation']);
+    Route::get('likes', [UsersController::class, 'getUserLikes']);
 
     // Settings
     Route::prefix('settings')->group(function () {
@@ -178,12 +179,6 @@ Route::prefix('users')->middleware('auth')->group(function () {
         Route::get('orientations', [ReferenceDataController::class, 'getOrientations']);
         Route::get('clubs', [ReferenceDataController::class, 'getClubs']);
     });
-});
-
-// who liked you?
-
-Route::prefix('users')->middleware('auth')->group(function () {
-    Route::get('likes', [UsersController::class, 'getUserLikes']);
 });
 
 // Default routes
