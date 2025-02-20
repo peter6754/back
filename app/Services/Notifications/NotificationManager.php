@@ -2,6 +2,7 @@
 
 namespace App\Services\Notifications;
 
+use App\Services\Notifications\Providers\TelegramProvider;
 use App\Services\Notifications\Providers\OneSignalProvider;
 use App\Services\Notifications\Providers\ExpoProvider;
 use Illuminate\Support\Manager;
@@ -17,6 +18,14 @@ class NotificationManager extends Manager
     public function createOnesignalDriver(): OneSignalProvider
     {
         return new OneSignalProvider();
+    }
+
+    /**
+     * @return TelegramProvider
+     */
+    private function createTelegramDriver(): TelegramProvider
+    {
+        return new TelegramProvider();
     }
 
     /**

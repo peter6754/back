@@ -81,6 +81,11 @@ return [
         'delay' => env('TELESCOPE_QUEUE_DELAY', 10),
     ],
 
+    'prune' => [
+        'enabled' => true,
+        'hours' => 72,
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Telescope Route Middleware
@@ -91,7 +96,6 @@ return [
     | the existing middleware. Or, you can simply stick with this list.
     |
     */
-
     'middleware' => [
         'web',
         Authorize::class,

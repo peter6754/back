@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Backpack\CRUD\app\Models\Traits\CrudTrait;
@@ -27,7 +29,7 @@ class Secondaryuser extends Model
     protected $fillable = [
         'id', 'name', 'username', 'phone', 'email', 'birth_date', 'lat', 'long',
         'age', 'gender', 'sexual_orientation', 'mode', 'registration_date',
-        'last_check', 'is_online',
+        'last_check', 'is_online', 'last_seen_at', 'is_bot'
     ];
 
     /**
@@ -48,6 +50,7 @@ class Secondaryuser extends Model
         'long' => 'decimal:8',
         'is_online' => 'boolean',
         'is_bot' => 'boolean',
+        'last_seen_at' => 'datetime',
         'registration_date' => 'datetime',
         'last_check' => 'datetime',
         'bot_genders_for_likes' => 'array',
@@ -240,6 +243,22 @@ class Secondaryuser extends Model
     }
 
     /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function interests()
+    {
+        return $this->hasMany(UserInterests::class, 'user_id');
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function relationshipPreference()
+    {
+        return $this->hasOne(UserRelationshipPreference::class);
+    }
+
+    /**
      * Get the user's conversations where they are user1.
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
@@ -305,5 +324,57 @@ class Secondaryuser extends Model
             'provider' => $data['provider'],
             'name' => $data['name']
         ]);
+    }
+
+    /**
+     * @return HasOneThrough
+     */
+    public function finalPreference(): HasOneThrough
+    {
+        return $this->hasOneThrough(
+            RelationshipPreferences::class,
+            UserRelationshipPreference::class,
+            'user_id',
+            'id',
+            'id',
+            'preference_id'
+        );
+    }
+
+    /**
+     * @return HasMany
+     */
+    public function receivedGifts()
+    {
+        return $this->hasMany(UserGifts::class, 'receiver_id');
+    }
+
+    /**
+     * @return HasMany
+     */
+    public function feedbacks()
+    {
+        return $this->hasMany(UserFeedbacks::class, 'user_id');
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function city()
+    {
+        return $this->hasOne(UserCities::class, 'user_id');
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function pets()
+    {
+        return $this->hasOne(UserPets::class, 'user_id');
+    }
+
+    public function sentReactions()
+    {
+        return $this->hasMany(UserReaction::class, 'user_id');
     }
 }

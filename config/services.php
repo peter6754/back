@@ -39,6 +39,7 @@ return [
     'onesignal' => [
         'app_id' => env('ONESIGNAL_APP_ID'),
         'rest_api_key' => env('ONESIGNAL_REST_API_KEY'),
+        'guzzle_client_timeout' => env('ONESIGNAL_GUZZLE_CLIENT_TIMEOUT', 0),
     ],
 
     'expo' => [
@@ -47,10 +48,8 @@ return [
 
     // Oauth settings
     'telegram' => [
-        'bot' => env('TELEGRAM_BOT_NAME'),
-        'client_id' => null,
+        'client_secret_pwa' => env('TELEGRAM_TOKEN_PWA'),
         'client_secret' => env('TELEGRAM_TOKEN'),
-        'redirect' => env('TELEGRAM_REDIRECT_URI'),
     ],
 
     'google' => [

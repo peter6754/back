@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\UserReaction;
+use App\Jobs\ProcessReaction;
 use App\Models\UserInformation;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Redis;
@@ -73,10 +74,19 @@ class RecommendationService
         $key = "top-profiles:" . $customer['id'];
         $topProfiles = Redis::get($key);
 
+        if (!empty($topProfiles)) {
+            try {
+                $topProfiles = json_decode($topProfiles, true);
+            } catch (\Exception $e) {
+                unset($topProfiles);
+                Redis::del($key);
+            }
+        }
+
         if (empty($topProfiles)) {
             $twoDaysAgo = now()->subDays(2)->toDateTimeString();
-            $myUserId = $customer['id'];
             $myPhone = $customer['phone'];
+            $myUserId = $customer['id'];
             $myLat = $customer['long'];
             $myLng = $customer['lat'];
 
@@ -164,6 +174,7 @@ class RecommendationService
                 ->whereNotNull('u.long')
                 ->where('u.mode', 'authenticated')
                 ->whereNotNull('u.registration_date')
+
                 // блокировка: если нет подписки — фильтруем по bc.user_id
                 ->when(!$myHasSubscription, function ($query) {
                     $query->whereNull('bc.user_id');
@@ -178,7 +189,7 @@ class RecommendationService
                 $row->blocked_me = (bool)$row->blocked_me;
             }
 
-            Redis::set($key, $topProfiles->toArray());
+            Redis::setex($key, 900, json_encode($topProfiles));
         }
 
         return [
@@ -218,7 +229,7 @@ class RecommendationService
             })[0];
 
             if (empty($forPage)) {
-                $fromDb = $this->getRecommendationsForCache($userId, $query, $this->recommendationsCacheSize);
+                $fromDb = $this->_getRecommendationsForCache($userId, $query, $this->recommendationsCacheSize);
                 $forPage = array_splice($fromDb, 0, $this->recommendationsPageSize);
 
                 if (empty($forPage)) {
@@ -231,7 +242,7 @@ class RecommendationService
                 }
             }
 
-            return $this->getRecommendationsPage($userId, $forPage);
+            return $this->_getRecommendationsPage($userId, $forPage);
         } catch (\Exception $e) {
             Log::channel('recommendations')->error('getRecommendations_v2 error: ' . $e->getMessage(), [
                 'user_id' => $userId,
@@ -240,7 +251,6 @@ class RecommendationService
         }
     }
 
-
     /**
      * @param string $userId
      * @param array $params
@@ -248,42 +258,18 @@ class RecommendationService
      */
     public function like(string $userId, array $params)
     {
-        $user = Secondaryuser::with(['deviceTokens', 'userInformation', 'userSettings'])
-            ->select(['id', 'email'])
-            ->findOrFail($params['user_id']);
-
-        // Проверяем существование реакции
         $reactionExists = UserReaction::where('reactor_id', $params['user_id'])
             ->where('user_id', $userId)
             ->whereIn('type', ['like', 'superlike'])
             ->exists();
 
-        $superboom = $user->userInformation->superboom_due_date >= now();
-        if ($reactionExists) {
-            // Обновляем существующую запись
-            UserReaction::where('reactor_id', $params['user_id'])
-                ->where('user_id', $userId)
-                ->update([
-                    'from_top' => $params['from_top'],
-                    'superboom' => $superboom,
-                    'type' => 'like',
-                    'date' => now()
-                ]);
-        } else {
-            // Создаем новую запись
-            UserReaction::create([
-                'user_id' => $params['user_id'],
-                'reactor_id' => $userId,
-                'from_top' => $params['from_top'],
-                'superboom' => $superboom,
-                'type' => 'like',
-                'date' => now()
-            ]);
-        }
+        ProcessReaction::dispatch(
+            ProcessReaction::ACTION_LIKE,
+            $userId,
+            $params
+        )->onQueue('reactions');
 
-        return [
-            'is_match' => $reactionExists
-        ];
+        return ['is_match' => $reactionExists];
     }
 
     /**
@@ -293,47 +279,29 @@ class RecommendationService
      */
     public function dislike(string $userId, array $params)
     {
-        UserReaction::updateOrCreate(
-            [
-                'user_id' => $params['user_id'],
-                'reactor_id' => $userId,
-            ],
-            [
-                'type' => 'dislike',
-                'date' => now()
-            ]
-        );
+        ProcessReaction::dispatch(
+            ProcessReaction::ACTION_DISLIKE,
+            $userId,
+            $params
+        )->onQueue('reactions');
 
-        return [
-            'message' => 'Reaction sent successfully'
-        ];
+        return ['message' => 'Reaction processing started'];
     }
 
     /**
      * @param string $userId
      * @param array $params
-     * @return string[]|void
+     * @return string[]
      */
     public function rollback(string $userId, array $params)
     {
-        $lastReacted = UserReaction::where('reactor_id', $userId)
-            ->latest('date')
-            ->first(['user_id']);
+        ProcessReaction::dispatch(
+            ProcessReaction::ACTION_ROLLBACK,
+            $userId,
+            $params
+        )->onQueue('reactions');
 
-        if (!$lastReacted || $lastReacted->user_id != $params['user_id']) {
-            throw new \Exception('Your last reaction doesn\'t match to the given user_id');
-        }
-
-        DB::table('user_reactions')
-            ->where('reactor_id', $userId)
-            ->where('user_id', $params['user_id'])
-            ->orderBy('date', 'desc')
-            ->limit(1)
-            ->delete();
-
-        return [
-            'message' => 'Rollbacked successfully'
-        ];
+        return ['message' => 'Rollback processing started'];
     }
 
     /**
@@ -343,48 +311,18 @@ class RecommendationService
      */
     public function superlike(string $userId, array $params)
     {
-        $user = Secondaryuser::with(['deviceTokens', 'userInformation', 'userSettings'])
-            ->select(['id', 'email'])
-            ->findOrFail($params['user_id']);
-
-        // Проверяем существование реакции
         $reactionExists = UserReaction::where('reactor_id', $params['user_id'])
             ->where('user_id', $userId)
             ->whereIn('type', ['like', 'superlike'])
             ->exists();
 
-        $superboom = $user->userInformation->superboom_due_date >= now();
-        if ($reactionExists) {
-            // Обновляем существующую запись
-            UserReaction::where('reactor_id', $params['user_id'])
-                ->where('user_id', $userId)
-                ->update([
-                    'from_top' => $params['from_top'],
-                    'superboom' => $superboom,
-                    'type' => 'superlike',
-                    'date' => now()
-                ]);
-        } else {
-            // Создаем новую запись
-            UserReaction::create([
-                'from_top' => $params['from_top'],
-                'user_id' => $params['user_id'],
-                'superboom' => $superboom,
-                'reactor_id' => $userId,
-                'type' => 'superlike',
-                'date' => now()
-            ]);
-        }
+        ProcessReaction::dispatch(
+            ProcessReaction::ACTION_SUPERLIKE,
+            $userId,
+            $params
+        )->onQueue('reactions');
 
-        UserInformation::where('user_id', $userId)->decrement('superlikes');
-
-        if (!empty($params['comment'])) {
-            $this->leaveComment($params['comment'], $userId, $params['user_id']);
-        }
-
-        return [
-            'is_match' => (bool)$reactionExists
-        ];
+        return ['is_match' => $reactionExists];
     }
 
     /**
@@ -409,7 +347,7 @@ class RecommendationService
      * @param int $cacheSize
      * @return array
      */
-    private function getRecommendationsForCache(string $userId, array $query, int $cacheSize): array
+    private function _getRecommendationsForCache(string $userId, array $query, int $cacheSize): array
     {
         $user = Secondaryuser::with(['settings', 'preferences'])
             ->select(['id', 'phone', 'lat', 'long'])
@@ -496,7 +434,7 @@ class RecommendationService
      * @param $usersIds
      * @return array
      */
-    private function getRecommendationsPage(string $userId, $usersIds): array
+    private function _getRecommendationsPage(string $userId, $usersIds): array
     {
         $user = Secondaryuser::select(['lat', 'long'])->findOrFail($userId);
 

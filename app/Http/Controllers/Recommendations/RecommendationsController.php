@@ -109,7 +109,7 @@ class RecommendationsController extends Controller
             );
         } catch (Exception $e) {
             Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
-                'user_id' => $request->customer['id'],
+                'user_id' => $request->customer['id'] ?? 'unknown',
                 'error' => $e->getMessage()
             ]);
             return $this->errorResponse(
@@ -164,7 +164,7 @@ class RecommendationsController extends Controller
             );
         } catch (Exception $e) {
             Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
-                'user_id' => $request->customer['id'],
+                'user_id' => $request->customer['id'] ?? 'unknown',
                 'error' => $e->getMessage()
             ]);
             return $this->errorResponse(
@@ -217,6 +217,12 @@ class RecommendationsController extends Controller
     public function like(Request $request): JsonResponse
     {
         try {
+            // Debug logging
+            \Log::info('Like method called', [
+                'customer' => $request->customer ?? 'NULL',
+                'request_data' => $request->all()
+            ]);
+
             // Get queries
             $query = RecommendationsDto::forActions($request, [
                 'from_top' => 'required|boolean'
@@ -228,7 +234,7 @@ class RecommendationsController extends Controller
             );
         } catch (Exception $e) {
             Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
-                'user_id' => $request->customer['id'],
+                'user_id' => $request->customer['id'] ?? 'unknown',
                 'error' => $e->getMessage()
             ]);
             return $this->errorResponse(
@@ -303,7 +309,7 @@ class RecommendationsController extends Controller
             );
         } catch (Exception $e) {
             Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
-                'user_id' => $request->customer['id'],
+                'user_id' => $request->customer['id'] ?? 'unknown',
                 'error' => $e->getMessage()
             ]);
             return $this->errorResponse(
@@ -373,7 +379,7 @@ class RecommendationsController extends Controller
             );
         } catch (Exception $e) {
             Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
-                'user_id' => $request->customer['id'],
+                'user_id' => $request->customer['id'] ?? 'unknown',
                 'error' => $e->getMessage()
             ]);
             return $this->errorResponse(
@@ -428,7 +434,7 @@ class RecommendationsController extends Controller
             );
         } catch (Exception $e) {
             Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
-                'user_id' => $request->customer['id'],
+                'user_id' => $request->customer['id'] ?? 'unknown',
                 'error' => $e->getMessage()
             ]);
             return $this->errorResponse(

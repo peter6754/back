@@ -12,7 +12,6 @@ return [
     | based disks are available to your application for file storage.
     |
     */
-
     'default' => env('FILESYSTEM_DISK', 'local'),
 
     /*
@@ -27,7 +26,6 @@ return [
     | Supported drivers: "local", "ftp", "sftp", "s3"
     |
     */
-
     'disks' => [
 
         'local' => [
@@ -69,7 +67,6 @@ return [
     | the locations of the links and the values should be their targets.
     |
     */
-
     'links' => [
         public_path('storage') => storage_path('app/public'),
     ],

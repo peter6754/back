@@ -1,9 +1,14 @@
 <?php
 
+use App\Http\Controllers\Users\UserController;
+use App\Http\Controllers\Migrate\ProxyController;
+use App\Http\Controllers\Users\SettingsController;
 use App\Http\Controllers\Application\PricesController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Chat\ChatController;
 use App\Http\Controllers\Payments\PaymentsController;
 use App\Http\Controllers\Payments\StatusesController;
+use App\Http\Controllers\Users\ReferenceDataController;
 use App\Http\Controllers\Recommendations\RecommendationsController;
 use App\Http\Controllers\Users\UsersController;
 use Illuminate\Support\Facades\Route;
@@ -76,6 +81,41 @@ Route::prefix('application')->middleware('auth')->group(function () {
     });
 });
 
+// Chat/Conversations API routes
+Route::prefix('api/conversations')->middleware('auth')->group(function () {
+    // получить все чаты текущего юзера
+    Route::get('/', [ChatController::class, 'getConversations']);
+
+    // Получить сообщения в чате
+    Route::get('/messages/{chat_id}', [ChatController::class, 'getMessages']);
+
+    // Отправить сообщение в чат текст и файлы
+    Route::post('/send-messages', [ChatController::class, 'sendMessage']);
+
+    // Загрузить медиа файл в чат
+    Route::post('/{chat_id}/media', [ChatController::class, 'uploadMedia']);
+
+    // Отметить все сообщения в чате как прочитанные
+    Route::post('/read-messages/{chat_id}', [ChatController::class, 'markMessagesAsRead']);
+
+    // Получить непрочитанные сообщения в чате
+    Route::get('/{chat_id}/unread-messages-status', [ChatController::class, 'getUnreadMessagesStatus']);
+    // Создать чат с пользователем
+    Route::post('/{user_id}', [ChatController::class, 'createConversation']);
+
+    // Удалить чат с пользователем
+    Route::delete('/{chat_id}', [ChatController::class, 'deleteConversation']);
+
+    // Закрепить/открепить чат
+    Route::post('/pin/{chat_id}', [ChatController::class, 'togglePinConversation']);
+
+    // Получить социальные сети пользователя
+    Route::get('/social-accounts', action: [ChatController::class, 'getUserSocialAccounts']);
+
+    // Отправить социальные контакты в чат
+    Route::get('/send-social-contacts', [ChatController::class, 'sendSocialContacts']);
+});
+
 // Auth routes
 Route::prefix('auth')->group(function () {
     // Phone login
@@ -101,6 +141,44 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+// Users routes
+Route::prefix('users')->middleware('auth')->group(function () {
+    // Users Profile
+    Route::get('info/{id}', [UserController::class, 'getUser']);
+
+    // My Profile
+    Route::get('profile', [UserController::class, 'getAccountInformation']);
+    Route::put('profile', [UserController::class, 'updateAccountInformation']);
+
+    // Settings
+    Route::prefix('settings')->group(function () {
+        Route::delete('token', [SettingsController::class, 'deleteToken']);
+        Route::post('token', [SettingsController::class, 'addToken']);
+    });
+
+    // Справочные данные
+    Route::prefix('reference-data')->group(function () {
+        Route::get('interests', [ReferenceDataController::class, 'getInterests']);
+        Route::get('relationship-preferences', [ReferenceDataController::class, 'getRelationshipPreferences']);
+        Route::get('genders', [ReferenceDataController::class, 'getGenders']);
+        Route::get('zodiac-signs', [ReferenceDataController::class, 'getZodiacSigns']);
+        Route::get('family-statuses', [ReferenceDataController::class, 'getFamilyStatuses']);
+        Route::get('education', [ReferenceDataController::class, 'getEducationOptions']);
+        Route::get('family', [ReferenceDataController::class, 'getFamilyPlans']);
+        Route::get('communication', [ReferenceDataController::class, 'getCommunicationOptions']);
+        Route::get('love-languages', [ReferenceDataController::class, 'getLoveLanguages']);
+        Route::get('pets', [ReferenceDataController::class, 'getPets']);
+        Route::get('alcohol', [ReferenceDataController::class, 'getAlcohol']);
+        Route::get('smoking', [ReferenceDataController::class, 'getSmoking']);
+        Route::get('sport', [ReferenceDataController::class, 'getSport']);
+        Route::get('food', [ReferenceDataController::class, 'getFood']);
+        Route::get('social-network', [ReferenceDataController::class, 'getSocialNetwork']);
+        Route::get('sleep', [ReferenceDataController::class, 'getSleep']);
+        Route::get('orientations', [ReferenceDataController::class, 'getOrientations']);
+        Route::get('clubs', [ReferenceDataController::class, 'getClubs']);
+    });
+});
+
 // who liked you?
 Route::prefix('user')->middleware('auth')->group(function () {
     Route::get('likes', [UsersController::class, 'getUserLikes']);
@@ -109,11 +187,17 @@ Route::prefix('user')->middleware('auth')->group(function () {
 // Default routes
 Route::get('swagger', function () {
     $getGenerator = Generator::scan([
-        base_path().'/App/Http/Controllers',
+        base_path().'/app/Http/Controllers',
     ]);
 
     return response($getGenerator->toYaml());
 });
+
 Route::get('/', function () {
     return view('welcome');
 });
+
+// Fallback route - будет срабатывать, если ни один другой маршрут не совпал
+Route::any('{any}', [ProxyController::class, 'handle'])
+    ->where('any', '.*')
+    ->middleware('proxy');

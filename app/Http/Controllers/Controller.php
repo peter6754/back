@@ -23,6 +23,9 @@ namespace App\Http\Controllers;
  *  @OA\Tag(
  *       name="App Settings"
  *   )
+ * @OA\Tag(
+ *        name="User Settings"
+ *    )
  */
 abstract class Controller
 {

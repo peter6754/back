@@ -1,22 +1,20 @@
 services:
-    mysql-replica:
+    tinderone:
+        container_name: tinderone
         build:
-            context: ./deploy/mysql_slave
-        container_name: mysql_replica
-        environment:
-            MYSQL_ROOT_PASSWORD: "reZHoSFM41OhF4ni0q13sRX4JVCjMYKo"
-            # Эти переменные (DATABASE, USER, PASSWORD) обычно используются для инициализации
-            # мастера или для приложений, подключающихся к базе.
-            # Для репликации важны только master-хост и учетные данные репликации.
-            MYSQL_DATABASE: api_tinderon
-            MYSQL_USER: api_tinderon
-            MYSQL_PASSWORD: 0BJTpH8decyEykXp
-            MYSQL_MASTER_HOST: "176.118.167.210"
-            MYSQL_MASTER_USER: "replica"
-            MYSQL_MASTER_PASSWORD: "slTy19g37CTVfmFHd2jDTHiyijtgcsrU"
-            SERVER_ID: 2 # Уникальный ID для этого slave-сервера
+            dockerfile: Dockerfile
+            context: .
+        image: tinderone
         ports:
-            - "3307:3306" # Маппинг порта 3306 внутри контейнера на 3307 на хосте
+            - '7080:80'
         volumes:
-            - ./storage/mysql:/var/lib/mysql # Сохранение данных slave на хосте
-        restart: unless-stopped # Автоматический перезапуск контейнера, если он останавливается
+            - .:/var/www/html
+
+#    redis:
+#        image: redis:7.2
+#        container_name: redis
+#        labels:
+#            app: redis
+#        restart: unless-stopped
+#        ports:
+#            - 127.0.0.1:6379:6379

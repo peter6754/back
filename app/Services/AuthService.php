@@ -46,12 +46,11 @@ class AuthService
     /**
      * @param array $params
      * @return array
-     * @throws GuzzleException
      * @throws \Exception
      */
     public function login(array $params): array
     {
-        $userToken = $params['device_token'];
+        $userToken = $params['device_token'] ?? null;
         $userPhone = $params['phone'];
         $code = (string)rand(1000, 9999);
 
@@ -75,7 +74,7 @@ class AuthService
         } else {
             // Отправка push-уведомления новому пользователю
             Log::info("Register, send push, code {$code}, new user: " . $userPhone);
-            (new NotificationService())->sendPushNotification($userToken,
+            (new NotificationService())->sendPushNotification($userToken ?? "",
                 $code, "Ваш код подтверждения"
             );
             $type = 'register';
@@ -132,11 +131,6 @@ class AuthService
             $type = 'register';
         } else {
             $type = $user->registration_date ? 'login' : 'register';
-
-            // Если это первая регистрация, обновляем дату
-            if (!$user->registration_date) {
-//                $user->update(['registration_date' => now()]);
-            }
         }
 
         // Создаем токен аутентификации
@@ -154,6 +148,99 @@ class AuthService
             'type' => $type,
             'mode' => $mode
         ];
+    }
+
+    /**
+     * @param array $params
+     * @return array|string[]
+     * @throws \Throwable
+     */
+    public function telegram(array $params): array
+    {
+        $initData = urldecode($params['initData']);
+        parse_str($initData, $parsedData);
+
+        // Проверка наличия хэша
+        if (!isset($parsedData['hash'])) {
+            throw new \Exception("Hash missing");
+        }
+
+        // Проверка подписи
+        if (!$this->verifyTelegramHash($parsedData, $params['appId'] ?? "")) {
+            throw new \Exception("Invalid hash");
+        }
+
+        // Извлечение данных пользователя
+        $userData = json_decode($parsedData['user'], true);
+        $name = $userData['first_name'] . " " . $userData['last_name'];
+        $email = $userData['id'] . "@t.me";
+        $provider = "telegram";
+
+        DB::beginTransaction();
+        $account = ConnectedAccount::with("user")
+            ->where('provider', $provider)
+            ->where('email', $email)
+            ->first();
+
+        // Проверяем, не удален ли пользователь
+        if ($account && $account->user->mode === 'deleted') {
+            Log::warning("loginBySocial is FORBIDDEN", [
+                'user' => $account
+            ]);
+
+            throw new \Exception("User is deactivated");
+        }
+        if (empty($account)) {
+            $getUser = Secondaryuser::where('email', $email)->first();
+            if (!empty($getUser)) {
+                throw new \Exception("User already exists " . PHP_EOL .
+                    "account: " . print_r($account, true) . PHP_EOL .
+                    "getUser: " . print_r($getUser, true) . PHP_EOL .
+                    "user: " . print_r($userData, true)
+                );
+            }
+
+            // ToDo: Временная мера (блокировка, разрешаем только авторизацию)
+            return [
+                'type' => 'register'
+            ];
+
+            // Создаем нового пользователя
+            $account = $this->createNewUser(
+                email: $email,
+                provider: $provider,
+                name: $name,
+            );
+
+            $type = 'register';
+        } else {
+            $type = $account->user->registration_date ? 'login' : 'register';
+        }
+        DB::commit();
+
+        // Создаем токен аутентификации
+        $userId = $account->user->id ?? $account->id ?? null;
+        if (is_null($userId)) {
+            throw new \Exception("User not found");
+        }
+
+        return [
+            'token' => app(JwtService::class)->encode([
+                'id' => $userId
+            ]),
+            'type' => $type
+        ];
+
+//        $account = $this->createNewUser(
+//            email: $userData['id'],
+//            provider: "telegram",
+//            name: implode(" ", [
+//                $userData['first_name'],
+//                $userData['last_name']
+//            ])
+//        );
+        return $userData;
+        return [];
     }
 
     /**
@@ -198,11 +285,6 @@ class AuthService
             $type = 'register';
         } else {
             $type = $account->user->registration_date ? 'login' : 'register';
-
-            // Если это первая регистрация, обновляем дату
-            if (!$account->user->registration_date) {
-//                $account->user->update(['registration_date' => now()]);
-            }
         }
         DB::commit();
 
@@ -218,6 +300,41 @@ class AuthService
             ]),
             'type' => $type
         ];
+    }
+
+    /**
+     * @param array $data
+     * @param string $appId
+     * @return bool
+     */
+    private function verifyTelegramHash(array $data, string $appId): bool
+    {
+        $receivedHash = $data['hash'];
+        unset($data['hash']);
+
+        // Сортировка параметров по алфавиту
+        ksort($data);
+
+        // Формирование строки для проверки
+        $dataCheckString = collect($data)
+            ->map(fn($value, $key) => "$key=$value")
+            ->implode("\n");
+
+        // Генерация секретного ключа
+        $secretKey = hash_hmac(
+            'sha256',
+            config('services.telegram.client_secret' . $appId),
+            "WebAppData",
+            true
+        );
+
+        // Вычисление хэша
+        $calculatedHash = bin2hex(
+            hash_hmac('sha256', $dataCheckString, $secretKey, true)
+        );
+
+        // Безопасное сравнение хэшей
+        return hash_equals($calculatedHash, $receivedHash);
     }
 
     /**

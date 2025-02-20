@@ -115,7 +115,15 @@ class PaymentsService extends Manager
     }
 
     /**
-     * @return Repository|Application|mixed|object|string|null
+     * @return Providers\UnitpayProvider
+     */
+    public function createUnitpayDriver()
+    {
+        return new Providers\UnitpayProvider();
+    }
+
+    /**
+     * @return mixed
      */
     public function getDefaultDriver(): mixed
     {

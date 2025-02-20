@@ -62,21 +62,21 @@ class AuthController extends Controller
      *      path="/auth/login",
      *      summary="Request user authorization",
      *      @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"phone"},
-     *               @OA\Property(
-     *                   property="device_token",
-     *                   type="string",
-     *                   example="20bdb8fb3bdadc1bef037eefcaeb56ad6e57f3241c99e734062b6ee829271b71",
-     *                   description="Device Token"
-     *               ),
+     *          required=true,
+     *          @OA\JsonContent(
+     *              required={"phone"},
      *              @OA\Property(
-     *                  property="phone",
-     *                  type="string",
-     *                  example="+37491563504",
-     *                  description="Phone Number"
+     *                  example="20bdb8fb3bdadc1bef037eefcaeb56ad6e57f3241c99e734062b6ee829271b71",
+     *                  description="Device Token",
+     *                  property="device_token",
+     *                  type="string"
      *              ),
+     *              @OA\Property(
+     *                  description="Phone Number",
+     *                  example="+37491563504",
+     *                  property="phone",
+     *                  type="string"
+     *              )
      *          )
      *      ),
      *      @OA\Response(
@@ -86,14 +86,13 @@ class AuthController extends Controller
      *      )
      * )
      * @return JsonResponse
-     * @throws GuzzleException
      */
     public function login(Request $request): JsonResponse
     {
         try {
             $validatedData = $request->validate([
-                'device_token' => 'required',
-                'phone' => 'required'
+                'device_token' => 'string|nullable',
+                'phone' => 'string|required'
             ]);
 
             return $this->successResponse(
@@ -109,11 +108,12 @@ class AuthController extends Controller
     }
 
     /**
-     * @OA\Post(
-     *     tags={"Customer Authorization"},
-     *     path="/auth/verify-login",
-     *     summary="Verify user by code (Don't forget to add the token from the login)",
-     *     @OA\Parameter(
+     *  @param Request $request
+     *  @OA\Post(
+     *      tags={"Customer Authorization"},
+     *      path="/auth/verify-login",
+     *      summary="Verify user by code (Don't forget to add the token from the login)",
+     *      @OA\Parameter(
      *          name="Login-Token",
      *          in="header",
      *          description="Login token",
@@ -122,24 +122,25 @@ class AuthController extends Controller
      *              example="LOGIN_JWT_TOKEN",
      *              type="string",
      *          )
-     *     ),
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"code"},
-     *               @OA\Property(
+     *      ),
+     *      @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              required={"code"},
+     *              @OA\Property(
      *                  property="code",
      *                  type="string",
      *                  example="7878"
      *              )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Successful operation",
-     *         @OA\JsonContent(ref="#/components/schemas/SuccessResponse")
-     *     )
-     * )
+     *          )
+     *      ),
+     *      @OA\Response(
+     *          response=201,
+     *          description="Successful operation",
+     *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse")
+     *      )
+     *  )
+     *  @return JsonResponse
      */
     public function verify(Request $request): JsonResponse
     {
@@ -166,6 +167,32 @@ class AuthController extends Controller
                 $e->getCode()
             );
         }
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     * @throws \Throwable
+     */
+    public function telegram(Request $request): JsonResponse
+    {
+        try {
+            $validatedData = $request->validate([
+                'initData' => 'required|string',
+                'appId' => 'string'
+            ]);
+
+            return $this->successResponse(
+                $this->authService->telegram($validatedData),
+                Response::HTTP_CREATED
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage(),
+                $e->getCode()
+            );
+        }
+
     }
 
     /**

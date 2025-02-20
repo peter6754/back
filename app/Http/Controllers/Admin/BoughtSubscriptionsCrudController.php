@@ -122,27 +122,7 @@ class BoughtSubscriptionsCrudController extends CrudController
                 ->progressClass('progressbar')
                 ->value("Ж: {$yesterdayExpired->count_women} на сумму: {$yesterdayExpired->total_sum_women} <br>
                          М: {$yesterdayExpired->count_men} на сумму: {$yesterdayExpired->total_sum_men} <br> Итого: " . ($yesterdayExpired->total_sum_women + $yesterdayExpired->total_sum_men))
-                ->description('Вчера закончилось подписок'),
-
-//            Widget::make()
-//                ->type('progress')
-//                ->class('card mb-3')
-//                ->statusBorder('start')
-//                ->accentColor('green')
-//                ->ribbon(['top', 'la-ruble-sign'])
-//                ->progressClass('progressbar')
-//                ->value("Количество: " . $todayOther->count . ", Сумма: " . $todayOther->sum)
-//                ->description('Сегодня подписок остальных на сумму'),
-//
-//            Widget::make()
-//                ->type('progress')
-//                ->class('card mb-3')
-//                ->statusBorder('start')
-//                ->accentColor('green')
-//                ->ribbon(['top', 'la-ruble-sign'])
-//                ->progressClass('progressbar')
-//                ->value("Количество: " . $yesterdayOther->count . ", Сумма: " . $yesterdayOther->sum)
-//                ->description('Вчера подписок остальных на сумму')
+                ->description('Вчера закончилось подписок')
         ]);
 
     }
@@ -155,7 +135,6 @@ class BoughtSubscriptionsCrudController extends CrudController
     protected function setupCreateOperation()
     {
         CRUD::setValidation(BoughtSubscriptionsRequest::class);
-//        CRUD::setFromDb(); // set fields from db columns.
 
         /**
          * Fields can be defined using the fluent syntax:
@@ -252,5 +231,4 @@ class BoughtSubscriptionsCrudController extends CrudController
     {
         $this->setupCreateOperation();
     }
-
 }

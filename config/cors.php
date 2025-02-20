@@ -14,12 +14,13 @@ return [
     | To learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
     |
     */
-
     'paths' => [
-        'recommendations/*',
-        'recommendations',
-        'payment/*',
-        'auth/*'
+//        'recommendations/*',
+//        'recommendations',
+//        'payment/*',
+//        'auth/*',
+//        'user/*',
+        '*'
     ],
     'allowed_headers' => ['Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN, cache-control, Login-Token'],
     'allowed_origins' => [
@@ -32,5 +33,5 @@ return [
     'allowed_origins_patterns' => [],
     'supports_credentials' => false,
     'exposed_headers' => [],
-    'max_age' => 0,
+    'max_age' => 86400
 ];
