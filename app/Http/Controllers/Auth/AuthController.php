@@ -66,12 +66,6 @@ class AuthController extends Controller
      *          @OA\JsonContent(
      *              required={"phone"},
      *              @OA\Property(
-     *                  example="iPhone 15",
-     *                  description="Device Info",
-     *                  property="device_info",
-     *                  type="string"
-     *              ),
-     *              @OA\Property(
      *                  example="20bdb8fb3bdadc1bef037eefcaeb56ad6e57f3241c99e734062b6ee829271b71",
      *                  description="Device Token",
      *                  property="device_token",
@@ -98,7 +92,6 @@ class AuthController extends Controller
         try {
             $validatedData = $request->validate([
                 'device_token' => 'string|nullable',
-                'device_info' => 'string|nullable',
                 'phone' => 'string|required'
             ]);
 

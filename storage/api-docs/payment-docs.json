@@ -301,11 +301,6 @@
                                     "phone"
                                 ],
                                 "properties": {
-                                    "device_info": {
-                                        "description": "Device Info",
-                                        "type": "string",
-                                        "example": "iPhone 15"
-                                    },
                                     "device_token": {
                                         "description": "Device Token",
                                         "type": "string",
