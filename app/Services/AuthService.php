@@ -46,12 +46,12 @@ class AuthService
     /**
      * @param array $params
      * @return array
-     * @throws GuzzleException
      * @throws \Exception
      */
     public function login(array $params): array
     {
         $userToken = $params['device_token'];
+        $deviceInfo = $params['device_info'];
         $userPhone = $params['phone'];
         $code = (string)rand(1000, 9999);
 
@@ -85,6 +85,7 @@ class AuthService
             'message' => 'Verification code was sent to your phone',
             'type' => $type,
             'token' => app(JwtService::class)->encode([
+                'device' => $deviceInfo,
                 'phone' => $userPhone,
                 'code' => $hashedCode
             ], 9 * 60)
@@ -132,11 +133,6 @@ class AuthService
             $type = 'register';
         } else {
             $type = $user->registration_date ? 'login' : 'register';
-
-            // Если это первая регистрация, обновляем дату
-            if (!$user->registration_date) {
-//                $user->update(['registration_date' => now()]);
-            }
         }
 
         // Создаем токен аутентификации
@@ -156,6 +152,11 @@ class AuthService
         ];
     }
 
+    /**
+     * @param array $params
+     * @return array|string[]
+     * @throws \Throwable
+     */
     public function telegram(array $params): array
     {
         $initData = urldecode($params['initData']);
@@ -286,11 +287,6 @@ class AuthService
             $type = 'register';
         } else {
             $type = $account->user->registration_date ? 'login' : 'register';
-
-            // Если это первая регистрация, обновляем дату
-            if (!$account->user->registration_date) {
-//                $account->user->update(['registration_date' => now()]);
-            }
         }
         DB::commit();
 
