@@ -33,6 +33,7 @@ class SettingsController extends Controller
      *      tags={"User settings"},
      *      path="/users/settings/token",
      *      summary="Remove device token",
+     *      security={{"bearerAuth":{}}},
      *      @OA\RequestBody(
      *          required=true,
      *          @OA\JsonContent(
@@ -77,6 +78,7 @@ class SettingsController extends Controller
      *      tags={"User settings"},
      *      path="/users/settings/token",
      *      summary="Add / Register device token",
+     *      security={{"bearerAuth":{}}},
      *      @OA\RequestBody(
      *          required=true,
      *          @OA\JsonContent(
