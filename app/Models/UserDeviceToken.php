@@ -19,7 +19,7 @@ class UserDeviceToken extends Model
      *
      * @var string
      */
-    protected $primaryKey = null;
+    protected $primaryKey = ['user_id', 'token'];
     public $incrementing = false;
 
     /**
