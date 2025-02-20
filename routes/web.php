@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Users\UserController;
+use App\Http\Controllers\Users\UsersController;
 use App\Http\Controllers\Migrate\ProxyController;
 use App\Http\Controllers\Users\SettingsController;
 use App\Http\Controllers\Application\PricesController;
@@ -149,6 +150,7 @@ Route::prefix('users')->middleware('auth')->group(function () {
     // My Profile
     Route::get('profile', [UserController::class, 'getAccountInformation']);
     Route::put('profile', [UserController::class, 'updateAccountInformation']);
+    Route::get('likes', [UsersController::class, 'getUserLikes']);
 
     // Settings
     Route::prefix('settings')->group(function () {
@@ -186,6 +188,11 @@ Route::get('swagger', function () {
     ]);
 
     return response($getGenerator->toYaml());
+});
+
+Route::get('/test', function () {
+    $model = new \App\Models\UserReaction();
+    dd($model->getFillable());
 });
 
 Route::get('/', function () {

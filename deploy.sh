@@ -20,6 +20,8 @@ php artisan view:clear     # Очистка кеша шаблонов
 php artisan config:cache   # Кеширование конфигурации
 php artisan route:cache    # Кеширование маршрутов
 
+# Генерируем swagger документацию
+php artisan l5-swagger:generate
 
 # Обновление Node.js зависимостей и сборка фронтенда
 npm install                # Установка/обновление npm пакетов
