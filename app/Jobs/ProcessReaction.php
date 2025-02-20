@@ -183,9 +183,12 @@ class ProcessReaction implements ShouldQueue
             $reaction = UserReaction::where($attributes)->first();
 
             if ($reaction) {
-                // Обновляем существующую запись
-                $reaction->update($values);
-                return $reaction;
+                // Явно обновляем поля без использования update()
+                foreach ($values as $key => $value) {
+                    $reaction->{$key} = $value;
+                }
+                $reaction->save(); // Сохраняем изменения
+                return $reaction->fresh(); // Возвращаем обновленную запись
             }
 
             // Создаем новую запись со значениями по умолчанию
@@ -196,7 +199,9 @@ class ProcessReaction implements ShouldQueue
                 'from_reels' => false,
             ];
 
-            return UserReaction::create(array_merge($attributes, $defaultValues, $values));
+            $data = array_merge($attributes, $defaultValues, $values);
+
+            return UserReaction::create($data);
         });
     }
 
