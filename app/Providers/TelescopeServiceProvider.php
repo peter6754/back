@@ -2,12 +2,11 @@
 
 namespace App\Providers;
 
-use Laravel\Telescope\EntryType;
 use Laravel\Telescope\TelescopeApplicationServiceProvider;
 use Laravel\Telescope\IncomingEntry;
 use Illuminate\Support\Collection;
+use Laravel\Telescope\EntryType;
 use Laravel\Telescope\Telescope;
-use function Symfony\Component\String\b;
 
 class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
 {
@@ -40,8 +39,7 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
                     $entry->isScheduledTask() ||
                     $entry->isFailedJob() ||
                     $entry->isSlowQuery() ||
-                    $entry->isLog()
-                    ;
+                    $entry->isLog();
             });
         });
     }

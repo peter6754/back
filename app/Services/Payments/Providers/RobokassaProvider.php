@@ -82,14 +82,16 @@ class RobokassaProvider implements PaymentProviderInterface
             'subscriptionId' => $params['price'],
             'email' => $params['customer']['email']
         ];
-        $response = (new Client())->request('POST', $recurrentUrl . '?' . http_build_query($recurrentParams));
+        $recurrentUrl = $recurrentUrl . '?' . urldecode(http_build_query($recurrentParams));
+        $response = (new Client())->request('POST', $recurrentUrl);
         $queryParams = json_decode($response->getBody(), true);
 
         $baseUrl = 'https://auth.robokassa.ru/RecurringSubscriptionPage/Subscription/Subscribe';
         $baseParams = [
+            'subscriptionId' => $params['price'],
             'subscriberId' => $queryParams['subscriberId'],
-            'subscriptionId' => $params['price']
         ];
+        $redirectUrl = $baseUrl . '?' . urldecode(http_build_query($baseParams));
 
         // Update subscriber id
         TransactionProcess::where('transaction_id', $getData['transaction_id'])->update([
@@ -97,7 +99,7 @@ class RobokassaProvider implements PaymentProviderInterface
         ]);
 
         return [
-            "confirmation_url" => $baseUrl . '?' . http_build_query($baseParams),
+            "confirmation_url" => $redirectUrl,
             "created_at" => (new \DateTime())->format('Y-m-d H:i:s'),
             "payment_id" => $getData['transaction_id'],
             "invoice_id" => $getData['id'],

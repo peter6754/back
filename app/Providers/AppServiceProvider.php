@@ -2,13 +2,13 @@
 
 namespace App\Providers;
 
-use App\Services\JwtService;
-use App\Services\AuthService;
-use App\Services\UserService;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\ServiceProvider;
 use App\Services\Payments\PaymentsService;
 use App\Services\External\GreenSMSService;
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Event;
+use App\Services\AuthService;
+use App\Services\UserService;
+use App\Services\JwtService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,6 +30,10 @@ class AppServiceProvider extends ServiceProvider
             $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
             $this->app->register(TelescopeServiceProvider::class);
         }
+
+//        if (class_exists(\Barryvdh\Debugbar\ServiceProvider::class)) {
+//            $this->app->register(DebugBarServiceProvider::class);
+//        }
 
         // Payment service
         $this->app->singleton(PaymentsService::class, function ($app) {
@@ -64,17 +68,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (empty(env('APP_URL'))) {
+        if (empty(config('app.url'))) {
             $schema = filter_var(request()->getHost(), FILTER_VALIDATE_IP) ? "http://" : "https://";
             \URL::forceRootUrl($schema . request()->getHttpHost());
         }
 
         if ($this->app->environment('production')) {
-           \URL::forceScheme('https');
-        }
-
-        if (auth()->check() && auth()->user()->isAdmin()) {
-            \Debugbar::enable();
+            \URL::forceScheme('https');
         }
     }
 }

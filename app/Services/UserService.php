@@ -33,6 +33,7 @@ class UserService
      * @param string $id
      * @param array $viewer
      * @return array
+     * @throws \Throwable
      */
     private function fetchUserData(string $id, array $viewer): array
     {
