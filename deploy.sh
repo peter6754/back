@@ -11,14 +11,15 @@ chown -R www-data:www-data ./
 php composer.phar update   # Обновление Composer пакетов
 
 # Очистка кеша Laravel
-php artisan view:clear     # Очистка кеша шаблонов
-php artisan cache:clear    # Очистка кеша приложения
-php artisan route:clear    # Очистка кеша маршрутов
 php artisan config:clear   # Очистка кеша конфигурации
+php artisan route:clear    # Очистка кеша маршрутов
+php artisan cache:clear    # Очистка кеша приложения
+php artisan view:clear     # Очистка кеша шаблонов
 
 # Пересборка кеша (только для production)
-php artisan route:cache    # Кеширование маршрутов
 php artisan config:cache   # Кеширование конфигурации
+php artisan route:cache    # Кеширование маршрутов
+
 
 # Обновление Node.js зависимостей и сборка фронтенда
 npm install                # Установка/обновление npm пакетов
