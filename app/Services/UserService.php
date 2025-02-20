@@ -23,6 +23,7 @@ class UserService
      * @param string $id
      * @param array $viewer
      * @return array
+     * @throws \Throwable
      */
     public function getUser(string $id, array $viewer)
     {

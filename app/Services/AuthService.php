@@ -75,7 +75,7 @@ class AuthService
         } else {
             // Отправка push-уведомления новому пользователю
             Log::info("Register, send push, code {$code}, new user: " . $userPhone);
-            (new NotificationService())->sendPushNotification($userToken,
+            (new NotificationService())->sendPushNotification($userToken ?? "",
                 $code, "Ваш код подтверждения"
             );
             $type = 'register';
