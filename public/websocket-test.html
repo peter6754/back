@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+</head>
+<body>
+    <h1>WebSocket Test</h1>
+    <div id="status">Disconnected</div>
+    <div id="messages"></div>
+    
+    <script>
+        // Подключение к Reverb WebSocket
+        const socket = new WebSocket('ws://localhost:8081/app/xdnx5eiwahrnrg8hjjmv?protocol=7&client=js&version=8.0.1');
+        
+        const status = document.getElementById('status');
+        const messages = document.getElementById('messages');
+        
+        socket.onopen = function() {
+            status.textContent = 'Connected';
+            status.style.color = 'green';
+            console.log('WebSocket подключен');
+            
+            // Подписка на канал пользователя
+            const subscribeData = {
+                event: 'pusher:subscribe',
+                data: {
+                    channel: 'private-user.54a31ea8-cd94-472e-b877-87c24b95f389'
+                }
+            };
+            socket.send(JSON.stringify(subscribeData));
+            
+            // Подписка на канал разговора
+            const subscribeConversation = {
+                event: 'pusher:subscribe', 
+                data: {
+                    channel: 'private-conversation.3'
+                }
+            };
+            socket.send(JSON.stringify(subscribeConversation));
+        };
+        
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log('Получено сообщение:', data);
+            
+            const msgDiv = document.createElement('div');
+            msgDiv.textContent = new Date().toLocaleTimeString() + ': ' + JSON.stringify(data);
+            messages.appendChild(msgDiv);
+        };
+        
+        socket.onerror = function(error) {
+            status.textContent = 'Error';
+            status.style.color = 'red';
+            console.log('WebSocket ошибка:', error);
+        };
+        
+        socket.onclose = function() {
+            status.textContent = 'Disconnected';
+            status.style.color = 'red';
+            console.log('WebSocket отключен');
+        };
+    </script>
+</body>
+</html>

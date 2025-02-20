@@ -8,6 +8,9 @@
     ],
     "license": "MIT",
     "require": {
+        "php": "^8.2",
+        "ext-pdo": "*",
+        "ext-simplexml": "*",
         "backpack/backupmanager": "^5.0",
         "backpack/crud": "^6.7",
         "backpack/logmanager": "^5.0",
@@ -20,6 +23,7 @@
         "laravel-notification-channels/telegram": "^6.0",
         "laravel/framework": "^11.45",
         "laravel/horizon": "^5.33",
+        "laravel/reverb": "^1.0",
         "laravel/socialite": "^5.21",
         "laravel/telescope": "^5.7",
         "laravel/tinker": "^2.9",
@@ -40,6 +44,10 @@
         "ext-pdo": "*",
         "ext-zip": "*",
         "php": "^8.2"
+        "socialiteproviders/google": "^4.1",
+        "socialiteproviders/telegram": "^4.1",
+        "socialiteproviders/vkontakte": "^5.0",
+        "spatie/laravel-data": "^4.17"
     },
     "require-dev": {
         "backpack/generators": "^4.0",

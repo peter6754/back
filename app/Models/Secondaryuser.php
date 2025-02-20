@@ -29,7 +29,7 @@ class Secondaryuser extends Model
     protected $fillable = [
         'id', 'name', 'username', 'phone', 'email', 'birth_date', 'lat', 'long',
         'age', 'gender', 'sexual_orientation', 'mode', 'registration_date',
-        'last_check', 'is_online', 'is_bot',
+        'last_check', 'is_online', 'last_seen_at', 'is_bot'
     ];
 
     /**
@@ -50,6 +50,7 @@ class Secondaryuser extends Model
         'long' => 'decimal:8',
         'is_online' => 'boolean',
         'is_bot' => 'boolean',
+        'last_seen_at' => 'datetime',
         'registration_date' => 'datetime',
         'last_check' => 'datetime',
         'bot_genders_for_likes' => 'array',

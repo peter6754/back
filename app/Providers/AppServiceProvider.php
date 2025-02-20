@@ -25,6 +25,7 @@ class AppServiceProvider extends ServiceProvider
             $event->extendSocialite('apple', \SocialiteProviders\Apple\Provider::class);
         });
 
+
         // Telescope
         if (class_exists(\Laravel\Telescope\TelescopeServiceProvider::class)) {
             $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);

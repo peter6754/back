@@ -383,6 +383,1193 @@
                 }
             }
         },
+        "/api/conversations/send-messages": {
+            "post": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Send a message to a conversation",
+                "description": "Send text, media, gift, or contact message to a conversation",
+                "operationId": "e710cec273ee2c3cade38cb4da480f82",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "conversation_id": {
+                                        "description": "Conversation ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "type": {
+                                        "description": "Message type",
+                                        "type": "string",
+                                        "enum": [
+                                            "text",
+                                            "contact",
+                                            "media",
+                                            "gift"
+                                        ],
+                                        "example": "text"
+                                    },
+                                    "message": {
+                                        "description": "Message text (required for text messages, optional for media)",
+                                        "type": "string",
+                                        "example": "Hello there!"
+                                    },
+                                    "file": {
+                                        "description": "Media file (required for media type)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "gift": {
+                                        "description": "Gift identifier (required for gift type)",
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "contact_type": {
+                                        "description": "Contact type (required for contact type)",
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Message sent successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string",
+                                                    "example": "Message sent successfully via WebSocket"
+                                                },
+                                                "file_url": {
+                                                    "type": "string",
+                                                    "example": "http://example.com/storage/chat_media/file.jpg",
+                                                    "nullable": true
+                                                },
+                                                "file_type": {
+                                                    "type": "string",
+                                                    "example": "image/jpeg",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Conversation not found or access denied"
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    },
+                    "500": {
+                        "description": "Failed to send message"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations": {
+            "get": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Get all conversations for the current user",
+                "description": "Get all conversations for the current user",
+                "operationId": "fe160d44547c780ef80fc6b13cc44192",
+                "responses": {
+                    "200": {
+                        "description": "List of conversations",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "chat_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "user": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string",
+                                                                "example": "user-uuid"
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "John Doe"
+                                                            },
+                                                            "avatar_url": {
+                                                                "type": "string",
+                                                                "nullable": true
+                                                            },
+                                                            "online": {
+                                                                "type": "boolean",
+                                                                "example": true
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "last_message": {
+                                                        "properties": {
+                                                            "text": {
+                                                                "type": "string",
+                                                                "example": "Hello!"
+                                                            },
+                                                            "timestamp": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            }
+                                                        },
+                                                        "type": "object",
+                                                        "nullable": true
+                                                    },
+                                                    "is_pinned": {
+                                                        "type": "boolean",
+                                                        "example": false
+                                                    },
+                                                    "unread_count": {
+                                                        "type": "integer",
+                                                        "example": 2
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/{chat_id}/unread-messages-status": {
+            "get": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Get unread messages count for specific chat",
+                "description": "Get unread messages status for specific chat",
+                "operationId": "77ad8cd3b617ce003cc00797c3135365",
+                "parameters": [
+                    {
+                        "name": "chat_id",
+                        "in": "path",
+                        "description": "Chat ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Unread messages count",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "unread_count": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Conversation not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/{user_id}": {
+            "post": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Create or get existing conversation with a user",
+                "description": "Creates a new conversation or returns existing one. Requires mutual likes between users.",
+                "operationId": "2f02aca6ddc3abb4afbc61015622952c",
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "path",
+                        "description": "Target user ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "user-uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Conversation created or retrieved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "chat_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "created": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Conversation can only be created after mutual likes"
+                    },
+                    "404": {
+                        "description": "User not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/{chat_id}": {
+            "delete": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Delete conversation and all its messages",
+                "description": "Delete conversation",
+                "operationId": "ef53e6da65b4366f91304ba1b7f2ad67",
+                "parameters": [
+                    {
+                        "name": "chat_id",
+                        "in": "path",
+                        "description": "Chat ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "1"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Conversation deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Conversation not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/messages/{chat_id}": {
+            "get": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Get messages from a specific conversation with pagination",
+                "description": "Get messages from a specific conversation",
+                "operationId": "5bfa5c4ab9bef04aa8b1fe3d7d225b3a",
+                "parameters": [
+                    {
+                        "name": "chat_id",
+                        "in": "path",
+                        "description": "Chat ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Messages per page (max 100)",
+                        "schema": {
+                            "type": "integer",
+                            "default": 30,
+                            "example": 30
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of messages",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "sender_id": {
+                                                        "type": "string",
+                                                        "example": "user-uuid"
+                                                    },
+                                                    "message": {
+                                                        "type": "string",
+                                                        "example": "Hello!"
+                                                    },
+                                                    "type": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "text",
+                                                            "media",
+                                                            "gift",
+                                                            "contact"
+                                                        ],
+                                                        "example": "text"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "is_read": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    },
+                                                    "gift": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "contact_type": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "file_url": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "file_extension": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "is_image": {
+                                                        "type": "boolean",
+                                                        "nullable": true
+                                                    },
+                                                    "is_video": {
+                                                        "type": "boolean",
+                                                        "nullable": true
+                                                    },
+                                                    "is_document": {
+                                                        "type": "boolean",
+                                                        "nullable": true
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Conversation not found or access denied"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/{chat_id}/media": {
+            "post": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Upload media file to a conversation",
+                "description": "Upload media file to a conversation",
+                "operationId": "0a97797cf960f3e2771c80735f721b80",
+                "parameters": [
+                    {
+                        "name": "chat_id",
+                        "in": "path",
+                        "description": "Chat ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "file": {
+                                        "description": "Media file (max 10MB, types: jpg,jpeg,png,gif,mp4,mov,avi,pdf,doc,docx,txt)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Media uploaded successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "message_id": {
+                                                    "type": "integer",
+                                                    "example": 123
+                                                },
+                                                "file_url": {
+                                                    "type": "string",
+                                                    "example": "http://example.com/storage/chat_media/file.jpg"
+                                                },
+                                                "file_type": {
+                                                    "type": "string",
+                                                    "example": "image/jpeg"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Conversation not found or access denied"
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/read-messages/{chat_id}": {
+            "post": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Mark all messages in a conversation as read",
+                "description": "Mark all messages in a conversation as read",
+                "operationId": "ab3d7f654b2acfd216fa2ba348b596b9",
+                "parameters": [
+                    {
+                        "name": "chat_id",
+                        "in": "path",
+                        "description": "Chat ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Messages marked as read",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Conversation not found or access denied"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/pin/{chat_id}": {
+            "post": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Pin or unpin a conversation",
+                "description": "Pin or unpin conversation",
+                "operationId": "975ba2d516cb1208a2ee215970a598ff",
+                "parameters": [
+                    {
+                        "name": "chat_id",
+                        "in": "path",
+                        "description": "Chat ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "1"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Pin status toggled",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "pinned": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Conversation not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/typing-indicator": {
+            "post": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Send typing indicator to conversation",
+                "description": "Send typing indicator to conversation",
+                "operationId": "e47ef6aef43cdd84ddc2ca3350d23f02",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "conversation_id": {
+                                        "description": "Conversation ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "is_typing": {
+                                        "description": "Whether user is typing",
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Typing indicator sent",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Conversation not found or access denied"
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/online-status": {
+            "post": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Update user online status",
+                "description": "Update user online status",
+                "operationId": "fec59c974b30222c724c607dc339d3bb",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "is_online": {
+                                        "description": "Online status",
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Online status updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "is_online": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "last_seen": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/{chat_id}/online-status": {
+            "get": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Get conversation participants online status",
+                "description": "Get conversation participants online status",
+                "operationId": "9422f6c42a3d0bc281efc1fb24820e7e",
+                "parameters": [
+                    {
+                        "name": "chat_id",
+                        "in": "path",
+                        "description": "Chat ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Other participant's online status",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "user": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "string",
+                                                            "example": "user-uuid"
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "John Doe"
+                                                        },
+                                                        "is_online": {
+                                                            "type": "boolean",
+                                                            "example": true
+                                                        },
+                                                        "last_seen": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "nullable": true
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Conversation not found or access denied"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/social-accounts": {
+            "get": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Get current user's connected social accounts",
+                "description": "Get current user's connected social accounts",
+                "operationId": "fbb2047ad96f0aa77c5741216e1ea3d1",
+                "responses": {
+                    "200": {
+                        "description": "List of connected social accounts",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "user_id": {
+                                                    "type": "string",
+                                                    "example": "user-uuid"
+                                                },
+                                                "social_accounts": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "provider": {
+                                                                "type": "string",
+                                                                "example": "vkontakte"
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "John Doe"
+                                                            },
+                                                            "email": {
+                                                                "type": "string",
+                                                                "example": "john@example.com"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Failed to get social accounts"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/conversations/send-social-contacts": {
+            "get": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Send user's social contacts to chat",
+                "description": "Send user's social contacts to chat",
+                "operationId": "8964b996c24891e33377a19d6b2dac88",
+                "parameters": [
+                    {
+                        "name": "conversation_id",
+                        "in": "query",
+                        "description": "Conversation ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "provider",
+                        "in": "query",
+                        "description": "Social provider",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "vkontakte",
+                                "telegram",
+                                "google",
+                                "apple"
+                            ],
+                            "example": "vkontakte"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Social contact sent successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "meta": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 200
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string",
+                                                    "example": "Social contact sent successfully"
+                                                },
+                                                "provider": {
+                                                    "type": "string",
+                                                    "example": "vkontakte"
+                                                },
+                                                "contact": {
+                                                    "type": "string",
+                                                    "example": "John Doe"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid provider or missing parameters"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Conversation not found or no connected account"
+                    },
+                    "500": {
+                        "description": "Failed to send social contact"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/payment/service-package": {
             "post": {
                 "tags": [
@@ -1029,1649 +2216,6 @@
                     }
                 ]
             }
-        },
-        "/users/reference-data/interests": {
-            "get": {
-                "tags": [
-                    "User settings"
-                ],
-                "summary": "Get interests list",
-                "operationId": "0bade12c395e9dac48881f325425ca93",
-                "parameters": [
-                    {
-                        "name": "search",
-                        "in": "query",
-                        "description": "Search by interest name",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "example": "Фотография"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/SuccessResponse"
-                                },
-                                "example": {
-                                    "meta": {
-                                        "error": null,
-                                        "status": 200
-                                    },
-                                    "data": {
-                                        "items": [
-                                            {
-                                                "id": 1,
-                                                "name": "Мотоциклы"
-                                            },
-                                            {
-                                                "id": 2,
-                                                "name": "Кофе"
-                                            },
-                                            {
-                                                "id": 3,
-                                                "name": "Театр"
-                                            }
-                                        ]
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Unauthorized"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/users/reference-data/relationship-preferences": {
-            "get": {
-                "tags": [
-                    "User settings"
-                ],
-                "summary": "Get available genders",
-                "description": "Returns list of available relationship preferences",
-                "operationId": "a51ae246acb13df0f29faea9138558ef",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/SuccessResponse"
-                                },
-                                "example": {
-                                    "meta": {
-                                        "error": null,
-                                        "status": 200
-                                    },
-                                    "data": {
-                                        "items": [
-                                            {
-                                                "id": 1,
-                                                "preference": "Серьезные отношения"
-                                            },
-                                            {
-                                                "id": 2,
-                                                "preference": "Встречи на один раз."
-                                            },
-                                            {
-                                                "id": 3,
-                                                "preference": "Серьезные отношения, но не против встречи на один раз.."
-                                            },
-                                            {
-                                                "id": 4,
-                                                "preference": "Встречи на один раз, но не против регулярных встреч."
-                                            },
-                                            {
-                                                "id": 5,
-                                                "preference": "Новых друзей"
-                                            },
-                                            {
-                                                "id": 6,
-                                                "preference": "Все ещё думаю."
-                                            }
-                                        ]
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Unauthorized"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/users/reference-data/genders": {
-            "get": {
-                "tags": [
-                    "User settings"
-                ],
-                "summary": "Get available genders",
-                "description": "Returns list of available gender options with translations",
-                "operationId": "ebb190585ce48b59d999f3f9f0cbb1c5",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/SuccessResponse"
-                                },
-                                "example": {
-                                    "meta": {
-                                        "error": null,
-                                        "status": 200
-                                    },
-                                    "data": {
-                                        "items": {
-                                            "male": "Мужчина",
-                                            "female": "Женщина",
-                                            "m_f": "М+Ж",
-                                            "m_m": "М+М",
-                                            "f_f": "Ж+Ж"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Unauthorized"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/users/reference-data/zodiac-signs": {
-            "get": {
-                "tags": [
-                    "User settings"
-                ],
-                "summary": "Get available zodiac signs",
-                "description": "Returns list of available zodiac signs options with translations",
-                "operationId": "1109434ca5dd6f17f393cff16ee1c31f",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/SuccessResponse"
-                                },
-                                "example": {
-                                    "meta": {
-                                        "error": null,
-                                        "status": 200
-                                    },
-                                    "data": {
-                                        "items": {
-                                            "capricornus": "Козерог",
-                                            "aquarius": "Водолей",
-                                            "pisces": "Рыбы",
-                                            "aries": "Овен",
-                                            "taurus": "Телец",
-                                            "gemini": "Близнецы",
-                                            "cancecr": "Рак",
-                                            "leo": "Лев",
-                                            "virgo": "Дева",
-                                            "libra": "Весы",
-                                            "sagittarius": "Стрелец",
-                                            "scorpius": "Скорпион"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Unauthorized"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/users/reference-data/family-statuses": {
-            "get": {
-                "tags": [
-                    "User settings"
-                ],
-                "summary": "Get family statuses by gender",
-                "description": "Returns list of family statuses with translations based on gender",
-                "operationId": "87606f45df0c2683b63b00fce4471822",
-                "parameters": [
-                    {
-                        "name": "gender",
-                        "in": "query",
-                        "description": "Gender type to get appropriate family status translations",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "male",
-                                "female",
-                                "m_f",
-                                "m_m",
-                                "f_f"
-                            ],
-                            "example": "male"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/SuccessResponse"
-                                },
-                                "example": {
-                                    "meta": {
-                                        "error": null,
-                                        "status": 200
-                                    },
-                                    "data": {
-                                        "items": [
-                                            {
-                                                "key": "married",
-                                                "translation_ru": "Женат"
-                                            },
-                                            {
-                                                "key": "not_married",
-                                                "translation_ru": "Не женат"
-                                            },
-                                            {
-                                                "key": "widow_er",
-                                                "translation_ru": "Вдовец"
-                                            },
-                                            {
-                                                "key": "divorced",
-                                                "translation_ru": "Разведен"
-                                            }
-                                        ]
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Unauthorized"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/users/reference-data/education": {
-            "get": {
-                "tags": [
-                    "User settings"
-                ],
-                "summary": "Get education options",
-                "description": "Returns list of education levels with translations",
-                "operationId": "a1993ef036ce1d6335a1a12b0bc9312b",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/SuccessResponse"
-                                },
-                                "example": {
-                                    "meta": {
-                                        "error": null,
-                                        "status": 200
-                                    },
-                                    "data": {
-                                        "items": {
-                                            "lower_secondary": "Неполное среднее",
-                                            "secondary": "Среднее",
-                                            "specialized_secondary": "Среднее специальное",
-                                            "incomplete_higher": "Неполное высшее",
-                                            "higher": "Высшее",
-                                            "two_or_more_higher": "Два или более высших",
-                                            "academic_degree": "Ученая степень"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Unauthorized"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/users/reference-data/family": {
-            "get": {
-                "tags": [
-                    "User settings"
-                ],
-                "summary": "Get family plans options",
-                "description": "Returns list of family plans with translations",
-                "operationId": "3e79c05fc567b699c70528f24cd69846",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/SuccessResponse"
-                                },
-                                "example": {
-                                    "meta": {
-                                        "error": null,
-                                        "status": 200
-                                    },
-                                    "data": {
-                                        "items": {
-                                            "want_children": "Я хочу детей",
-                                            "dont_want_children": "Я не хочу детей",
-                                            "have_children_and_want": "У меня есть дети и хочу еще",
-                                            "have_children_and_dont_want": "Есть дети, но больше не хочу",
-                                            "not_decided": "Пока не знаю, хочу ли детей"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Unauthorized"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/users/reference-data/communication": {
-            "get": {
-                "tags": [
-                    "User settings"
-                ],
-                "summary": "Get communication preferences",
-                "description": "Returns list of communication preferences with translations",
-                "operationId": "e41e63e73b6c8518893c06809b441561",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/SuccessResponse"
-                                },
-                                "example": {
-                                    "meta": {
-                                        "error": null,
-                                        "status": 200
-                                    },
-                                    "data": {
-                                        "items": {
-                                            "texting": "Люблю переписываться",
-                                            "by_phone": "Люблю общаться по телефону",
-                                            "videocall": "Больше нравятся видеозвонки",
-                                            "meet": "Лучше встречусь лично"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Unauthorized"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/users/reference-data/love-languages": {
-            "get": {
-                "tags": [
-                    "User settings"
-                ],
-                "summary": "Get love languages",
-                "description": "Returns list of love languages with translations",
-                "operationId": "02e6daf75b74b601f712fc496d4071c4",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/SuccessResponse"
-                                },
-                                "example": {
-                                    "meta": {
-                                        "error": null,
-                                        "status": 200
-                                    },
-                                    "data": {
-                                        "items": {
-                                            "gifts": "Нравятся подарки",
-                                            "touches": "Нравятся прикосновения",
-                                            "compliments": "Нравятся комплименты",
-                                            "deeds": "Нравятся поступки",
-                                            "constant_attention": "Нравится постоянное внимание"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Unauthorized"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/users/reference-data/pets": {
-            "get": {
-                "tags": [
-                    "User settings"
-                ],
-                "summary": "Get pet preferences",
-                "description": "Returns list of pet preferences with translations",
-                "operationId": "efb4b874cf7851f91f273887bb745072",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/SuccessResponse"
-                                },
-                                "example": {
-                                    "meta": {
-                                        "error": null,
-                                        "status": 200
-                                    },
-                                    "data": {
-                                        "items": {
-                                            "dog": "Собака",
-                                            "cat": "Кошка",
-                                            "reptile": "Рептилия",
-                                            "amphibian": "Амфибия",
-                                            "bird": "Птица",
-                                            "fish": "Рыбки",
-                                            "turtle": "Черепаха",
-                                            "rabbit": "Кролик",
-                                            "hamster": "Хомяк",
-                                            "i_want": "Нет, но хочу питомца",
-                                            "dont_have": "Нет питомцев"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Unauthorized"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/users/reference-data/alcohol": {
-            "get": {
-                "tags": [
-                    "User settings"
-                ],
-                "summary": "Get alcohol preferences",
-                "description": "Returns list of alcohol preferences with translations",
-                "operationId": "cdcb989f47d9683c769394a1a2df5789",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/SuccessResponse"
-                                },
-                                "example": {
-                                    "meta": {
-                                        "error": null,
-                                        "status": 200
-                                    },
-                                    "data": {
-                                        "items": {
-                                            "dont_drink": "Я не пью",
-                                            "on_holidays": "Пью по праздникам",
-                                            "on_weekends": "Пью по выходным",
-                                            "drink_often": "Пью часто"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Unauthorized"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/users/reference-data/smoking": {
-            "get": {
-                "tags": [
-                    "User settings"
-                ],
-                "summary": "Get smoking preferences",
-                "description": "Returns list of smoking preferences with translations",
-                "operationId": "a2232b3eaebf5445a832f82580046658",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/SuccessResponse"
-                                },
-                                "example": {
-                                    "meta": {
-                                        "error": null,
-                                        "status": 200
-                                    },
-                                    "data": {
-                                        "items": {
-                                            "for_the_company": "Курю за компанию",
-                                            "when_i_drink": "Курю, когда выпью",
-                                            "i_smoke": "Курю",
-                                            "dont_smoke": "Не курю",
-                                            "give_up": "Бросаю"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Unauthorized"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/users/reference-data/sport": {
-            "get": {
-                "tags": [
-                    "User settings"
-                ],
-                "summary": "Get sport preferences",
-                "description": "Returns list of sport preferences with translations",
-                "operationId": "5440f212268a320013011708810334ed",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/SuccessResponse"
-                                },
-                                "example": {
-                                    "meta": {
-                                        "error": null,
-                                        "status": 200
-                                    },
-                                    "data": {
-                                        "items": {
-                                            "train_everyday": "Тренируюсь каждый день",
-                                            "train_often": "Часто тренируюсь",
-                                            "train_sometimes": "Иногда тренируюсь",
-                                            "dont_train": "Не занимаюсь спортом"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Unauthorized"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/users/reference-data/food": {
-            "get": {
-                "tags": [
-                    "User settings"
-                ],
-                "summary": "Get food preferences",
-                "description": "Returns list of food preferences with translations",
-                "operationId": "8d723cf2f61ec3a555376b8050133548",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/SuccessResponse"
-                                },
-                                "example": {
-                                    "meta": {
-                                        "error": null,
-                                        "status": 200
-                                    },
-                                    "data": {
-                                        "items": {
-                                            "veganism": "Веганство",
-                                            "vegetarianism": "Вегетарианство",
-                                            "pescatarianism": "Пескетарианство",
-                                            "kosher_food": "Кошерная еда",
-                                            "everything": "Ем всё"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Unauthorized"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/users/reference-data/social-network": {
-            "get": {
-                "tags": [
-                    "User settings"
-                ],
-                "summary": "Get social network preferences",
-                "description": "Returns list of social network preferences with translations",
-                "operationId": "95d3a5bfaa8a5563f06f7a13ee05eb15",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/SuccessResponse"
-                                },
-                                "example": {
-                                    "meta": {
-                                        "error": null,
-                                        "status": 200
-                                    },
-                                    "data": {
-                                        "items": {
-                                            "influencer": "Инфлюенсер соцсетей",
-                                            "active_user": "Активный пользователь соцсетей",
-                                            "dont_use": "Меня нет в соцсетях",
-                                            "sometimes_im_on": "Иногда захожу в соцсети"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Unauthorized"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/users/reference-data/sleep": {
-            "get": {
-                "tags": [
-                    "User settings"
-                ],
-                "summary": "Get sleep chronotypes",
-                "description": "Returns list of sleep chronotypes with translations",
-                "operationId": "2b745bea28d931583673a21473bf7603",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/SuccessResponse"
-                                },
-                                "example": {
-                                    "meta": {
-                                        "error": null,
-                                        "status": 200
-                                    },
-                                    "data": {
-                                        "items": {
-                                            "lark": "Я жаворонок",
-                                            "owl": "Я сова"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Unauthorized"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/users/reference-data/orientations": {
-            "get": {
-                "tags": [
-                    "User settings"
-                ],
-                "summary": "Get sexual orientations",
-                "description": "Returns list of sexual orientations with translations",
-                "operationId": "3c97cc0cab1afc29d82cd71e3c89be21",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/SuccessResponse"
-                                },
-                                "example": {
-                                    "meta": {
-                                        "error": null,
-                                        "status": 200
-                                    },
-                                    "data": {
-                                        "items": {
-                                            "hetero": "Гетеро",
-                                            "gay": "Гей",
-                                            "lesbian": "Лесбиянка",
-                                            "bisexual": "Бисексуал(ка)",
-                                            "asexual": "Асексуал(ка)",
-                                            "not_decided": "Не определился(лась)"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Unauthorized"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/users/reference-data/clubs": {
-            "get": {
-                "tags": [
-                    "User settings"
-                ],
-                "summary": "Get user clubs and additional clubs",
-                "operationId": "d27732f7dc2d2451c7b71cbf1d90a313",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/SuccessResponse"
-                                },
-                                "example": {
-                                    "meta": {
-                                        "error": null,
-                                        "status": 200
-                                    },
-                                    "data": {
-                                        "my_clubs": [
-                                            {
-                                                "name": "Кофе",
-                                                "image": "3,270a03362f79",
-                                                "id": 2
-                                            },
-                                            {
-                                                "name": "Ходьба",
-                                                "image": "5,272be78151bf",
-                                                "id": 35
-                                            }
-                                        ],
-                                        "additional": [
-                                            {
-                                                "name": "Мотоциклы",
-                                                "image": "6,2709abd0cdc3",
-                                                "id": 1
-                                            },
-                                            {
-                                                "name": "Театр",
-                                                "image": "1,270b06ef8adb",
-                                                "id": 3
-                                            }
-                                        ]
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Unauthorized"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/users/settings/token": {
-            "post": {
-                "tags": [
-                    "User settings"
-                ],
-                "summary": "Add / Register device token",
-                "operationId": "5a3849b8ab51e87aff067d74dbe87f21",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "token"
-                                ],
-                                "properties": {
-                                    "token": {
-                                        "description": "Device Token",
-                                        "type": "string",
-                                        "example": "20bdb8fb3bdadc1bef037eefcaeb56ad6e57f3241c99e734062b6ee829271b71"
-                                    },
-                                    "application": {
-                                        "description": "Application",
-                                        "type": "string",
-                                        "example": "AppStore 1.2.3"
-                                    },
-                                    "device": {
-                                        "description": "Device Name",
-                                        "type": "string",
-                                        "example": "iPhone 15"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/SuccessResponse"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "delete": {
-                "tags": [
-                    "User settings"
-                ],
-                "summary": "Remove device token",
-                "operationId": "ee82101a83ef018306a1e8cbd62fcd80",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "token"
-                                ],
-                                "properties": {
-                                    "token": {
-                                        "description": "Device Token",
-                                        "type": "string",
-                                        "example": "20bdb8fb3bdadc1bef037eefcaeb56ad6e57f3241c99e734062b6ee829271b71"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/SuccessResponse"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/users/info/{id}": {
-            "get": {
-                "tags": [
-                    "User settings"
-                ],
-                "summary": "Get user profile",
-                "description": "Returns detailed user profile information by user ID",
-                "operationId": "53ad6343eeb960d51fade692a8b35ffd",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "User ID",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid",
-                            "example": "00012bae-a544-4300-acb4-8b39ca353b8c"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/SuccessResponse"
-                                },
-                                "example": {
-                                    "meta": {
-                                        "error": null,
-                                        "status": 200
-                                    },
-                                    "data": {
-                                        "items": {
-                                            "id": "00012bae-a544-4300-acb4-8b39ca353b8c",
-                                            "name": "Олежа",
-                                            "bio": null,
-                                            "educational_institution": null,
-                                            "role": null,
-                                            "residence": "Благовещенск",
-                                            "company": null,
-                                            "gender": "Мужчина",
-                                            "age": 19,
-                                            "info": [
-                                                "Гетеро",
-                                                "Не женат",
-                                                "Серьезные отношения"
-                                            ],
-                                            "distance": 6666,
-                                            "is_verified": false,
-                                            "images": [
-                                                "45,075c70c6065121",
-                                                "48,075c7142509235",
-                                                "46,075c723825fe52",
-                                                "44,075c7391990dc5"
-                                            ],
-                                            "interests": [
-                                                "Фильмы",
-                                                "Киберспорт",
-                                                "Сериалы",
-                                                "Пиво",
-                                                "Аниме"
-                                            ],
-                                            "gifts": [],
-                                            "gifts_count": 0,
-                                            "feedbacks_count": 0
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Unauthorized"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/users/profile": {
-            "get": {
-                "tags": [
-                    "User settings"
-                ],
-                "summary": "Get my profile",
-                "description": "Returns account information",
-                "operationId": "808e9010b31809ab9843e1055836d95d",
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/SuccessResponse"
-                                },
-                                "example": {
-                                    "meta": {
-                                        "error": null,
-                                        "status": 200
-                                    },
-                                    "data": {
-                                        "images": [
-                                            {
-                                                "id": 63351,
-                                                "image": "11,f3dc14b810ca"
-                                            },
-                                            {
-                                                "id": 63350,
-                                                "image": "4,f3dbd03bce08"
-                                            }
-                                        ],
-                                        "pets": [
-                                            "Кошка"
-                                        ],
-                                        "interests": [
-                                            {
-                                                "id": 2,
-                                                "name": "Кофе"
-                                            },
-                                            {
-                                                "id": 35,
-                                                "name": "Ходьба"
-                                            },
-                                            {
-                                                "id": 87,
-                                                "name": "Настольные игры"
-                                            }
-                                        ],
-                                        "information": {
-                                            "id": "3ade5db5-fe5e-4f8c-a3bf-94d1d6ab1043",
-                                            "name": "Oleg",
-                                            "age": 33,
-                                            "email": "test@test.ru",
-                                            "phone": "+11111111111",
-                                            "birth_date": "1994-11-28T22:00:00.000000Z",
-                                            "registration_screen": null,
-                                            "registration_date": "2024-08-15T13:29:22.000000Z",
-                                            "show_my_gender": true,
-                                            "username": null,
-                                            "show_me": [
-                                                "female"
-                                            ],
-                                            "residence": "Тираспол",
-                                            "bio": "Люблю путешествовать и читать книги",
-                                            "gender": "Мужчина",
-                                            "sexual_orientation": "Гетеро",
-                                            "zodiac_sign": "Телец",
-                                            "education": "",
-                                            "family": "",
-                                            "communication": "",
-                                            "love_language": "",
-                                            "alcohole": "Пью по праздникам",
-                                            "smoking": "Курю",
-                                            "sport": "Иногда тренируюсь",
-                                            "food": "Ем всё",
-                                            "social_network": "Иногда захожу в соцсети",
-                                            "sleep": "Я сова",
-                                            "educational_institution": null,
-                                            "family_status": {
-                                                "key": "married",
-                                                "translation_ru": "Женат"
-                                            },
-                                            "relationship_preference": "Новых друзей",
-                                            "role": null,
-                                            "company": null,
-                                            "superlikes": 257,
-                                            "superbooms": 5,
-                                            "likes": 30,
-                                            "show_distance_from_me": true,
-                                            "show_my_age": true,
-                                            "show_my_orientation": false,
-                                            "is_verified": false
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Unauthorized"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "put": {
-                "tags": [
-                    "User settings"
-                ],
-                "summary": "Update user information",
-                "description": "Update comprehensive user profile information including personal details, preferences, pets, and settings",
-                "operationId": "d258e0a8eec63387e31d199d36448cd6",
-                "requestBody": {
-                    "description": "User information to update (all fields are optional)",
-                    "required": false,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "bio": {
-                                        "description": "User biography",
-                                        "type": "string",
-                                        "maxLength": 500,
-                                        "example": "Люблю путешествовать"
-                                    },
-                                    "gender": {
-                                        "description": "User gender",
-                                        "type": "string",
-                                        "example": "male"
-                                    },
-                                    "sexual_orientation": {
-                                        "description": "User sexual orientation",
-                                        "type": "string",
-                                        "example": "hetero"
-                                    },
-                                    "birth_date": {
-                                        "description": "User birth date (must be in the past)",
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "1990-05-15"
-                                    },
-                                    "email": {
-                                        "description": "User email address",
-                                        "type": "string",
-                                        "format": "email",
-                                        "maxLength": 100,
-                                        "example": "user@example.com"
-                                    },
-                                    "zodiac_sign": {
-                                        "description": "Zodiac sign",
-                                        "type": "string",
-                                        "example": "taurus"
-                                    },
-                                    "education": {
-                                        "description": "Education level",
-                                        "type": "string",
-                                        "example": "higher"
-                                    },
-                                    "educational_institution": {
-                                        "description": "Educational institution name",
-                                        "type": "string",
-                                        "maxLength": 100,
-                                        "example": "МГУ"
-                                    },
-                                    "family_status": {
-                                        "description": "Family status",
-                                        "type": "string",
-                                        "example": "single"
-                                    },
-                                    "family": {
-                                        "description": "Attitude towards family",
-                                        "type": "string",
-                                        "example": "want_children"
-                                    },
-                                    "communication": {
-                                        "description": "Communication style",
-                                        "type": "string",
-                                        "example": "extrovert"
-                                    },
-                                    "love_language": {
-                                        "description": "Love language preference",
-                                        "type": "string",
-                                        "example": "quality_time"
-                                    },
-                                    "alcohole": {
-                                        "description": "Attitude towards alcohol",
-                                        "type": "string",
-                                        "example": "sometimes"
-                                    },
-                                    "smoking": {
-                                        "description": "Smoking habits",
-                                        "type": "string",
-                                        "example": "never"
-                                    },
-                                    "sport": {
-                                        "description": "Attitude towards sports",
-                                        "type": "string",
-                                        "example": "active"
-                                    },
-                                    "food": {
-                                        "description": "Food preferences",
-                                        "type": "string",
-                                        "example": "vegetarian"
-                                    },
-                                    "social_network": {
-                                        "description": "Social network activity",
-                                        "type": "string",
-                                        "example": "active"
-                                    },
-                                    "sleep": {
-                                        "description": "Sleep schedule preference",
-                                        "type": "string",
-                                        "example": "owl"
-                                    },
-                                    "role": {
-                                        "description": "Job role/position",
-                                        "type": "string",
-                                        "maxLength": 50,
-                                        "example": "Software Developer"
-                                    },
-                                    "company": {
-                                        "description": "Company name",
-                                        "type": "string",
-                                        "maxLength": 50,
-                                        "example": "Tech Company"
-                                    },
-                                    "interests": {
-                                        "description": "User interests (minimum 3, maximum 5)",
-                                        "type": "array",
-                                        "items": {
-                                            "description": "Interest ID",
-                                            "type": "integer",
-                                            "example": 1
-                                        },
-                                        "maxItems": 5,
-                                        "minItems": 3
-                                    },
-                                    "pets": {
-                                        "description": "User pets (maximum 10)",
-                                        "type": "array",
-                                        "items": {
-                                            "description": "Pet type",
-                                            "type": "string",
-                                            "enum": [
-                                                "dog",
-                                                "cat",
-                                                "reptile",
-                                                "amphibian",
-                                                "bird",
-                                                "fish",
-                                                "turtle",
-                                                "rabbit",
-                                                "hamster",
-                                                "i_want",
-                                                "dont_have"
-                                            ],
-                                            "example": "dog"
-                                        },
-                                        "maxItems": 10
-                                    },
-                                    "relationship_preference_id": {
-                                        "description": "Relationship preference ID",
-                                        "type": "integer",
-                                        "example": 2
-                                    },
-                                    "show_my_gender": {
-                                        "description": "Whether to show user's gender to others",
-                                        "type": "boolean",
-                                        "example": true
-                                    },
-                                    "show_my_orientation": {
-                                        "description": "Whether to show user's orientation to others",
-                                        "type": "boolean",
-                                        "example": false
-                                    },
-                                    "show_me": {
-                                        "description": "Gender preferences for matching",
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string",
-                                            "enum": [
-                                                "male",
-                                                "female",
-                                                "m_f",
-                                                "m_m",
-                                                "f_f"
-                                            ],
-                                            "example": "female"
-                                        }
-                                    },
-                                    "registration_screen": {
-                                        "description": "Current registration screen",
-                                        "type": "string",
-                                        "maxLength": 50,
-                                        "example": "step_3",
-                                        "nullable": true
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Information updated successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "description": "Success message",
-                                            "type": "string",
-                                            "example": "Данные успешно обновлены"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "description": "Error message",
-                                            "type": "string",
-                                            "example": "Ошибка валидации данных"
-                                        },
-                                        "errors": {
-                                            "description": "Validation errors",
-                                            "properties": {
-                                                "bio": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string",
-                                                        "example": "Биография не должна превышать 500 символов"
-                                                    }
-                                                },
-                                                "interests": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string",
-                                                        "example": "Необходимо выбрать минимум 3 интереса"
-                                                    }
-                                                },
-                                                "pets": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string",
-                                                        "example": "Можно выбрать максимум 10 питомцев"
-                                                    }
-                                                },
-                                                "email": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string",
-                                                        "example": "Этот email уже используется другим пользователем"
-                                                    }
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Server error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "description": "Error message",
-                                            "type": "string",
-                                            "example": "Произошла ошибка при обновлении данных"
-                                        },
-                                        "errors": {
-                                            "description": "Error details",
-                                            "type": "string",
-                                            "example": "Database connection error"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Unauthorized"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
         }
     },
     "components": {
@@ -2763,8 +2307,8 @@
             "name": "App Settings"
         },
         {
-            "name": "User settings",
-            "description": "User settings"
+            "name": "Chat",
+            "description": "Chat"
         }
     ]
 }
