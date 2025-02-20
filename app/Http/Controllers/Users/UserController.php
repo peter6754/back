@@ -110,9 +110,9 @@ class UserController extends Controller
     {
         $viewer = $request->customer;
         try {
-            return $this->successResponse([
-                'items' => $this->userService->getUser($id, $viewer)
-            ]);
+            return $this->successResponse(
+                $this->userService->getUser($id, $viewer)
+            );
         } catch (Exception $e) {
             return $this->errorResponse(
                 $e->getMessage(),
@@ -231,7 +231,9 @@ class UserController extends Controller
     {
         $user = $request->customer;
         try {
-            return $this->successResponse($this->userService->getAccountInformation($user['id']));
+            return $this->successResponse(
+                $this->userService->getAccountInformation($user['id'])
+            );
         } catch (Exception $e) {
             return $this->errorResponse(
                 $e->getMessage(),
