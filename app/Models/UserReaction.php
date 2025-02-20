@@ -19,6 +19,7 @@ class UserReaction extends Model
      *
      * @var string
      */
+    protected $uniqueKeys = ['reactor_id', 'user_id'];
     protected $primaryKey = null;
     public $incrementing = false;
 
