@@ -39,15 +39,10 @@
         "barryvdh/laravel-debugbar": "^3.16",
         "ext-simplexml": "*",
         "ext-mbstring": "*",
-        "ext-redis": "*",
         "ext-curl": "*",
         "ext-pdo": "*",
         "ext-zip": "*",
         "php": "^8.2"
-        "socialiteproviders/google": "^4.1",
-        "socialiteproviders/telegram": "^4.1",
-        "socialiteproviders/vkontakte": "^5.0",
-        "spatie/laravel-data": "^4.17"
     },
     "require-dev": {
         "backpack/generators": "^4.0",
