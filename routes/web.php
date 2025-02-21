@@ -67,7 +67,6 @@ Route::prefix('payment')->group(function () {
         ->name('statuses.fail');
 });
 
-
 // Prices routes
 Route::prefix('application')->middleware('auth')->group(function () {
     Route::prefix('prices')->group(function () {
@@ -131,8 +130,8 @@ Route::prefix('auth')->group(function () {
     Route::any('social/{provider}/callback', [AuthController::class, 'socialCallback']);
     Route::get('social/{provider}', function ($provider) {
         if (
-            !empty(config("services.{$provider}.client_id")) ||
-            !empty(config("services.{$provider}.redirect"))
+            ! empty(config("services.{$provider}.client_id")) ||
+            ! empty(config("services.{$provider}.redirect"))
         ) {
             return Socialite::driver($provider)->redirectUrl(
                 url(config("services.{$provider}.redirect"))
@@ -146,11 +145,11 @@ Route::prefix('auth')->group(function () {
 Route::prefix('users')->middleware('auth')->group(function () {
     // Users Profile
     Route::get('info/{id}', [UserController::class, 'getUser']);
-    Route::get('likes', [UsersController::class, 'getUserLikes'])->name('user.likes');
 
     // My Profile
     Route::get('profile', [UserController::class, 'getAccountInformation']);
     Route::put('profile', [UserController::class, 'updateAccountInformation']);
+    Route::get('likes', [UsersController::class, 'getUserLikes']);
 
     // Settings
     Route::prefix('settings')->group(function () {
@@ -191,7 +190,7 @@ Route::get('swagger', function () {
 });
 
 Route::get('/test', function () {
-    $model = new \App\Models\UserReaction();
+    $model = new \App\Models\UserReaction;
     dd($model->getFillable());
 });
 

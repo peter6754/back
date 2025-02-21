@@ -14,7 +14,7 @@ use Illuminate\Http\JsonResponse;
 class UsersController extends Controller
 {
     use ApiResponseTrait;
-    
+
     private UserService $userService;
 
     public function __construct(UserService $userService)
@@ -24,6 +24,7 @@ class UsersController extends Controller
 
     /**
      * Get user likes with filtering options
+     *
      * @OA\Get(
      *     path="/users/likes",
      *     summary="Get user likes",
@@ -83,8 +84,8 @@ class UsersController extends Controller
         try {
             // Получаем текущего пользователя через customer или auth user
             $secondaryUser = $request->customer ?? $request->user();
-            
-            if (!$secondaryUser) {
+
+            if (! $secondaryUser) {
                 return $this->errorUnauthorized();
             }
 
@@ -121,10 +122,10 @@ class UsersController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'image' => $user->image,
-                    'age' => $user->age ? (int)$user->age : null,
-                    'distance' => $user->distance ? (int)$user->distance : null,
-                    'superliked_me' => (bool)$user->superliked_me,
-                    'is_online' => (bool)$user->is_online,
+                    'age' => $user->age ? (int) $user->age : null,
+                    'distance' => $user->distance ? (int) $user->distance : null,
+                    'superliked_me' => (bool) $user->superliked_me,
+                    'is_online' => (bool) $user->is_online,
                 ];
             });
 
