@@ -71,7 +71,7 @@ class UserDeviceToken extends Model
         ];
 
         // Сначала пытаемся обновить
-        if (static::where([$attributes])->exists()) {
+        if (static::where($attributes)->exists()) {
             static::where($attributes)->update($query);
             return static::where($attributes)->first();
         }
