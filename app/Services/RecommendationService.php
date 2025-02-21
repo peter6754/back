@@ -258,8 +258,8 @@ class RecommendationService
      */
     public function like(string $userId, array $params)
     {
-        $reactionExists = $this->checkExistingReaction();
-        $superboom = $this->getSuperboomStatus();
+        $reactionExists = $this->checkExistingReaction($userId, $params);
+        $superboom = $this->getSuperboomStatus($params);
 
         $this->updateOrCreateReaction([
             'user_id' => $params['user_id'],
@@ -299,8 +299,8 @@ class RecommendationService
      */
     public function superlike(string $userId, array $params)
     {
-        $reactionExists = $this->checkExistingReaction();
-        $superboom = $this->getSuperboomStatus();
+        $reactionExists = $this->checkExistingReaction($userId, $params);
+        $superboom = $this->getSuperboomStatus($params);
 
         $this->updateOrCreateReaction([
             'user_id' => $params['user_id'],
@@ -519,10 +519,10 @@ class RecommendationService
     /**
      * @return bool
      */
-    private function checkExistingReaction(): bool
+    private function checkExistingReaction($userId, $params): bool
     {
-        return UserReaction::where('reactor_id', $this->params['user_id'])
-            ->where('user_id', $this->userId)
+        return UserReaction::where('reactor_id', $params['user_id'])
+            ->where('user_id', $userId)
             ->whereIn('type', ['like', 'superlike'])
             ->exists();
     }
@@ -530,11 +530,11 @@ class RecommendationService
     /**
      * @return bool
      */
-    private function getSuperboomStatus(): bool
+    private function getSuperboomStatus($params): bool
     {
         $user = Secondaryuser::with(['userInformation'])
             ->select(['id'])
-            ->findOrFail($this->params['user_id']);
+            ->findOrFail($params['user_id']);
 
         return $user->userInformation && $user->userInformation->superboom_due_date >= now();
     }
