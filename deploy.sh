@@ -1,10 +1,5 @@
 #!/bin/bash
 
-# Инициализация node
-export NVM_DIR="/usr/local/nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-
 # Очистка локальных изменений и принудительное обновление из репозитория
 git reset --hard           # Сброс всех локальных изменений
 git pull origin main --force  # Принудительное обновление из ветки main
