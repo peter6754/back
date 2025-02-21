@@ -1,15 +1,15 @@
 <?php
 
-use App\Http\Controllers\Users\UserController;
-use App\Http\Controllers\Migrate\ProxyController;
-use App\Http\Controllers\Users\SettingsController;
 use App\Http\Controllers\Application\PricesController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Chat\ChatController;
+use App\Http\Controllers\Migrate\ProxyController;
 use App\Http\Controllers\Payments\PaymentsController;
 use App\Http\Controllers\Payments\StatusesController;
-use App\Http\Controllers\Users\ReferenceDataController;
 use App\Http\Controllers\Recommendations\RecommendationsController;
+use App\Http\Controllers\Users\ReferenceDataController;
+use App\Http\Controllers\Users\SettingsController;
+use App\Http\Controllers\Users\UserController;
 use App\Http\Controllers\Users\UsersController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
@@ -145,6 +145,7 @@ Route::prefix('auth')->group(function () {
 Route::prefix('users')->middleware('auth')->group(function () {
     // Users Profile
     Route::get('info/{id}', [UserController::class, 'getUser']);
+    Route::get('likes', [UsersController::class, 'getUserLikes'])->name('user.likes');
 
     // My Profile
     Route::get('profile', [UserController::class, 'getAccountInformation']);
@@ -177,11 +178,6 @@ Route::prefix('users')->middleware('auth')->group(function () {
         Route::get('orientations', [ReferenceDataController::class, 'getOrientations']);
         Route::get('clubs', [ReferenceDataController::class, 'getClubs']);
     });
-});
-
-// who liked you?
-Route::prefix('user')->middleware('auth')->group(function () {
-    Route::get('likes', [UsersController::class, 'getUserLikes']);
 });
 
 // Default routes

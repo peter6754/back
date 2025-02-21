@@ -11,6 +11,16 @@ namespace App\Http\Controllers;
  *           email="enternetacum@yandex.ru"
  *       ),
  *   )
+ * @OA\Server(
+ *     url="http://127.0.0.1:8000",
+ *     description="Local development server"
+ * )
+ * @OA\SecurityScheme(
+ *     securityScheme="bearerAuth",
+ *     type="http",
+ *     scheme="bearer",
+ *     bearerFormat="JWT"
+ * )
  * @OA\Tag(
  *       name="Customer Authorization",
  *   )
