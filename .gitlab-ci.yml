@@ -12,7 +12,7 @@ deploy:
     - mkdir -p ~/.ssh
     - echo -e "$GITLAB_PRIVATE_KEY" > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
-    - ssh-keyscan -H 185.207.64.193 >> ~/.ssh/known_hostscd
+    - ssh-keyscan -H 185.207.64.193 >> ~/.ssh/known_hosts
     - ssh root@185.207.64.193 "cd /var/www/api.tinderone.app && chmod +x ./deploy.sh && ./deploy.sh"
 
   only:
