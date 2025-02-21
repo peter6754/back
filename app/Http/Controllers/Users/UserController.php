@@ -151,23 +151,6 @@ class UserController extends Controller
      *                              "image": "4,f3dbd03bce08"
      *                          }
      *                      },
-     *                      "pets": {
-     *                          "Кошка"
-     *                      },
-     *                      "interests": {
-     *                          {
-     *                              "id": 2,
-     *                              "name": "Кофе"
-     *                          },
-     *                          {
-     *                              "id": 35,
-     *                              "name": "Ходьба"
-     *                          },
-     *                          {
-     *                              "id": 87,
-     *                              "name": "Настольные игры"
-     *                          }
-     *                      },
      *                      "information": {
      *                          "id": "3ade5db5-fe5e-4f8c-a3bf-94d1d6ab1043",
      *                          "name": "Oleg",
@@ -184,24 +167,69 @@ class UserController extends Controller
      *                          },
      *                          "residence": "Тираспол",
      *                          "bio": "Люблю путешествовать и читать книги",
-     *                          "gender": "Мужчина",
-     *                          "sexual_orientation": "Гетеро",
-     *                          "zodiac_sign": "Телец",
+     *                          "gender": {
+     *                               "key": "male",
+     *                               "translation_ru": "Мужчина"
+     *                           },
+     *                          "sexual_orientation": {
+     *                                "key": "hetero",
+     *                                "translation_ru": "Гетеро"
+     *                            },
+     *                          "zodiac_sign": {
+     *                                "key": "taurus",
+     *                                "translation_ru": "Телец"
+     *                            },
      *                          "education": "",
      *                          "family": "",
      *                          "communication": "",
      *                          "love_language": "",
-     *                          "alcohole": "Пью по праздникам",
-     *                          "smoking": "Курю",
-     *                          "sport": "Иногда тренируюсь",
-     *                          "food": "Ем всё",
-     *                          "social_network": "Иногда захожу в соцсети",
-     *                          "sleep": "Я сова",
+     *                          "alcohole": {
+     *                                "key": "on_holidays",
+     *                                "translation_ru": "Пью по праздникам"
+     *                            },
+     *                          "smoking": {
+     *                                "key": "i_smoke",
+     *                                "translation_ru": "Курю"
+     *                            },
+     *                          "sport": {
+     *                                "key": "train_sometimes",
+     *                                "translation_ru": "Иногда тренируюсь"
+     *                            },
+     *                          "food": {
+     *                                "key": "everything",
+     *                                "translation_ru": "Ем всё"
+     *                            },
+     *                          "social_network": {
+     *                                "key": "sometimes_im_on",
+     *                                "translation_ru": "Иногда захожу в соцсети"
+     *                            },
+     *                          "sleep": {
+     *                                "key": "owl",
+     *                                "translation_ru": "Я сова"
+     *                            },
      *                          "educational_institution": null,
      *                          "family_status": {
      *                              "key": "married",
      *                              "translation_ru": "Женат"
      *                          },
+     *                          "pets": {
+     *                               "Кошка"
+     *                           },
+     *                           "interests": {
+     *                                {
+     *                                    "id": 2,
+     *                                    "name": "Кофе"
+     *                                },
+     *                                {
+     *                                    "id": 35,
+     *                                    "name": "Ходьба"
+     *
+     *                                },
+     *                                {
+     *                                    "id": 87,
+     *                                    "name": "Настольные игры"
+     *                                }
+     *                            },
      *                          "relationship_preference": "Новых друзей",
      *                          "role": null,
      *                          "company": null,

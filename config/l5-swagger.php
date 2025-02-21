@@ -14,7 +14,7 @@ return [
                 /*
                  * File name of the generated json documentation file
                  */
-                'docs_json' => 'payment-docs.json',
+                'docs_json' => 'tinderone-docs.json',
 
                 /*
                  * Absolute paths to directory containing

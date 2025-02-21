@@ -24,7 +24,6 @@ class UsersController extends Controller
 
     /**
      * Get user likes with filtering options
-     *
      * @OA\Get(
      *     path="/users/likes",
      *     summary="Get user likes",
@@ -89,8 +88,6 @@ class UsersController extends Controller
                 return $this->errorUnauthorized();
             }
 
-            // Используем Secondaryuser напрямую
-
             // Получаем параметр фильтра
             $filter = $request->get('filter');
 
@@ -124,10 +121,10 @@ class UsersController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'image' => $user->image,
-                    'age' => $user->age ? (int) $user->age : null,
-                    'distance' => $user->distance ? (int) $user->distance : null,
-                    'superliked_me' => (bool) $user->superliked_me,
-                    'is_online' => (bool) $user->is_online,
+                    'age' => $user->age ? (int)$user->age : null,
+                    'distance' => $user->distance ? (int)$user->distance : null,
+                    'superliked_me' => (bool)$user->superliked_me,
+                    'is_online' => (bool)$user->is_online,
                 ];
             });
 

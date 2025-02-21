@@ -217,12 +217,6 @@ class RecommendationsController extends Controller
     public function like(Request $request): JsonResponse
     {
         try {
-            // Debug logging
-            \Log::info('Like method called', [
-                'customer' => $request->customer ?? 'NULL',
-                'request_data' => $request->all()
-            ]);
-
             // Get queries
             $query = RecommendationsDto::forActions($request, [
                 'from_top' => 'required|boolean'

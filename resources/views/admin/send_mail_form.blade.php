@@ -1,4 +1,3 @@
-// resources/views/admin/send_mail_form.blade.php
 @extends(backpack_view('blank'))
 
 @section('content')

@@ -119,7 +119,7 @@ class SettingsController extends Controller
                 'device' => 'string|nullable'
             ]);
 
-            UserDeviceToken::addToken($request->customer['id'], $query)->delete();
+            UserDeviceToken::addToken($request->customer['id'], $query);
 
             return $this->successResponse([
                 'message' => 'Request has ended successfully'

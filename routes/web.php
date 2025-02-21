@@ -67,6 +67,7 @@ Route::prefix('payment')->group(function () {
         ->name('statuses.fail');
 });
 
+
 // Prices routes
 Route::prefix('application')->middleware('auth')->group(function () {
     Route::prefix('prices')->group(function () {
@@ -130,8 +131,8 @@ Route::prefix('auth')->group(function () {
     Route::any('social/{provider}/callback', [AuthController::class, 'socialCallback']);
     Route::get('social/{provider}', function ($provider) {
         if (
-            ! empty(config("services.{$provider}.client_id")) ||
-            ! empty(config("services.{$provider}.redirect"))
+            !empty(config("services.{$provider}.client_id")) ||
+            !empty(config("services.{$provider}.redirect"))
         ) {
             return Socialite::driver($provider)->redirectUrl(
                 url(config("services.{$provider}.redirect"))
@@ -187,6 +188,11 @@ Route::get('swagger', function () {
     ]);
 
     return response($getGenerator->toYaml());
+});
+
+Route::get('/test', function () {
+    $model = new \App\Models\UserReaction();
+    dd($model->getFillable());
 });
 
 Route::get('/', function () {
