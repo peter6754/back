@@ -14,9 +14,6 @@ deploy:
     - chmod 600 ~/.ssh/id_rsa
     - ssh-keyscan -H 185.207.64.193 >> ~/.ssh/known_hosts
     - ssh root@185.207.64.193 "source ~/.bashrc && cd /var/www/api.tinderone.app && chmod +x ./deploy.sh && ./deploy.sh"
-#    - ssh-keyscan -H 176.118.167.210 >> ~/.ssh/known_hosts
-#    - ssh-keyscan -H 176.118.167.118 >> ~/.ssh/known_hosts
-#    - ssh root@176.118.167.210 "cd /var/www/api.tinderone.app && chmod +x ./deploy.sh && ./deploy.sh"
-#    - ssh root@176.118.167.118 "cd /var/www/api.tinderone.app && chmod +x ./deploy.sh && ./deploy.sh"
+
   only:
     - main
