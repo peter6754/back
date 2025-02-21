@@ -258,16 +258,18 @@ class RecommendationService
      */
     public function like(string $userId, array $params)
     {
-        $reactionExists = UserReaction::where('reactor_id', $params['user_id'])
-            ->where('user_id', $userId)
-            ->whereIn('type', ['like', 'superlike'])
-            ->exists();
+        $reactionExists = $this->checkExistingReaction();
+        $superboom = $this->getSuperboomStatus();
 
-        ProcessReaction::dispatch(
-            ProcessReaction::ACTION_LIKE,
-            $userId,
-            $params
-        )->onQueue('reactions');
+        $this->updateOrCreateReaction([
+            'user_id' => $params['user_id'],
+            'reactor_id' => $userId,
+        ], [
+            'from_top' => $params['from_top'] ?? false,
+            'superboom' => $superboom,
+            'type' => 'like',
+            'date' => now(),
+        ]);
 
         return ['is_match' => $reactionExists];
     }
@@ -279,50 +281,70 @@ class RecommendationService
      */
     public function dislike(string $userId, array $params)
     {
-        ProcessReaction::dispatch(
-            ProcessReaction::ACTION_DISLIKE,
-            $userId,
-            $params
-        )->onQueue('reactions');
+        $this->updateOrCreateReaction([
+            'user_id' => $params['user_id'],
+            'reactor_id' => $userId,
+        ], [
+            'type' => 'dislike',
+            'date' => now()
+        ]);
 
-        return ['message' => 'Reaction processing started'];
+        return ['message' => 'Reaction sent successfully'];
+    }
+
+    /**
+     * @param string $userId
+     * @param array $params
+     * @return bool[]
+     */
+    public function superlike(string $userId, array $params)
+    {
+        $reactionExists = $this->checkExistingReaction();
+        $superboom = $this->getSuperboomStatus();
+
+        $this->updateOrCreateReaction([
+            'user_id' => $params['user_id'],
+            'reactor_id' => $userId,
+        ], [
+            'from_top' => $params['from_top'] ?? false,
+            'superboom' => $superboom,
+            'type' => 'superlike',
+            'date' => now()
+        ]);
+
+        UserInformation::where('user_id', $userId)->decrement('superlikes');
+
+        if (!empty($params['comment'])) {
+            $this->leaveComment($params['comment'], $userId, $params['user_id']);
+        }
+
+        return ['is_match' => $reactionExists];
     }
 
     /**
      * @param string $userId
      * @param array $params
      * @return string[]
+     * @throws \Exception
      */
     public function rollback(string $userId, array $params)
     {
-        ProcessReaction::dispatch(
-            ProcessReaction::ACTION_ROLLBACK,
-            $userId,
-            $params
-        )->onQueue('reactions');
+        $lastReacted = UserReaction::where('reactor_id', $userId)
+            ->latest('date')
+            ->first(['user_id']);
 
-        return ['message' => 'Rollback processing started'];
-    }
+        if (!$lastReacted || $lastReacted->user_id != $params['user_id']) {
+            throw new \Exception('Your last reaction doesn\'t match to the given user_id');
+        }
 
-    /**
-     * @param string $userId
-     * @param array $params
-     * @return bool[]|void
-     */
-    public function superlike(string $userId, array $params)
-    {
-        $reactionExists = UserReaction::where('reactor_id', $params['user_id'])
-            ->where('user_id', $userId)
-            ->whereIn('type', ['like', 'superlike'])
-            ->exists();
+        DB::table('user_reactions')
+            ->where('reactor_id', $userId)
+            ->where('user_id', $params['user_id'])
+            ->orderBy('date', 'desc')
+            ->limit(1)
+            ->delete();
 
-        ProcessReaction::dispatch(
-            ProcessReaction::ACTION_SUPERLIKE,
-            $userId,
-            $params
-        )->onQueue('reactions');
-
-        return ['is_match' => $reactionExists];
+        return ['message' => 'Rollbacked successfully'];
     }
 
     /**
@@ -492,5 +514,61 @@ class RecommendationService
         return [
             'items' => $response
         ];
+    }
+
+    /**
+     * @return bool
+     */
+    private function checkExistingReaction(): bool
+    {
+        return UserReaction::where('reactor_id', $this->params['user_id'])
+            ->where('user_id', $this->userId)
+            ->whereIn('type', ['like', 'superlike'])
+            ->exists();
+    }
+
+    /**
+     * @return bool
+     */
+    private function getSuperboomStatus(): bool
+    {
+        $user = Secondaryuser::with(['userInformation'])
+            ->select(['id'])
+            ->findOrFail($this->params['user_id']);
+
+        return $user->userInformation && $user->userInformation->superboom_due_date >= now();
+    }
+
+    /**
+     * @param string $comment
+     * @param string $authorId
+     * @param string $recipientId
+     * @return void
+     */
+    private function leaveComment(string $comment, string $authorId, string $recipientId)
+    {
+        // Реализация добавления комментария
+    }
+
+    /**
+     * @param array $attributes
+     * @param array $values
+     * @return UserReaction
+     */
+    private function updateOrCreateReaction(array $attributes, array $values): UserReaction
+    {
+        // Сначала пытаемся обновить
+        if (UserReaction::where($attributes)->exists()) {
+            UserReaction::where($attributes)->update($values);
+            return UserReaction::where($attributes)->first();
+        }
+
+        // Если нет - создаем
+        return UserReaction::create(array_merge($attributes, [
+            'superboom' => false,
+            'from_top' => false,
+            'is_notified' => false,
+            'from_reels' => false,
+        ], $values));
     }
 }
