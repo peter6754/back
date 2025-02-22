@@ -105,7 +105,7 @@ class RecommendationsController extends Controller
 
             // Return data
             return $this->successResponse(
-                $this->recommendations->actionMatch($request->user()->id, $query)
+                $this->recommendations->deleteMatchedUser($request->user()->id, $query['user_id'])
             );
         } catch (Exception $e) {
             Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
