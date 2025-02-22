@@ -68,7 +68,7 @@ class RecommendationService
      * @param array $customer
      * @return array
      */
-    public function getTopProfiles(array $customer): array
+    public function getTopProfiles(mixed $customer): array
     {
         // Checking cache
         $key = "top-profiles:" . $customer['id'];

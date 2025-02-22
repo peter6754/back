@@ -55,7 +55,7 @@ class RecommendationsController extends Controller
     {
         try {
             return $this->successResponse(
-                $this->recommendations->getTopProfiles($request->customer)
+                $this->recommendations->getTopProfiles($request->user())
             );
         } catch (Exception $e) {
             return $this->errorResponse(
@@ -105,11 +105,11 @@ class RecommendationsController extends Controller
 
             // Return data
             return $this->successResponse(
-                $this->recommendations->actionMatch($request->customer['id'], $query)
+                $this->recommendations->actionMatch($request->user()->id, $query)
             );
         } catch (Exception $e) {
             Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
-                'user_id' => $request->customer['id'] ?? 'unknown',
+                'user_id' => $request->user()->id ?? 'unknown',
                 'error' => $e->getMessage()
             ]);
             return $this->errorResponse(
@@ -160,11 +160,11 @@ class RecommendationsController extends Controller
 
             // Return data
             return $this->successResponse(
-                $this->recommendations->dislike($request->customer['id'], $query)
+                $this->recommendations->dislike($request->user()->id, $query)
             );
         } catch (Exception $e) {
             Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
-                'user_id' => $request->customer['id'] ?? 'unknown',
+                'user_id' => $request->user()->id ?? 'unknown',
                 'error' => $e->getMessage()
             ]);
             return $this->errorResponse(
@@ -224,11 +224,11 @@ class RecommendationsController extends Controller
 
             // Return data
             return $this->successResponse(
-                $this->recommendations->like($request->customer['id'], $query)
+                $this->recommendations->like($request->user()->id, $query)
             );
         } catch (Exception $e) {
             Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
-                'user_id' => $request->customer['id'] ?? 'unknown',
+                'user_id' => $request->user()->id ?? 'unknown',
                 'error' => $e->getMessage()
             ]);
             return $this->errorResponse(
@@ -299,11 +299,11 @@ class RecommendationsController extends Controller
 
             // Return data
             return $this->successResponse(
-                $this->recommendations->getRecommendations($request->customer['id'], $query)
+                $this->recommendations->getRecommendations($request->user()->id, $query)
             );
         } catch (Exception $e) {
             Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
-                'user_id' => $request->customer['id'] ?? 'unknown',
+                'user_id' => $request->user()->id ?? 'unknown',
                 'error' => $e->getMessage()
             ]);
             return $this->errorResponse(
@@ -369,11 +369,11 @@ class RecommendationsController extends Controller
 
             // Return data
             return $this->successResponse(
-                $this->recommendations->superlike($request->customer['id'], $query)
+                $this->recommendations->superlike($request->user()->id, $query)
             );
         } catch (Exception $e) {
             Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
-                'user_id' => $request->customer['id'] ?? 'unknown',
+                'user_id' => $request->user()->id ?? 'unknown',
                 'error' => $e->getMessage()
             ]);
             return $this->errorResponse(
@@ -424,11 +424,11 @@ class RecommendationsController extends Controller
 
             // Return data
             return $this->successResponse(
-                $this->recommendations->rollback($request->customer['id'], $query)
+                $this->recommendations->rollback($request->user()->id, $query)
             );
         } catch (Exception $e) {
             Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
-                'user_id' => $request->customer['id'] ?? 'unknown',
+                'user_id' => $request->user()->id ?? 'unknown',
                 'error' => $e->getMessage()
             ]);
             return $this->errorResponse(
