@@ -55,11 +55,11 @@ class ExpoProvider
             true
         );
 
-        $status = (!empty($getResponse['status']) && $getResponse['status'] === "ok");
+        $status = (!empty($getResponse['data']['status']) && $getResponse['data']['status'] === "ok");
 
         if ($status === false) {
             Log::error(
-                "[NotificationService] provider expo, push token {$params['to']} not sent",
+                "[NotificationService] provider expo, push token {$params['to']}",
                 $getResponse
             );
         }
