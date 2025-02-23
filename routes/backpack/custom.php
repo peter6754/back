@@ -35,6 +35,7 @@ Route::group([
     Route::crud('transaction-process', 'TransactionProcessCrudController');
     Route::crud('mail-queue', 'MailQueueCrudController');
     Route::crud('mail-template', 'MailTemplateCrudController');
+    Route::crud('city-analytics', 'CityAnalyticsCrudController');
 
 // Дополнительные маршруты
     Route::get('mail-template/{id}/preview', 'MailTemplateCrudController@preview')
