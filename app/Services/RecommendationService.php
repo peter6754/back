@@ -68,7 +68,7 @@ class RecommendationService
      * @param array $customer
      * @return array
      */
-    public function getTopProfiles(array $customer): array
+    public function getTopProfiles(mixed $customer): array
     {
         // Checking cache
         $key = "top-profiles:" . $customer['id'];
@@ -350,7 +350,7 @@ class RecommendationService
     /**
      * @param string $matchedId
      * @param string $userId
-     * @return void
+     * @return array
      */
     public function deleteMatchedUser(string $matchedId, string $userId)
     {
@@ -361,6 +361,7 @@ class RecommendationService
             $query->where('user_id', $matchedId)
                 ->where('reactor_id', $userId);
         })->delete();
+        return [];
     }
 
     /**

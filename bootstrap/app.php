@@ -2,6 +2,7 @@
 
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\DebugbarMiddleware;
 use Illuminate\Console\Scheduling\Schedule;
 use App\Http\Middleware\LogProxyRequests;
 use App\Http\Middleware\AuthMiddleware;
@@ -24,8 +25,14 @@ return Application::configure(basePath: dirname(__DIR__))
             '*',
         ]);
 
+        // Устанавливаем middleware на админа
+//        $middleware->web(append: [
+//            DebugbarMiddleware::class,
+//        ]);
+
         // Регистрируем AuthMiddleware
         $middleware->alias([
+//            'debugbar' => DebugbarMiddleware::class,
             'proxy' => LogProxyRequests::class,
             'auth' => AuthMiddleware::class,
         ]);
