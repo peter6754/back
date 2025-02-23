@@ -15,23 +15,25 @@ return [
     |
     */
     'paths' => [
-//        'recommendations/*',
-//        'recommendations',
-//        'payment/*',
-//        'auth/*',
-//        'user/*',
-        '*'
+        //        'recommendations/*',
+        //        'recommendations',
+        //        'payment/*',
+        //        'auth/*',
+        //        'user/*',
+        '*',
     ],
     'allowed_headers' => ['Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN, cache-control, Login-Token'],
     'allowed_origins' => [
         'http://localhost:5173',
         'http://localhost:3000',
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
         '*.tinderone.app',
-        '*.tinderone.ru'
+        '*.tinderone.ru',
     ],
     'allowed_methods' => ['OPTIONS, DELETE, POST, GET'],
     'allowed_origins_patterns' => [],
     'supports_credentials' => false,
     'exposed_headers' => [],
-    'max_age' => 86400
+    'max_age' => 86400,
 ];

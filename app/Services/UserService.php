@@ -3,8 +3,11 @@
 namespace App\Services;
 
 use App\Helpers\UserInformationTranslator;
+use App\Models\LikeSettings;
 use App\Models\Secondaryuser;
+use App\Models\Users;
 use Exception;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -478,5 +481,146 @@ class UserService
             'role',
             'company'
         ]));
+    }
+
+    public function getUserLikes(Secondaryuser $user, ?string $filter = null, ?LikeSettings $userSettings = null): Builder
+    {
+        $query = DB::table('users as u')
+            ->select([
+                'u.id',
+                'u.name',
+                DB::raw('(SELECT image FROM user_images WHERE user_id = u.id LIMIT 1) as image'),
+                DB::raw('CASE 
+                    WHEN EXISTS(
+                        SELECT 1 FROM bought_subscriptions bs 
+                        JOIN transactions t ON t.id = bs.transaction_id 
+                        WHERE t.user_id = u.id AND bs.due_date > NOW()
+                    ) AND us.show_my_age = 0 THEN NULL 
+                    ELSE u.age 
+                END as age'),
+                DB::raw('CASE 
+                    WHEN EXISTS(
+                        SELECT 1 FROM bought_subscriptions bs 
+                        JOIN transactions t ON t.id = bs.transaction_id 
+                        WHERE t.user_id = u.id AND bs.due_date > NOW()
+                    ) AND us.show_distance_from_me = 0 THEN NULL 
+                    ELSE ROUND(
+                        (6371 * acos(
+                            cos(radians('.$user->lat.')) * cos(radians(u.lat)) * 
+                            cos(radians(u.long) - radians('.$user->long.')) + 
+                            sin(radians('.$user->lat.')) * sin(radians(u.lat))
+                        )), 0
+                    ) 
+                END as distance'),
+                DB::raw('EXISTS(
+                    SELECT 1 FROM user_reactions ur2 
+                    WHERE ur2.user_id = "'.$user->id.'" AND ur2.reactor_id = u.id AND ur2.type = "superlike"
+                ) as superliked_me'),
+                DB::raw('CASE 
+                    WHEN us.status_online = 1 THEN u.is_online 
+                    ELSE 0 
+                END as is_online'),
+            ])
+            ->leftJoin('user_settings as us', 'us.user_id', '=', 'u.id')
+            ->leftJoin('user_information as ui', 'ui.user_id', '=', 'u.id')
+            ->whereExists(function ($query) use ($user) {
+                $query->select(DB::raw(1))
+                    ->from('user_reactions')
+                    ->where('user_id', $user->id)
+                    ->whereColumn('reactor_id', 'u.id')
+                    ->whereIn('type', ['like', 'superlike']);
+            })
+            ->whereNotExists(function ($query) use ($user) {
+                $query->select(DB::raw(1))
+                    ->from('user_reactions as ur1')
+                    ->whereColumn('ur1.user_id', 'u.id')
+                    ->where('ur1.reactor_id', $user->id)
+                    ->where('ur1.type', '!=', 'dislike')
+                    ->whereExists(function ($subquery) use ($user) {
+                        $subquery->select(DB::raw(1))
+                            ->from('user_reactions as ur2')
+                            ->where('ur2.user_id', $user->id)
+                            ->whereColumn('ur2.reactor_id', 'u.id')
+                            ->where('ur2.type', '!=', 'dislike');
+                    });
+            })
+            ->whereNotExists(function ($query) use ($user) {
+                $query->select(DB::raw(1))
+                    ->from('user_reactions')
+                    ->where('reactor_id', $user->id)
+                    ->whereColumn('user_id', 'u.id')
+                    ->where('type', 'dislike');
+            });
+
+        $this->applyLikesFilters($query, $user, $filter, $userSettings);
+
+        return $query;
+    }
+
+    private function applyLikesFilters(Builder $query, Secondaryuser $user, ?string $filter, ?LikeSettings $userSettings): void
+    {
+        if ($userSettings) {
+            $this->applyUserSettingsFilters($query, $user, $userSettings);
+        } else {
+            $this->applySimpleFilters($query, $user, $filter);
+        }
+    }
+
+    private function applyUserSettingsFilters(Builder $query, Secondaryuser $user, LikeSettings $userSettings): void
+    {
+        if ($userSettings->radius) {
+            $query->whereRaw('(6371 * acos(cos(radians(?)) * cos(radians(u.lat)) * cos(radians(u.long) - radians(?)) + sin(radians(?)) * sin(radians(u.lat)))) <= ?')
+                ->addBinding([$user->lat, $user->long, $user->lat, $userSettings->radius]);
+        }
+
+        if ($userSettings->age_range) {
+            $ageRange = explode('-', $userSettings->age_range);
+            $query->whereBetween('u.age', [(int) $ageRange[0], (int) $ageRange[1]]);
+        }
+
+        if ($userSettings->verified) {
+            $query->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('verification_requests')
+                    ->whereColumn('user_id', 'u.id')
+                    ->where('status', 'approved');
+            });
+        }
+
+        if ($userSettings->has_info) {
+            $query->whereNotNull('ui.bio');
+        }
+
+        if ($userSettings->min_photo_count) {
+            $query->whereRaw('(SELECT COUNT(*) FROM user_images WHERE user_id = u.id) >= ?', [$userSettings->min_photo_count]);
+        }
+
+        $query->whereExists(function ($query) use ($user) {
+            $query->select(DB::raw(1))
+                ->from('like_preferences')
+                ->where('user_id', $user->id)
+                ->whereColumn('gender', 'u.gender');
+        });
+    }
+
+    private function applySimpleFilters(Builder $query, Secondaryuser $user, ?string $filter): void
+    {
+        switch ($filter) {
+            case 'by_distance':
+                $query->whereRaw('(6371 * acos(cos(radians(?)) * cos(radians(u.lat)) * cos(radians(u.long) - radians(?)) + sin(radians(?)) * sin(radians(u.lat)))) <= 30')
+                    ->addBinding([$user->lat, $user->long, $user->lat]);
+                break;
+            case 'by_verification_status':
+                $query->whereExists(function ($query) {
+                    $query->select(DB::raw(1))
+                        ->from('verification_requests')
+                        ->whereColumn('user_id', 'u.id')
+                        ->where('status', 'approved');
+                });
+                break;
+            case 'by_information':
+                $query->whereNotNull('ui.bio');
+                break;
+        }
     }
 }
