@@ -317,7 +317,7 @@ class UserService
                     )
                 ] : null,
                 'pets' => !empty($user['pets']) ? [
-                    'key' => $user['pets'],
+                    'key' => $user['pets']['pet'],
                     'translation_ru' => UserInformationTranslator::translate('pets', $user['pets']['pet'])
                 ] : null,
                 'interests' => collect($user['interests'] ?? [])->map(function ($userInterest) {

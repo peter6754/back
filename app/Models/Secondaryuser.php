@@ -255,7 +255,7 @@ class Secondaryuser extends Model
      */
     public function relationshipPreference()
     {
-        return $this->hasOne(UserRelationshipPreference::class);
+        return $this->hasOne(UserRelationshipPreference::class, 'user_id', 'id');
     }
 
     /**

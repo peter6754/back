@@ -6,6 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class UserRelationshipPreference extends Model
 {
+
+    protected $table = 'user_relationship_preferences';
+    protected $primaryKey = 'user_id';
+    public $incrementing = false;
+    public $timestamps = false;
+
     /**
      * @var string[]
      */
