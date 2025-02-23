@@ -316,10 +316,12 @@ class UserService
                         $user['gender']
                     )
                 ] : null,
-                'pets' => !empty($user['pets']) ? [
-                    'key' => $user['pets']['pet'],
-                    'translation_ru' => UserInformationTranslator::translate('pets', $user['pets']['pet'])
-                ] : null,
+                'pets' => collect($user['pets'] ?? [])->map(function ($pet) {
+                    return [
+                        'key' => $pet['pet'],
+                        'translation_ru' => UserInformationTranslator::translate('pets', $pet['pet'])
+                    ];
+                }),
                 'interests' => collect($user['interests'] ?? [])->map(function ($userInterest) {
                     return [
                         'id' => $userInterest['interest']['id'],

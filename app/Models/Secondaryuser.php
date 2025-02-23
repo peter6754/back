@@ -366,11 +366,11 @@ class Secondaryuser extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function pets()
     {
-        return $this->hasOne(UserPets::class, 'user_id');
+        return $this->hasMany(UserPets::class, 'user_id');
     }
 
     public function sentReactions()
