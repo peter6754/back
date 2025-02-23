@@ -326,7 +326,10 @@ class UserService
                         'name' => $userInterest['interest']['name']
                     ];
                 }),
-                'relationship_preference' => $user['final_preference']['preference'] ?? null,
+                'relationship_preference' => !empty($user['final_preference']) ? [
+                    'id' => $user['final_preference']['id'],
+                    'preference' => $user['final_preference']['preference']
+                ] : null,
                 'role' => $user['user_information']['role'] ?? null,
                 'company' => $user['user_information']['company'] ?? null,
                 'superlikes' => $user['user_information']['superlikes'] ?? null,

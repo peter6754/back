@@ -257,7 +257,7 @@ class UserController extends Controller
      */
     public function getAccountInformation(Request $request): JsonResponse
     {
-        $user = $request->customer;
+        $user = $request->user()->toArray();
         try {
             return $this->successResponse(
                 $this->userService->getAccountInformation($user['id'])
@@ -565,7 +565,7 @@ class UserController extends Controller
      */
     public function updateAccountInformation(UpdateUserInformationRequest $request): JsonResponse
     {
-        $user = $request->customer;
+        $user = $request->user()->toArray();
         try {
             $data = $request->validated();
 
