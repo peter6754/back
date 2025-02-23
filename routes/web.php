@@ -1,16 +1,16 @@
 <?php
 
-use App\Http\Controllers\Users\UserController;
-use App\Http\Controllers\Users\UsersController;
-use App\Http\Controllers\Migrate\ProxyController;
-use App\Http\Controllers\Users\SettingsController;
 use App\Http\Controllers\Application\PricesController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Chat\ChatController;
+use App\Http\Controllers\Migrate\ProxyController;
 use App\Http\Controllers\Payments\PaymentsController;
 use App\Http\Controllers\Payments\StatusesController;
-use App\Http\Controllers\Users\ReferenceDataController;
 use App\Http\Controllers\Recommendations\RecommendationsController;
+use App\Http\Controllers\Users\ReferenceDataController;
+use App\Http\Controllers\Users\SettingsController;
+use App\Http\Controllers\Users\UserController;
+use App\Http\Controllers\Users\UsersController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
 use OpenApi\Generator;
@@ -66,7 +66,6 @@ Route::prefix('payment')->group(function () {
     Route::get('{provider}/fail', [StatusesController::class, 'fail'])
         ->name('statuses.fail');
 });
-
 
 // Prices routes
 Route::prefix('application')->middleware('auth')->group(function () {
@@ -131,8 +130,8 @@ Route::prefix('auth')->group(function () {
     Route::any('social/{provider}/callback', [AuthController::class, 'socialCallback']);
     Route::get('social/{provider}', function ($provider) {
         if (
-            !empty(config("services.{$provider}.client_id")) ||
-            !empty(config("services.{$provider}.redirect"))
+            ! empty(config("services.{$provider}.client_id")) ||
+            ! empty(config("services.{$provider}.redirect"))
         ) {
             return Socialite::driver($provider)->redirectUrl(
                 url(config("services.{$provider}.redirect"))
@@ -191,7 +190,7 @@ Route::get('swagger', function () {
 });
 
 Route::get('/test', function () {
-    $model = new \App\Models\UserReaction();
+    $model = new \App\Models\UserReaction;
     dd($model->getFillable());
 });
 
