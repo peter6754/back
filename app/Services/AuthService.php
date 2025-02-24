@@ -236,24 +236,13 @@ class AuthService
             ]),
             'type' => $type
         ];
-
-//        $account = $this->createNewUser(
-//            email: $userData['id'],
-//            provider: "telegram",
-//            name: implode(" ", [
-//                $userData['first_name'],
-//                $userData['last_name']
-//            ])
-//        );
-        return $userData;
-        return [];
     }
 
     /**
      * @param string $provider
      * @param object $user
      * @return array
-     * @throws \Exception
+     * @throws \Throwable
      */
     public function loginBySocial(string $provider, object $user): array
     {
