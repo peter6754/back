@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Model;
 
 class UserDeviceToken extends Model
 {
@@ -44,6 +44,34 @@ class UserDeviceToken extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(Secondaryuser::class, 'user_id');
+    }
+
+    /**
+     * @param string $user_id
+     * @return array
+     */
+    public static function getPushTokens(string $user_id = ""): array
+    {
+        // User not found
+        if (empty($user_id)) {
+            return [];
+        }
+
+        // Get user token
+        $getTokens = static::select(['token'])->where([
+            'user_id' => $user_id
+        ])->get();
+        $pushTokens = [];
+
+        // Draw data
+        if (!empty($getTokens)) {
+            foreach ($getTokens as $token) {
+                $pushTokens[] = $token->token;
+            }
+        }
+
+        // Response
+        return $pushTokens;
     }
 
     /**

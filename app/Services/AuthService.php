@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Firebase\JWT\JWT;
 use App\Models\Secondaryuser;
+use App\Models\UserDeviceToken;
 use Propaganistas\LaravelPhone\PhoneNumber;
 use App\Models\ConnectedAccount;
 use Illuminate\Support\Facades\DB;
@@ -223,6 +224,11 @@ class AuthService
         if (is_null($userId)) {
             throw new \Exception("User not found");
         }
+
+        UserDeviceToken::addToken($userId, [
+            'application' => 'telegram',
+            'token' => $userData['id']
+        ]);
 
         return [
             'token' => app(JwtService::class)->encode([
