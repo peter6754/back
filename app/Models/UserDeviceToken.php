@@ -60,9 +60,9 @@ class UserDeviceToken extends Model
      * Add a new device token for a user.
      * @param string $userId
      * @param array $query
-     * @return UserDeviceToken
+     * @return bool
      */
-    public static function addToken(string $userId, array $query): UserDeviceToken
+    public static function addToken(string $userId, array $query): bool
     {
         // Значения по умолчанию
         $attributes = [
@@ -72,12 +72,11 @@ class UserDeviceToken extends Model
 
         // Сначала пытаемся обновить
         if (static::where($attributes)->exists()) {
-            static::where($attributes)->update($query);
-            return static::where($attributes)->first();
+            return static::where($attributes)->update($query);
         }
 
         // Если нет - создаем
-        return static::create(
+        return (bool)static::create(
             array_merge(
                 $attributes,
                 $query
@@ -106,5 +105,24 @@ class UserDeviceToken extends Model
     public static function removeAllTokens(string $userId): bool
     {
         return (bool)static::where('user_id', $userId)->delete();
+    }
+
+    /**
+     * @return array
+     */
+    public function getKey(): array
+    {
+        return [
+            'user_id' => $this->getAttribute('user_id'),
+            'token' => $this->getAttribute('token')
+        ];
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getKeyName(): array
+    {
+        return ['user_id', 'token'];
     }
 }
