@@ -2,8 +2,8 @@
 
 namespace App\Services\Notifications\Providers;
 
-use Illuminate\Support\Facades\Log;
 use GuzzleHttp\Exception\GuzzleException;
+use Illuminate\Support\Facades\Log;
 use GuzzleHttp\Client;
 
 class OneSignalProvider

@@ -3,7 +3,6 @@
 namespace App\Services\Notifications\Providers;
 
 use GuzzleHttp\Exception\GuzzleException;
-use Illuminate\Support\Facades\Log;
 use GuzzleHttp\Client;
 
 class TelegramProvider
@@ -26,9 +25,8 @@ class TelegramProvider
         $this->client = new Client([
             'headers' => [
                 'Content-Type' => 'application/json',
-                'Accept-Encoding' => 'gzip, deflate',
-                'Accept' => 'application/json',
-            ],
+                'Accept' => 'application/json'
+            ]
         ]);
     }
 
@@ -39,11 +37,6 @@ class TelegramProvider
      */
     public function sendMessage(array $params): bool
     {
-        // Formatted message
-        if (isset($params['data'])) {
-            $params['data'] = (object)$params['data'];
-        }
-
         // Build URL
         $this->apiUrl = str_replace('{{TELEGRAM_TOKEN}}',
             config('services.telegram.client_secret'),
@@ -52,7 +45,11 @@ class TelegramProvider
 
         // Send request
         $response = $this->client->post($this->apiUrl, [
-            'json' => $params,
+            'json' => [
+                'text' => "*{$params['title']}*" . PHP_EOL . $params['body'],
+                'parse_mode' => 'MarkdownV2',
+                'chat_id' => $params['to']
+            ]
         ]);
 
         // Response
@@ -62,6 +59,6 @@ class TelegramProvider
         );
 
         // Return
-        return (!empty($getResponse['status']) && $getResponse['status'] === "ok");
+        return !empty($getResponse['ok']);
     }
 }
