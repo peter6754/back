@@ -60,29 +60,19 @@ class NotificationService
     }
 
     /**
-     * @param array $messages
-     * @param int $chunkSize
-     * @return array
-     */
-    public static function chunkPushNotifications(array $messages, int $chunkSize = 100): array
-    {
-        return array_chunk($messages, $chunkSize);
-    }
-
-    /**
      * @param $token
      * @return string
      */
     protected function getProvider($token): string
     {
-        if (
-            preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i', $token) ||
-            preg_match('/^ExponentToken\[[a-zA-Z0-9_-]+\]$/', $token)
-        ) {
+        if (preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i', $token)) {
             return 'onesignal';
         } else if (preg_match('/^ExponentPushToken\[[a-zA-Z0-9_-]+\]$/', $token)) {
             return 'expo';
+        } else if (is_numeric($token)) {
+            return 'telegram';
         }
+
         return 'unknown';
     }
 }
