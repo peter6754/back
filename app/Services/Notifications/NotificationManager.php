@@ -2,8 +2,8 @@
 
 namespace App\Services\Notifications;
 
-use App\Services\Notifications\Providers\TelegramProvider;
 use App\Services\Notifications\Providers\OneSignalProvider;
+use App\Services\Notifications\Providers\TelegramProvider;
 use App\Services\Notifications\Providers\ExpoProvider;
 use Illuminate\Support\Manager;
 
@@ -23,7 +23,7 @@ class NotificationManager extends Manager
     /**
      * @return TelegramProvider
      */
-    private function createTelegramDriver(): TelegramProvider
+    public function createTelegramDriver(): TelegramProvider
     {
         return new TelegramProvider();
     }
@@ -43,8 +43,15 @@ class NotificationManager extends Manager
      */
     public function sendMessage(string $provider, $params): bool
     {
+        try {
+
         return $this->driver($provider)
             ->sendMessage($params);
+
+        } catch (\Exception $e) {
+            echo $e->getMessage();
+            return false;
+        }
     }
 
     /**

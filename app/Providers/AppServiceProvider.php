@@ -36,11 +36,6 @@ class AppServiceProvider extends ServiceProvider
 //            $this->app->register(DebugBarServiceProvider::class);
 //        }
 
-        // Payment service
-        $this->app->singleton(PaymentsService::class, function ($app) {
-            return new PaymentsService($app);
-        });
-
         // Auth service
         $this->app->bind(GreenSMSService::class, function ($app) {
             return new GreenSMSService();
@@ -52,16 +47,21 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
+        $this->app->bind(UserService::class, function ($app) {
+            return new UserService();
+        });
+
         // Default service
-        $this->app->singleton(JwtService::class, function () {
-            return new JwtService();
+        $this->app->singleton(PaymentsService::class, function ($app) {
+            return new PaymentsService($app);
         });
 
         $this->app->singleton(\App\Services\MailService::class);
 
-        $this->app->bind(UserService::class, function ($app) {
-            return new UserService();
+        $this->app->singleton(JwtService::class, function () {
+            return new JwtService();
         });
+
     }
 
     /**
