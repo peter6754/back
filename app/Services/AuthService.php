@@ -202,18 +202,19 @@ class AuthService
             }
 
             // ToDo: Временная мера (блокировка, разрешаем только авторизацию)
-            return [
-                'type' => 'register'
-            ];
-
-            // Создаем нового пользователя
-            $account = $this->createNewUser(
-                email: $email,
-                provider: $provider,
-                name: $name,
-            );
-
-            $type = 'register';
+            if ($params['step'] === 'register') {
+                // Создаем нового пользователя
+                $account = $this->createNewUser(
+                    email: $email,
+                    provider: $provider,
+                    name: $name,
+                );
+                $type = 'register';
+            } else {
+                return [
+                    'type' => 'register'
+                ];
+            }
         } else {
             $type = $account->user->registration_date ? 'login' : 'register';
         }
