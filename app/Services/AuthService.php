@@ -202,7 +202,7 @@ class AuthService
             }
 
             // ToDo: Временная мера (блокировка, разрешаем только авторизацию)
-            if ($params['step'] === 'register') {
+            if (!empty($params['step']) && $params['step'] === 'register') {
                 // Создаем нового пользователя
                 $account = $this->createNewUser(
                     email: $email,
