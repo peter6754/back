@@ -81,12 +81,18 @@ class Secondaryuser extends Model
         return $this->hasMany(VerificationRequests::class, 'user_id');
     }
 
+
     /**
      * @return Secondaryuser|HasMany
      */
     public function userDeviceTokens()
     {
         return $this->hasMany(UserDeviceToken::class, 'user_id', 'id');
+    }
+
+    public function userPreferences()
+    {
+        return $this->hasMany(UserPreference::class, 'user_id', 'id');
     }
 
     /**

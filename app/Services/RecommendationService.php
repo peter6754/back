@@ -205,18 +205,18 @@ class RecommendationService
      */
     public function getRecommendations(string $userId, array $query)
     {
-        $user = Secondaryuser::with(['settings', 'preferences'])
+        $user = Secondaryuser::with(['userSettings', 'userPreferences'])
             ->select(['id', 'phone', 'lat', 'long'])
             ->findOrFail($userId);
 
-        if ($user->preferences->isEmpty()) {
+        if ($user->userPreferences->isEmpty()) {
             return ['items' => []];
         }
 
         // Configure cache params
-        $keyPart1 = implode('-', $user->settings->age_range);
-        $keyPart2 = $user->settings->is_global_search ? 'global' : $user->settings->search_radius;
-        $keyPart3 = implode(',', $user->preferences->pluck('gender')->toArray());
+        $keyPart1 = implode('-', $user->userSettings->age_range);
+        $keyPart2 = $user->userSettings->is_global_search ? 'global' : $user->userSettings->search_radius;
+        $keyPart3 = implode(',', $user->userPreferences->pluck('gender')->toArray());
         $keyPart4 = isset($query['interest_id']) ? ':' . $query['interest_id'] : '';
 
         // Configure cache
