@@ -47,34 +47,6 @@ class UserDeviceToken extends Model
     }
 
     /**
-     * @param string $user_id
-     * @return array
-     */
-    public static function getPushTokens(string $user_id = ""): array
-    {
-        // User not found
-        if (empty($user_id)) {
-            return [];
-        }
-
-        // Get user token
-        $getTokens = static::select(['token'])->where([
-            'user_id' => $user_id
-        ])->get();
-        $pushTokens = [];
-
-        // Draw data
-        if (!empty($getTokens)) {
-            foreach ($getTokens as $token) {
-                $pushTokens[] = $token->token;
-            }
-        }
-
-        // Response
-        return $pushTokens;
-    }
-
-    /**
      * Add a new device token for a user.
      * @param string $userId
      * @param array $query

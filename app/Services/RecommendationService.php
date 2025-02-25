@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Config\Repository;
 use App\Models\Secondaryuser;
+use App\Services\Notifications\NotificationService;
 
 /**
  *
@@ -204,18 +205,18 @@ class RecommendationService
      */
     public function getRecommendations(string $userId, array $query)
     {
-        $user = Secondaryuser::with(['settings', 'preferences'])
+        $user = Secondaryuser::with(['userSettings', 'userPreferences'])
             ->select(['id', 'phone', 'lat', 'long'])
             ->findOrFail($userId);
 
-        if ($user->preferences->isEmpty()) {
+        if ($user->userPreferences->isEmpty()) {
             return ['items' => []];
         }
 
         // Configure cache params
-        $keyPart1 = implode('-', $user->settings->age_range);
-        $keyPart2 = $user->settings->is_global_search ? 'global' : $user->settings->search_radius;
-        $keyPart3 = implode(',', $user->preferences->pluck('gender')->toArray());
+        $keyPart1 = implode('-', $user->userSettings->age_range);
+        $keyPart2 = $user->userSettings->is_global_search ? 'global' : $user->userSettings->search_radius;
+        $keyPart3 = implode(',', $user->userPreferences->pluck('gender')->toArray());
         $keyPart4 = isset($query['interest_id']) ? ':' . $query['interest_id'] : '';
 
         // Configure cache
@@ -271,6 +272,12 @@ class RecommendationService
             'date' => now(),
         ]);
 
+        // Send notifications
+        (new \App\Services\RecommendationService())->handleLikeNotification(
+            $params['user_id'],
+            $reactionExists
+        );
+
         return ['is_match' => $reactionExists];
     }
 
@@ -317,6 +324,13 @@ class RecommendationService
         if (!empty($params['comment'])) {
             $this->leaveComment($params['comment'], $userId, $params['user_id']);
         }
+
+        // Send notifications
+        (new \App\Services\RecommendationService())->handleLikeNotification(
+            $params['user_id'],
+            $reactionExists,
+            true
+        );
 
         return ['is_match' => $reactionExists];
     }
@@ -518,6 +532,8 @@ class RecommendationService
     }
 
     /**
+     * @param $userId
+     * @param $params
      * @return bool
      */
     private function checkExistingReaction($userId, $params): bool
@@ -529,6 +545,7 @@ class RecommendationService
     }
 
     /**
+     * @param $params
      * @return bool
      */
     private function getSuperboomStatus($params): bool
@@ -538,6 +555,54 @@ class RecommendationService
             ->findOrFail($params['user_id']);
 
         return $user->userInformation && $user->userInformation->superboom_due_date >= now();
+    }
+
+
+    /**
+     * @param string $user_id
+     * @param bool $is_match
+     * @param bool $superlike
+     * @return bool
+     */
+    public function handleLikeNotification(string $userId = "", bool $isMatch = false, bool $superLike = false): bool
+    {
+        try {
+            $getUserData = Secondaryuser::with(['userDeviceTokens', 'userSettings'])
+                ->where('id', $userId)
+                ->first();
+
+            $userTokens = collect($getUserData->userDeviceTokens)->map(function ($userTokens) {
+                return $userTokens->token;
+            });
+
+            if ($isMatch === true) {
+                if ($getUserData->userSettings->new_couples_push) {
+                    (new NotificationService())->sendPushNotification($userTokens,
+                        "У вас совпала новая пара! Зайдите, чтобы посмотреть и начать общение.",
+                        "Новая пара!"
+                    );
+                }
+            } else {
+                if ($superLike === true && $getUserData->userSettings->new_super_likes_push) {
+                    (new NotificationService())->sendPushNotification($userTokens,
+                        "Вам поставили суперлайк! Заходите в TinderOne, чтобы найти свою пару!",
+                        "Вы кому-то нравитесь!"
+                    );
+                } else if ($superLike === false && $getUserData->userSettings->new_likes_push) {
+                    (new NotificationService())->sendPushNotification($userTokens,
+                        "Вам поставили лайк! Заходите в TinderOne, чтобы найти свою пару!",
+                        "Вы кому-то нравитесь!"
+                    );
+                }
+            }
+            return true;
+        } catch (\Exception $e) {
+            Log::channel('recommendations')->error('LikeNotification error: ' . $e->getMessage(), [
+                'user_id' => $userId,
+                'error' => $e
+            ]);
+            return false;
+        }
     }
 
     /**

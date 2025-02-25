@@ -2,34 +2,19 @@
 
 namespace App\Services\Notifications\Providers;
 
-use GuzzleHttp\Exception\GuzzleException;
-use Illuminate\Support\Facades\Log;
 use GuzzleHttp\Client;
+use GuzzleHttp\Promise;
+use Illuminate\Support\Facades\Log;
 
 class OneSignalProvider
 {
-    /**
-     * @var string
-     */
-    protected string $apiUrl = 'https://api.onesignal.com/notifications?c=push';
-
-    /**
-     * @var Client
-     */
+    protected string $apiUrl = 'https://api.onesignal.com/notifications';
+    protected string $restApiKey;
     protected Client $client;
-
-    /**
-     * @var string
-     */
     protected string $appId;
 
     /**
-     * @var string
-     */
-    protected string $restApiKey;
-
-    /**
-     * OneSignalProvider constructor.
+     *
      */
     public function __construct()
     {
@@ -46,19 +31,13 @@ class OneSignalProvider
 
     /**
      * @param array $params
-     * @return bool
-     * @throws GuzzleException
+     * @return Promise\PromiseInterface
      */
-    public function sendMessage(array $params): bool
+    public function sendMessageAsync(array $params): Promise\PromiseInterface
     {
-        // Default parameters
-        $defaultParams = [
+        $requestParams = [
             'target_channel' => 'push',
-            'app_id' => $this->appId
-        ];
-
-        // Merge default parameters with custom ones
-        $requestParams = array_merge($defaultParams, [
+            'app_id' => $this->appId,
             'contents' => [
                 "en" => $params['body'],
                 "ru" => $params['body']
@@ -68,34 +47,91 @@ class OneSignalProvider
                 "ru" => $params['title'],
             ],
             'include_aliases' => [
-                'external_id' => [
-                    $params['to']
-                ],
-                'onesignal_id' => [
-                    $params['to']
-                ]
+                'external_id' => [$params['to']],
+                'onesignal_id' => [$params['to']]
             ]
-        ]);
+        ];
 
-        try {
-            // Send request
-            $response = $this->client->post($this->apiUrl, [
-                'json' => $requestParams
-            ]);
+        return $this->client->postAsync($this->apiUrl, [
+            'json' => $requestParams
+        ])->then(
+            function ($response) use ($params) {
+                return $this->handleSuccessResponse($response, $params);
+            },
+            function ($exception) use ($params) {
+                return $this->handleError($exception, $params);
+            }
+        );
+    }
 
-            Log::debug("OneSignal send message response: " . json_encode($response));
-            // Response
-            $getResponse = json_decode(
-                $response->getBody(),
-                true
-            );
-            Log::debug("OneSignal decode response: ", $getResponse);
-        } catch (\Exception $e) {
-            echo $e->getMessage();
-            exit;
+    /**
+     * @param array $messagesParams
+     * @return array
+     */
+    public function sendBulkMessagesAsync(array $messagesParams): array
+    {
+        $promises = [];
+
+        foreach ($messagesParams as $index => $params) {
+            $promises[$index] = $this->sendMessageAsync($params);
         }
 
-        // Return
-        return isset($getResponse['id']) && !empty($getResponse['recipients']);
+        return $promises;
+    }
+
+    /**
+     * @param $response
+     * @param array $params
+     * @return array
+     */
+    private function handleSuccessResponse($response, array $params): array
+    {
+        $getResponse = json_decode($response->getBody(), true);
+        $success = isset($getResponse['id']) && !empty($getResponse['recipients']);
+
+        if (!$success) {
+            Log::error("[OneSignalProvider] Async send failed", [
+                'user_id' => $params['to'],
+                'response' => $getResponse
+            ]);
+        }
+
+        return [
+            'success' => $success,
+            'user_id' => $params['to'],
+            'response' => $getResponse
+        ];
+    }
+
+    /**
+     * @param $exception
+     * @param array $params
+     * @return array
+     */
+    private function handleError($exception, array $params): array
+    {
+        Log::error("[OneSignalProvider] Async request failed", [
+            'user_id' => $params['to'],
+            'error' => $exception->getMessage(),
+            'code' => $exception->getCode()
+        ]);
+
+        return [
+            'success' => false,
+            'user_id' => $params['to'],
+            'error' => $exception->getMessage()
+        ];
+    }
+
+    /**
+     * @param array $params
+     * @return bool
+     */
+    public function sendMessage(array $params): bool
+    {
+        $promise = $this->sendMessageAsync($params);
+        $result = $promise->wait();
+
+        return $result['success'];
     }
 }

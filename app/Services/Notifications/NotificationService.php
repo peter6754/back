@@ -21,6 +21,11 @@ class NotificationService
                 Log::error('[NotificationService] Empty tokens to send push notification');
             }
 
+            // Object to array
+            if (is_object($tokens)) {
+                $tokens = $tokens->toArray();
+            }
+
             // String to array
             if (is_string($tokens)) {
                 $tokens = [$tokens];

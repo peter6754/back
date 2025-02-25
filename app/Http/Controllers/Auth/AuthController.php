@@ -179,7 +179,8 @@ class AuthController extends Controller
         try {
             $validatedData = $request->validate([
                 'initData' => 'required|string',
-                'appId' => 'string'
+                'appId' => 'string',
+                'step' => 'string'
             ]);
 
             return $this->successResponse(

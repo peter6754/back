@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Support\Str;
@@ -80,20 +81,34 @@ class Secondaryuser extends Model
         return $this->hasMany(VerificationRequests::class, 'user_id');
     }
 
+
+    /**
+     * @return Secondaryuser|HasMany
+     */
+    public function userDeviceTokens()
+    {
+        return $this->hasMany(UserDeviceToken::class, 'user_id', 'id');
+    }
+
+    public function userPreferences()
+    {
+        return $this->hasMany(UserPreference::class, 'user_id', 'id');
+    }
+
+    /**
+     * @return Secondaryuser|HasOne
+     */
     public function userInformation()
     {
         return $this->hasOne(UserInformation::class, 'user_id', 'id');
     }
 
+    /**
+     * @return Secondaryuser|HasOne
+     */
     public function userSettings()
     {
         return $this->hasOne(UserSettings::class, 'user_id', 'id');
-    }
-
-    public function deviceTokens()
-    {
-        $getTokens = $this->hasMany(UserDeviceToken::class, 'user_id', 'id');
-        return $this->hasMany(UserDeviceToken::class, 'user_id', 'id');
     }
 
     public static function getGenderStats(): array
@@ -226,7 +241,7 @@ class Secondaryuser extends Model
 
     /**
      * Get the user's settings.
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     * @return HasOne
      */
     public function settings()
     {
@@ -251,7 +266,7 @@ class Secondaryuser extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     * @return HasOne
      */
     public function relationshipPreference()
     {
@@ -358,7 +373,7 @@ class Secondaryuser extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     * @return HasOne
      */
     public function city()
     {
