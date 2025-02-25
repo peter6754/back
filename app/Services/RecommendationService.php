@@ -272,6 +272,12 @@ class RecommendationService
             'date' => now(),
         ]);
 
+        // Send notifications
+        (new \App\Services\RecommendationService())->handleLikeNotification(
+            $params['user_id'],
+            $reactionExists
+        );
+
         return ['is_match' => $reactionExists];
     }
 
@@ -318,6 +324,13 @@ class RecommendationService
         if (!empty($params['comment'])) {
             $this->leaveComment($params['comment'], $userId, $params['user_id']);
         }
+
+        // Send notifications
+        (new \App\Services\RecommendationService())->handleLikeNotification(
+            $params['user_id'],
+            $reactionExists,
+            true
+        );
 
         return ['is_match' => $reactionExists];
     }
