@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Config\Repository;
 use App\Models\Secondaryuser;
+use App\Services\Notifications\NotificationService;
 
 /**
  *
@@ -518,6 +519,8 @@ class RecommendationService
     }
 
     /**
+     * @param $userId
+     * @param $params
      * @return bool
      */
     private function checkExistingReaction($userId, $params): bool
@@ -529,6 +532,7 @@ class RecommendationService
     }
 
     /**
+     * @param $params
      * @return bool
      */
     private function getSuperboomStatus($params): bool
@@ -538,6 +542,54 @@ class RecommendationService
             ->findOrFail($params['user_id']);
 
         return $user->userInformation && $user->userInformation->superboom_due_date >= now();
+    }
+
+
+    /**
+     * @param string $user_id
+     * @param bool $is_match
+     * @param bool $superlike
+     * @return bool
+     */
+    public function handleLikeNotification(string $userId = "", bool $isMatch = false, bool $superLike = false): bool
+    {
+        try {
+            $getUserData = Secondaryuser::with(['userDeviceTokens', 'userSettings'])
+                ->where('id', $userId)
+                ->first();
+
+            $userTokens = collect($getUserData->userDeviceTokens)->map(function ($userTokens) {
+                return $userTokens->token;
+            });
+
+            if ($isMatch === true) {
+                if ($getUserData->userSettings->new_couples_push) {
+                    (new NotificationService())->sendPushNotification($userTokens,
+                        "У вас совпала новая пара! Зайдите, чтобы посмотреть и начать общение.",
+                        "Новая пара!"
+                    );
+                }
+            } else {
+                if ($superLike === true && $getUserData->userSettings->new_super_likes_push) {
+                    (new NotificationService())->sendPushNotification($userTokens,
+                        "Вам поставили суперлайк! Заходите в TinderOne, чтобы найти свою пару!",
+                        "Вы кому-то нравитесь!"
+                    );
+                } else if ($superLike === false && $getUserData->userSettings->new_likes_push) {
+                    (new NotificationService())->sendPushNotification($userTokens,
+                        "Вам поставили лайк! Заходите в TinderOne, чтобы найти свою пару!",
+                        "Вы кому-то нравитесь!"
+                    );
+                }
+            }
+            return true;
+        } catch (\Exception $e) {
+            Log::channel('recommendations')->error('LikeNotification error: ' . $e->getMessage(), [
+                'user_id' => $userId,
+                'error' => $e
+            ]);
+            return false;
+        }
     }
 
     /**

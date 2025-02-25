@@ -44,10 +44,8 @@ class NotificationManager extends Manager
     public function sendMessage(string $provider, $params): bool
     {
         try {
-
-        return $this->driver($provider)
-            ->sendMessage($params);
-
+            return $this->driver($provider)
+                ->sendMessage($params);
         } catch (\Exception $e) {
             echo $e->getMessage();
             return false;
