@@ -522,7 +522,7 @@ class RecommendationService
                 'is_online' => (bool)$r->is_online,
                 'photos' => $photos,
                 'age' => $r->age ? (int)$r->age : null,
-                'distance' => $r->distance ? (int)$r->distance : null
+                'distance' => $r->distance !== null ? (int)$r->distance : null
             ];
         }, $recommendations);
 

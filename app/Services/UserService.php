@@ -161,7 +161,7 @@ class UserService
                 : null,
             'age' => $withQueryRaw['age'] ? (int) $withQueryRaw['age'] : null,
             'info' => array_values(array_filter($infoItems)),
-            'distance' => $withQueryRaw['distance'] ? (int) $withQueryRaw['distance'] : null,
+            'distance' => $withQueryRaw['distance'] !== null ? (int) $withQueryRaw['distance'] : null,
             'is_verified' => ($info['verification_request']['status'] ??
                 $info['verification_requests'][0]['status'] ?? null) === 'approved',
             'images' => array_column($info['images'] ?? $info['user_image'] ?? [], 'image'),
@@ -447,148 +447,147 @@ class UserService
         ]));
     }
 
-    public function getUserLikes(Secondaryuser $user, ?string $filter = null, ?LikeSettings $userSettings = null): Builder
+    public function getUserLikes(Secondaryuser $user, ?string $filter = null, ?LikeSettings $userSettings = null): \Illuminate\Support\Collection
     {
-        // координты по умолчанию если у юзера нет местоположения
+        // координты по умолчанию если у юзера нет местоположения  
         $userLat = $user->lat ?? 0;
         $userLong = $user->long ?? 0;
+        
+        // Параметры для фильтров (точно как в Node.js)
+        $hasUserSettings = $userSettings ? 1 : 0;
+        $filterValue = $filter ?? '';
+        $userSettingsRadius = $userSettings->radius ?? 30;
+        $userSettingsAgeRange = $userSettings ? explode('-', $userSettings->age_range) : [18, 100];
+        $userSettingsVerified = $userSettings && $userSettings->verified ? 1 : 0;
+        $userSettingsHasInfo = $userSettings && $userSettings->has_info ? 1 : 0;
+        $userSettingsMinPhotoCount = $userSettings->min_photo_count ?? 0;
 
-        $query = DB::table('users as u')
-            ->select([
-                'u.id',
-                'u.name',
-                DB::raw('(SELECT image FROM user_images WHERE user_id = u.id LIMIT 1) as image'),
-                DB::raw('CASE 
-                    WHEN EXISTS(
-                        SELECT 1 FROM bought_subscriptions bs 
-                        JOIN transactions t ON t.id = bs.transaction_id 
-                        WHERE t.user_id = u.id AND bs.due_date > NOW()
-                    ) AND us.show_my_age = 0 THEN NULL 
-                    ELSE u.age 
-                END as age'),
-                DB::raw('CASE 
-                    WHEN EXISTS(
-                        SELECT 1 FROM bought_subscriptions bs 
-                        JOIN transactions t ON t.id = bs.transaction_id 
-                        WHERE t.user_id = u.id AND bs.due_date > NOW()
-                    ) AND us.show_distance_from_me = 0 THEN NULL 
-                    ELSE ROUND(
-                        (6371 * acos(
-                            cos(radians('.$userLat.')) * cos(radians(u.lat)) * 
-                            cos(radians(u.long) - radians('.$userLong.')) + 
-                            sin(radians('.$userLat.')) * sin(radians(u.lat))
-                        )), 0
-                    ) 
-                END as distance'),
-                DB::raw('EXISTS(
-                    SELECT 1 FROM user_reactions ur2 
-                    WHERE ur2.user_id = "'.$user->id.'" AND ur2.reactor_id = u.id AND ur2.type = "superlike"
-                ) as superliked_me'),
-                DB::raw('CASE 
-                    WHEN us.status_online = 1 THEN u.is_online 
-                    ELSE 0 
-                END as is_online'),
-            ])
-            ->leftJoin('user_settings as us', 'us.user_id', '=', 'u.id')
-            ->leftJoin('user_information as ui', 'ui.user_id', '=', 'u.id')
-            ->whereExists(function ($query) use ($user) {
-                $query->select(DB::raw(1))
-                    ->from('user_reactions')
-                    ->where('user_id', $user->id)
-                    ->whereColumn('reactor_id', 'u.id')
-                    ->whereIn('type', ['like', 'superlike']);
-            })
-            ->whereNotExists(function ($query) use ($user) {
-                $query->select(DB::raw(1))
-                    ->from('user_reactions as ur1')
-                    ->whereColumn('ur1.user_id', 'u.id')
-                    ->where('ur1.reactor_id', $user->id)
-                    ->where('ur1.type', '!=', 'dislike')
-                    ->whereExists(function ($subquery) use ($user) {
-                        $subquery->select(DB::raw(1))
-                            ->from('user_reactions as ur2')
-                            ->where('ur2.user_id', $user->id)
-                            ->whereColumn('ur2.reactor_id', 'u.id')
-                            ->where('ur2.type', '!=', 'dislike');
-                    });
-            })
-            ->whereNotExists(function ($query) use ($user) {
-                $query->select(DB::raw(1))
-                    ->from('user_reactions')
-                    ->where('reactor_id', $user->id)
-                    ->whereColumn('user_id', 'u.id')
-                    ->where('type', 'dislike');
-            });
+        // Чистый SQL запрос точно как в оригинальном Node.js (адаптированный под MySQL)
+        $results = DB::select("
+            WITH users_near AS (
+                SELECT u.id FROM users u
+                WHERE (6371 * acos(
+                    cos(radians(?)) * cos(radians(COALESCE(u.lat, 0))) * 
+                    cos(radians(COALESCE(u.long, 0)) - radians(?)) + 
+                    sin(radians(?)) * sin(radians(COALESCE(u.lat, 0)))
+                )) <= 30
+            ),
+            users_in_radius AS (
+                SELECT u.id FROM users u  
+                WHERE (6371 * acos(
+                    cos(radians(?)) * cos(radians(COALESCE(u.lat, 0))) * 
+                    cos(radians(COALESCE(u.long, 0)) - radians(?)) + 
+                    sin(radians(?)) * sin(radians(COALESCE(u.lat, 0)))
+                )) <= ?
+            ),
+            my_matches AS (
+                SELECT ure.user_id FROM user_reactions ure
+                LEFT JOIN user_reactions ur ON ur.reactor_id = ure.user_id 
+                    AND ur.user_id = ? AND ure.reactor_id = ?
+                WHERE ure.user_id != ? AND ure.type != 'dislike' AND ur.type != 'dislike'
+            ),
+            users_liked_me AS (
+                SELECT reactor_id FROM user_reactions
+                WHERE user_id = ? AND type IN ('like', 'superlike')
+            ),
+            users_superliked_me AS (
+                SELECT reactor_id FROM user_reactions
+                WHERE user_id = ? AND type = 'superlike'
+            ),
+            my_dislikes AS (
+                SELECT user_id FROM user_reactions
+                WHERE reactor_id = ? AND type = 'dislike'
+            ),
+            my_like_preferences AS (
+                SELECT gender FROM like_preferences
+                WHERE user_id = ?
+            )
+            
+            SELECT u.id,
+                u.name,
+                (SELECT image FROM user_images WHERE user_id = u.id LIMIT 1) as image,
+                CAST(
+                    IF(
+                        (SELECT COUNT(*) FROM bought_subscriptions bs 
+                         JOIN transactions t ON t.id = bs.transaction_id 
+                         WHERE t.user_id = u.id AND bs.due_date > NOW()) > 0 
+                         AND COALESCE(us.show_my_age, 1) = 0,
+                        NULL,
+                        u.age
+                    ) AS CHAR 
+                ) as age,
+                CAST(
+                    IF(
+                        (SELECT COUNT(*) FROM bought_subscriptions bs 
+                         JOIN transactions t ON t.id = bs.transaction_id 
+                         WHERE t.user_id = u.id AND bs.due_date > NOW()) > 0 
+                         AND COALESCE(us.show_distance_from_me, 1) = 0,
+                        NULL,
+                        ROUND((6371 * acos(
+                            cos(radians(?)) * cos(radians(COALESCE(u.lat, 0))) * 
+                            cos(radians(COALESCE(u.long, 0)) - radians(?)) + 
+                            sin(radians(?)) * sin(radians(COALESCE(u.lat, 0)))
+                        )), 0)
+                    ) AS CHAR
+                ) as distance,
+                CAST((u.id IN (SELECT * FROM users_superliked_me)) AS CHAR) as superliked_me,
+                CAST(IF(COALESCE(us.status_online, 1), u.is_online, 0) AS CHAR) as is_online          
+            FROM users u
+            LEFT JOIN user_settings us ON us.user_id = u.id
+            LEFT JOIN user_information ui ON ui.user_id = u.id
+            WHERE u.id IN (SELECT * FROM users_liked_me) 
+                AND u.id NOT IN (SELECT * FROM my_matches)
+                AND u.id NOT IN (SELECT * FROM my_dislikes)
+                AND IF(
+                    ? = 1,
+                    u.gender IN (SELECT * FROM my_like_preferences)
+                    AND u.id IN (SELECT * FROM users_in_radius)
+                    AND (u.age BETWEEN ? AND ?)
+                    AND IF(? = 1, (SELECT status FROM verification_requests WHERE user_id = u.id AND status = 'approved') IS NOT NULL, 1)
+                    AND IF(? = 1, ui.bio IS NOT NULL, 1)
+                    AND (SELECT COUNT(*) FROM user_images WHERE user_id = u.id) >= ?,
+                    IF(? = 'by_distance', u.id IN (SELECT * FROM users_near), 
+                       IF(? = 'by_verification_status', (SELECT status FROM verification_requests WHERE user_id = u.id AND status = 'approved') IS NOT NULL, 
+                          IF(? = 'by_information', ui.bio IS NOT NULL, 1)))
+                )
+        ", [
+            // users_near CTE (3 параметра)
+            $userLat, $userLong, $userLat,
+            // users_in_radius CTE (4 параметра) 
+            $userLat, $userLong, $userLat, $userSettingsRadius,
+            // my_matches CTE (3 параметра)
+            $user->id, $user->id, $user->id,
+            // users_liked_me CTE (1 параметр)
+            $user->id,
+            // users_superliked_me CTE (1 параметр)
+            $user->id,
+            // my_dislikes CTE (1 параметр)
+            $user->id,
+            // my_like_preferences CTE (1 параметр)
+            $user->id,
+            // distance calculation (3 параметра)
+            $userLat, $userLong, $userLat,
+            // main WHERE conditions (9 параметров)
+            $hasUserSettings,
+            $userSettingsAgeRange[0], $userSettingsAgeRange[1],
+            $userSettingsVerified,
+            $userSettingsHasInfo,
+            $userSettingsMinPhotoCount,
+            $filterValue, $filterValue, $filterValue
+        ]);
 
-        $this->applyLikesFilters($query, $user, $filter, $userSettings, $userLat, $userLong);
-
-        return $query;
-    }
-
-    private function applyLikesFilters(Builder $query, Secondaryuser $user, ?string $filter, ?LikeSettings $userSettings, float $userLat, float $userLong): void
-    {
-        if ($userSettings) {
-            $this->applyUserSettingsFilters($query, $user, $userSettings, $userLat, $userLong);
-        } else {
-            $this->applySimpleFilters($query, $user, $filter, $userLat, $userLong);
-        }
-    }
-
-    private function applyUserSettingsFilters(Builder $query, Secondaryuser $user, LikeSettings $userSettings, float $userLat, float $userLong): void
-    {
-        if ($userSettings->radius) {
-            $query->whereRaw('(6371 * acos(cos(radians(?)) * cos(radians(u.lat)) * cos(radians(u.long) - radians(?)) + sin(radians(?)) * sin(radians(u.lat)))) <= ?')
-                ->addBinding([$userLat, $userLong, $userLat, $userSettings->radius]);
-        }
-
-        if ($userSettings->age_range) {
-            $ageRange = explode('-', $userSettings->age_range);
-            $query->whereBetween('u.age', [(int) $ageRange[0], (int) $ageRange[1]]);
-        }
-
-        if ($userSettings->verified) {
-            $query->whereExists(function ($query) {
-                $query->select(DB::raw(1))
-                    ->from('verification_requests')
-                    ->whereColumn('user_id', 'u.id')
-                    ->where('status', 'approved');
-            });
-        }
-
-        if ($userSettings->has_info) {
-            $query->whereNotNull('ui.bio');
-        }
-
-        if ($userSettings->min_photo_count) {
-            $query->whereRaw('(SELECT COUNT(*) FROM user_images WHERE user_id = u.id) >= ?', [$userSettings->min_photo_count]);
-        }
-
-        $query->whereExists(function ($query) use ($user) {
-            $query->select(DB::raw(1))
-                ->from('like_preferences')
-                ->where('user_id', $user->id)
-                ->whereColumn('gender', 'u.gender');
+        // Преобразуем результаты точно как в Node.js
+        return collect($results)->map(function ($user) {
+            return (object) [
+                'id' => $user->id,
+                'name' => $user->name,
+                'image' => $user->image,
+                'age' => $user->age !== null ? (int)$user->age : null,
+                'distance' => $user->distance !== null ? (int)$user->distance : null,
+                'superliked_me' => (bool)(int)$user->superliked_me,
+                'is_online' => (bool)(int)$user->is_online,
+            ];
         });
     }
 
-    private function applySimpleFilters(Builder $query, Secondaryuser $user, ?string $filter, float $userLat, float $userLong): void
-    {
-        switch ($filter) {
-            case 'by_distance':
-                $query->whereRaw('(6371 * acos(cos(radians(?)) * cos(radians(u.lat)) * cos(radians(u.long) - radians(?)) + sin(radians(?)) * sin(radians(u.lat)))) <= 30')
-                    ->addBinding([$userLat, $userLong, $userLat]);
-                break;
-            case 'by_verification_status':
-                $query->whereExists(function ($query) {
-                    $query->select(DB::raw(1))
-                        ->from('verification_requests')
-                        ->whereColumn('user_id', 'u.id')
-                        ->where('status', 'approved');
-                });
-                break;
-            case 'by_information':
-                $query->whereNotNull('ui.bio');
-                break;
-        }
-    }
 }

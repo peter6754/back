@@ -112,22 +112,8 @@ class UsersController extends Controller
                 }
             }
 
-            // Получаем через UserService
-            $query = $this->userService->getUserLikes($secondaryUser, $filter, $userSettings);
-            $results = $query->get();
-
-            // Форматируем результаты
-            $formattedResults = collect($results)->map(function ($user) {
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'image' => $user->image,
-                    'age' => $user->age ? (int) $user->age : null,
-                    'distance' => $user->distance ? (int) $user->distance : null,
-                    'superliked_me' => (bool) $user->superliked_me,
-                    'is_online' => (bool) $user->is_online,
-                ];
-            });
+            // Получаем через UserService (теперь возвращает готовую коллекцию)
+            $formattedResults = $this->userService->getUserLikes($secondaryUser, $filter, $userSettings);
 
             return $this->successResponse([
                 'items' => $formattedResults,
