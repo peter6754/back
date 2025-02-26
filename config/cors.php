@@ -42,7 +42,7 @@ return [
     'paths' => [
         '*',
     ],
-    'supports_credentials' => false,
+    'supports_credentials' => true,
     'exposed_headers' => [],
-    'max_age' => 86400,
+    'max_age' => 86400
 ];
