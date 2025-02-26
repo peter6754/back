@@ -71,7 +71,6 @@ class RecommendationService
      */
     public function getTopProfiles(mixed $customer): array
     {
-        // Checking cache
         $key = "top-profiles:" . $customer['id'];
         $topProfiles = Redis::get($key);
 
@@ -88,100 +87,83 @@ class RecommendationService
             $twoDaysAgo = now()->subDays(2)->toDateTimeString();
             $myPhone = $customer['phone'];
             $myUserId = $customer['id'];
-            $myLat = $customer['long'];
-            $myLng = $customer['lat'];
+            $myLat = $customer['lat'];
+            $myLng = $customer['long'];
 
-            // 1. excluded_users подзапрос (UNION двух частей)
-            $excludedUsers1 = DB::table('user_reactions as ure')
-                ->select('ure.user_id')
-                ->where('ure.reactor_id', $myUserId)
-                ->where('ure.type', '!=', 'dislike')
-                ->where('ure.date', '>=', $twoDaysAgo);
-
-            $excludedUsers2 = DB::table('user_reactions as ure')
-                ->select('ure.user_id')
-                ->join('user_reactions as ur', function ($join) use ($myUserId) {
-                    $join->on('ur.reactor_id', '=', 'ure.user_id')
-                        ->where('ur.user_id', $myUserId)
-                        ->where('ur.type', '!=', 'dislike');
-                })
-                ->where('ure.reactor_id', $myUserId)
-                ->where('ure.type', '!=', 'dislike');
-
-            $excludedUsers = $excludedUsers1->union($excludedUsers2);
-
-            // 2. min_images подзапрос
-            $minImages = DB::table('user_images')
-                ->select('user_id', DB::raw('MIN(id) as min_image_id'))
-                ->groupBy('user_id');
-
-            // 3. like_counts подзапрос
-            $likeCounts = DB::table('user_reactions')
-                ->select('user_id', DB::raw('COUNT(*) as like_count'))
-                ->where('type', '!=', 'dislike')
-                ->groupBy('user_id');
-
-            // 4. subs подзапрос
-            $subs = DB::table('bought_subscriptions as bs')
-                ->join('transactions as t', 't.id', '=', 'bs.transaction_id')
-                ->select('t.user_id')
-                ->whereRaw('NOW() <= bs.due_date')
-                ->groupBy('t.user_id');
-
-            // 5. Флаг подписки текущего пользователя
-            $myHasSubscription = DB::table('bought_subscriptions as bs')
-                ->join('transactions as t', 't.id', '=', 'bs.transaction_id')
-                ->where('t.user_id', $myUserId)
-                ->whereRaw('NOW() <= bs.due_date')
-                ->exists();
-
-            // 6. Основной запрос
-            $query = DB::table('users as u')
-                ->selectRaw('
+            // Создаем CTE
+            $filteredUsers = DB::table('users as u')
+                ->selectRaw("
                 u.id,
                 u.name,
-                (bc.user_id IS NOT NULL) as blocked_me,
-                CASE WHEN subs.user_id IS NOT NULL AND NOT us.show_my_age THEN NULL ELSE u.age END as age,
-                ui.image,
-                CASE
-                    WHEN subs.user_id IS NOT NULL AND NOT us.show_distance_from_me THEN NULL
-                    ELSE ROUND(ST_Distance_Sphere(
-                        POINT(u.`long`, u.lat),
-                        POINT(?, ?)
-                    ) / 1000, 0)
-                END as distance,
-                COALESCE(rc.like_count, 0) as like_count
-            ', [$myLng, $myLat])
+                u.age,
+                u.lat,
+                u.long,
+                u.phone,
+                (SELECT 1 FROM blocked_contacts bc
+                 WHERE bc.user_id = u.id AND bc.phone = ? LIMIT 1) AS blocked_me,
+                us.show_my_age,
+                us.show_distance_from_me,
+                (SELECT image FROM user_images ui
+                 WHERE ui.user_id = u.id ORDER BY ui.id LIMIT 1) AS image,
+                (SELECT COUNT(*) FROM user_reactions ur
+                 WHERE ur.user_id = u.id AND ur.type != 'dislike') AS like_count,
+                (SELECT 1 FROM bought_subscriptions bs
+                 JOIN transactions t ON t.id = bs.transaction_id
+                 WHERE t.user_id = u.id AND bs.due_date >= NOW() LIMIT 1) AS has_subscription
+            ")
+                ->leftJoin('user_settings as us', 'us.user_id', '=', 'u.id')
                 ->join('user_preferences as up', function ($join) use ($myUserId) {
                     $join->on('up.gender', '=', 'u.gender')
                         ->where('up.user_id', '=', $myUserId);
                 })
-                ->leftJoin('user_settings as us', 'us.user_id', '=', 'u.id')
-                ->leftJoinSub($minImages, 'mi', 'mi.user_id', '=', 'u.id')
-                ->leftJoin('user_images as ui', 'ui.id', '=', 'mi.min_image_id')
-                ->leftJoin('blocked_contacts as bc', function ($join) use ($myPhone) {
-                    $join->on('bc.user_id', '=', 'u.id')
-                        ->where('bc.phone', '=', $myPhone);
-                })
-                ->leftJoin('blocked_contacts as my_bc', function ($join) use ($myUserId) {
-                    $join->on('my_bc.phone', '=', 'u.phone')
-                        ->where('my_bc.user_id', '=', $myUserId);
-                })
-                ->leftJoinSub($likeCounts, 'rc', 'rc.user_id', '=', 'u.id')
-                ->leftJoinSub($subs, 'subs', 'subs.user_id', '=', 'u.id')
-                ->leftJoinSub($excludedUsers, 'eu', 'eu.user_id', '=', 'u.id')
                 ->where('u.id', '!=', $myUserId)
                 ->whereNotNull('u.lat')
                 ->whereNotNull('u.long')
                 ->where('u.mode', 'authenticated')
                 ->whereNotNull('u.registration_date')
-
-                // блокировка: если нет подписки — фильтруем по bc.user_id
-                ->when(!$myHasSubscription, function ($query) {
-                    $query->whereNull('bc.user_id');
+                ->whereNotExists(function ($query) use ($myPhone) {
+                    $query->select(DB::raw(1))
+                        ->from('blocked_contacts as bc')
+                        ->whereRaw('bc.user_id = u.id')
+                        ->where('bc.phone', $myPhone);
                 })
-                ->whereNull('my_bc.user_id')
-                ->whereNull('eu.user_id')
+                ->whereNotExists(function ($query) use ($myUserId) {
+                    $query->select(DB::raw(1))
+                        ->from('blocked_contacts as my_bc')
+                        ->whereRaw('my_bc.phone = u.phone')
+                        ->where('my_bc.user_id', $myUserId);
+                })
+                ->whereNotExists(function ($query) use ($myUserId, $twoDaysAgo) {
+                    $query->select(DB::raw(1))
+                        ->from('user_reactions as ure')
+                        ->where('ure.reactor_id', $myUserId)
+                        ->where('ure.type', '!=', 'dislike')
+                        ->where('ure.date', '>=', $twoDaysAgo)
+                        ->whereRaw('ure.user_id = u.id');
+                });
+
+            // Основной запрос из CTE
+            $query = DB::table(DB::raw("({$filteredUsers->toSql()}) as filtered_users"))
+                ->mergeBindings($filteredUsers)
+                ->selectRaw("
+                id,
+                name,
+                (blocked_me IS NOT NULL) AS blocked_me,
+                CASE
+                    WHEN has_subscription IS NOT NULL AND NOT show_my_age THEN NULL
+                    ELSE age
+                END AS age,
+                image,
+                CASE
+                    WHEN has_subscription IS NOT NULL AND NOT show_distance_from_me THEN NULL
+                    ELSE ROUND(ST_Distance_Sphere(POINT(?, ?),POINT(`long`, `lat`)) / 1000, 0)
+                END AS distance,
+                COALESCE(like_count, 0) AS like_count
+            ", [
+                    $myLng,
+                    $myLat,
+                    $myPhone
+                ])
                 ->orderByDesc('like_count')
                 ->limit(15);
 
