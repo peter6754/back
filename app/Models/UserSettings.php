@@ -68,7 +68,7 @@ class UserSettings extends Model
         'is_phone_verified',
         'is_email_verified',
         'search_radius',
-//        'age_range',
+        'age_range',
         'visibility',
         'recommendations',
         'age_range'
