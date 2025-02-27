@@ -68,9 +68,10 @@ class UserSettings extends Model
         'is_phone_verified',
         'is_email_verified',
         'search_radius',
-        'age_range',
+//        'age_range',
         'visibility',
-        'recommendations'
+        'recommendations',
+        'age_range'
     ];
 
     /**
@@ -139,15 +140,5 @@ class UserSettings extends Model
     public function getAgeRangeAttribute()
     {
         return array_map('intval', explode('-', $this->attributes['age_range']));
-    }
-
-    /**
-     * Set the age range.
-     * @param array $value
-     * @return void
-     */
-    public function setAgeRangeAttribute(array $value)
-    {
-        $this->attributes['age_range'] = implode('-', $value);
     }
 }

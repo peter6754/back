@@ -3,12 +3,13 @@
 namespace App\Services;
 
 use App\Helpers\UserInformationTranslator;
-use App\Models\LikeSettings;
-use App\Models\Secondaryuser;
-use Exception;
-use Illuminate\Database\Query\Builder;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Models\UserPreference;
+use Illuminate\Support\Carbon;
+use App\Models\Secondaryuser;
+use App\Models\UserSettings;
+use App\Models\LikeSettings;
+use Exception;
 use Log;
 
 class UserService
@@ -21,7 +22,6 @@ class UserService
 
     /**
      * @return array
-     *
      * @throws \Throwable
      */
     public function getUser(string $id, array $viewer)
@@ -51,17 +51,17 @@ class UserService
         $user = Secondaryuser::with([
             'finalPreference:preference',
             'interests.interest:id,name',
-            'images' => fn ($query) => $query->select('user_id', 'image')->take(4),
+            'images' => fn($query) => $query->select('user_id', 'image')->take(4),
             'verificationRequest:user_id,status',
-            'receivedGifts' => fn ($query) => $query->with('gift:id,image')
-                ->whereHas('transaction', fn ($q) => $q->where('status', 'succeeded'))
+            'receivedGifts' => fn($query) => $query->with('gift:id,image')
+                ->whereHas('transaction', fn($q) => $q->where('status', 'succeeded'))
                 ->take(2),
             'settings:user_id,show_my_orientation,show_my_gender,show_my_age,show_distance_from_me',
             'city:user_id,formatted_address',
             'userInformation',
-            'pets' => fn ($query) => $query->select('user_id', 'pet'),
+            'pets' => fn($query) => $query->select('user_id', 'pet'),
         ])->withCount([
-            'receivedGifts as gifts_count' => fn ($query) => $query->whereHas('transaction', fn ($q) => $q->where('status', 'succeeded')),
+            'receivedGifts as gifts_count' => fn($query) => $query->whereHas('transaction', fn($q) => $q->where('status', 'succeeded')),
             'feedbacks as feedbacks_count',
         ])->findOrFail($id);
 
@@ -86,7 +86,7 @@ class UserService
             WHERE u.id = ?
         ', [$viewer['lat'], $viewer['long'], $id]);
 
-        return (array) $result;
+        return (array)$result;
     }
 
     private function formatResponse(array $info, array $withQueryRaw): array
@@ -96,56 +96,56 @@ class UserService
         $gender = $info['gender'] ?? null;
 
         $infoItems = [
-            $userSettings['show_my_orientation'] ?? false
-            ? UserInformationTranslator::translate('orientations', $info['sexual_orientation'])
-            : null,
-            ! empty($userInformation['zodiac_sign'])
-            ? UserInformationTranslator::translate('zodiac_signs', $userInformation['zodiac_sign'])
-            : null,
-            ! empty($userInformation['alcohole'])
-            ? UserInformationTranslator::translate('alcohol', $userInformation['alcohole'])
-            : null,
-            ! empty($userInformation['smoking'])
-            ? UserInformationTranslator::translate('smoking', $userInformation['smoking'])
-            : null,
-            ! empty($userInformation['education'])
-            ? UserInformationTranslator::translate('education', $userInformation['education'])
-            : null,
-            ! empty($userInformation['family'])
-            ? UserInformationTranslator::translate('family', $userInformation['family'])
-            : null,
-            ! empty($userInformation['communication'])
-            ? UserInformationTranslator::translate('communication', $userInformation['communication'])
-            : null,
+                $userSettings['show_my_orientation'] ?? false
+                ? UserInformationTranslator::translate('orientations', $info['sexual_orientation'])
+                : null,
+            !empty($userInformation['zodiac_sign'])
+                ? UserInformationTranslator::translate('zodiac_signs', $userInformation['zodiac_sign'])
+                : null,
+            !empty($userInformation['alcohole'])
+                ? UserInformationTranslator::translate('alcohol', $userInformation['alcohole'])
+                : null,
+            !empty($userInformation['smoking'])
+                ? UserInformationTranslator::translate('smoking', $userInformation['smoking'])
+                : null,
+            !empty($userInformation['education'])
+                ? UserInformationTranslator::translate('education', $userInformation['education'])
+                : null,
+            !empty($userInformation['family'])
+                ? UserInformationTranslator::translate('family', $userInformation['family'])
+                : null,
+            !empty($userInformation['communication'])
+                ? UserInformationTranslator::translate('communication', $userInformation['communication'])
+                : null,
             ...array_map(function ($pet) {
                 return isset($pet['pet']) && $pet['pet']
                     ? UserInformationTranslator::translate('pets', $pet['pet'])
                     : null;
             }, $info['pets'] ?? $info['user_pets'] ?? []),
-            ! empty($userInformation['sport'])
-            ? UserInformationTranslator::translate('sport', $userInformation['sport'])
-            : null,
-            ! empty($userInformation['love_language'])
-            ? UserInformationTranslator::translate('love_language', $userInformation['love_language'])
-            : null,
-            ! empty($userInformation['food'])
-            ? UserInformationTranslator::translate('food', $userInformation['food'])
-            : null,
-            ! empty($userInformation['social_network'])
-            ? UserInformationTranslator::translate('social_network', $userInformation['social_network'])
-            : null,
-            ! empty($userInformation['sleep'])
-            ? UserInformationTranslator::translate('sleep', $userInformation['sleep'])
-            : null,
-            ! empty($userInformation['family_status'])
-            ? UserInformationTranslator::translate(
+            !empty($userInformation['sport'])
+                ? UserInformationTranslator::translate('sport', $userInformation['sport'])
+                : null,
+            !empty($userInformation['love_language'])
+                ? UserInformationTranslator::translate('love_language', $userInformation['love_language'])
+                : null,
+            !empty($userInformation['food'])
+                ? UserInformationTranslator::translate('food', $userInformation['food'])
+                : null,
+            !empty($userInformation['social_network'])
+                ? UserInformationTranslator::translate('social_network', $userInformation['social_network'])
+                : null,
+            !empty($userInformation['sleep'])
+                ? UserInformationTranslator::translate('sleep', $userInformation['sleep'])
+                : null,
+            !empty($userInformation['family_status'])
+                ? UserInformationTranslator::translate(
                 'family_statuses',
                 $userInformation['family_status'],
                 in_array($gender, $this->maleGenders) ? 'male' : 'female'
             )
-            : null,
+                : null,
             $info['final_preference']['preference'] ??
-            $info['user_relationship_preferences'][0]['preference']['preference'] ?? null,
+                $info['user_relationship_preferences'][0]['preference']['preference'] ?? null,
         ];
 
         return [
@@ -159,11 +159,11 @@ class UserService
             'gender' => $userSettings['show_my_gender'] ?? false
                 ? UserInformationTranslator::translate('genders', $info['gender'])
                 : null,
-            'age' => $withQueryRaw['age'] ? (int) $withQueryRaw['age'] : null,
+            'age' => $withQueryRaw['age'] ? (int)$withQueryRaw['age'] : null,
             'info' => array_values(array_filter($infoItems)),
-            'distance' => $withQueryRaw['distance'] !== null ? (int) $withQueryRaw['distance'] : null,
+            'distance' => $withQueryRaw['distance'] !== null ? (int)$withQueryRaw['distance'] : null,
             'is_verified' => ($info['verification_request']['status'] ??
-                $info['verification_requests'][0]['status'] ?? null) === 'approved',
+                    $info['verification_requests'][0]['status'] ?? null) === 'approved',
             'images' => array_column($info['images'] ?? $info['user_image'] ?? [], 'image'),
             'interests' => array_map(function ($interest) {
                 return $interest['interest']['name'];
@@ -222,72 +222,72 @@ class UserService
                 'show_me' => collect($user['preferences'] ?? [])->pluck('gender')->toArray(),
                 'residence' => $user['city']['formatted_address'] ?? null,
                 'bio' => $user['user_information']['bio'] ?? null,
-                'gender' => ! empty($user['gender']) ? [
+                'gender' => !empty($user['gender']) ? [
                     'key' => $user['gender'],
                     'translation_ru' => UserInformationTranslator::translate('genders', $user['gender']),
                 ] : null,
 
-                'sexual_orientation' => ! empty($user['sexual_orientation']) ? [
+                'sexual_orientation' => !empty($user['sexual_orientation']) ? [
                     'key' => $user['sexual_orientation'],
                     'translation_ru' => UserInformationTranslator::translate('orientations', $user['sexual_orientation']),
                 ] : null,
 
-                'zodiac_sign' => ! empty($user['user_information']['zodiac_sign']) ? [
+                'zodiac_sign' => !empty($user['user_information']['zodiac_sign']) ? [
                     'key' => $user['user_information']['zodiac_sign'],
                     'translation_ru' => UserInformationTranslator::translate('zodiac_signs', $user['user_information']['zodiac_sign']),
                 ] : null,
 
-                'education' => ! empty($user['user_information']['education']) ? [
+                'education' => !empty($user['user_information']['education']) ? [
                     'key' => $user['user_information']['education'],
                     'translation_ru' => UserInformationTranslator::translate('education', $user['user_information']['education']),
                 ] : null,
 
-                'family' => ! empty($user['user_information']['family']) ? [
+                'family' => !empty($user['user_information']['family']) ? [
                     'key' => $user['user_information']['family'],
                     'translation_ru' => UserInformationTranslator::translate('family', $user['user_information']['family']),
                 ] : null,
 
-                'communication' => ! empty($user['user_information']['communication']) ? [
+                'communication' => !empty($user['user_information']['communication']) ? [
                     'key' => $user['user_information']['communication'],
                     'translation_ru' => UserInformationTranslator::translate('communication', $user['user_information']['communication']),
                 ] : null,
 
-                'love_language' => ! empty($user['user_information']['love_language']) ? [
+                'love_language' => !empty($user['user_information']['love_language']) ? [
                     'key' => $user['user_information']['love_language'],
                     'translation_ru' => UserInformationTranslator::translate('love_language', $user['user_information']['love_language']),
                 ] : null,
 
-                'alcohole' => ! empty($user['user_information']['alcohole']) ? [
+                'alcohole' => !empty($user['user_information']['alcohole']) ? [
                     'key' => $user['user_information']['alcohole'],
                     'translation_ru' => UserInformationTranslator::translate('alcohol', $user['user_information']['alcohole']),
                 ] : null,
 
-                'smoking' => ! empty($user['user_information']['smoking']) ? [
+                'smoking' => !empty($user['user_information']['smoking']) ? [
                     'key' => $user['user_information']['smoking'],
                     'translation_ru' => UserInformationTranslator::translate('smoking', $user['user_information']['smoking']),
                 ] : null,
 
-                'sport' => ! empty($user['user_information']['sport']) ? [
+                'sport' => !empty($user['user_information']['sport']) ? [
                     'key' => $user['user_information']['sport'],
                     'translation_ru' => UserInformationTranslator::translate('sport', $user['user_information']['sport']),
                 ] : null,
 
-                'food' => ! empty($user['user_information']['food']) ? [
+                'food' => !empty($user['user_information']['food']) ? [
                     'key' => $user['user_information']['food'],
                     'translation_ru' => UserInformationTranslator::translate('food', $user['user_information']['food']),
                 ] : null,
 
-                'social_network' => ! empty($user['user_information']['social_network']) ? [
+                'social_network' => !empty($user['user_information']['social_network']) ? [
                     'key' => $user['user_information']['social_network'],
                     'translation_ru' => UserInformationTranslator::translate('social_network', $user['user_information']['social_network']),
                 ] : null,
 
-                'sleep' => ! empty($user['user_information']['sleep']) ? [
+                'sleep' => !empty($user['user_information']['sleep']) ? [
                     'key' => $user['user_information']['sleep'],
                     'translation_ru' => UserInformationTranslator::translate('sleep', $user['user_information']['sleep']),
                 ] : null,
                 'educational_institution' => $user['user_information']['educational_institution'] ?? null,
-                'family_status' => ! empty($user['user_information']['family_status']) ? [
+                'family_status' => !empty($user['user_information']['family_status']) ? [
                     'key' => $user['user_information']['family_status'],
                     'translation_ru' => UserInformationTranslator::translate(
                         'family_statuses',
@@ -307,7 +307,7 @@ class UserService
                         'name' => $userInterest['interest']['name'],
                     ];
                 }),
-                'relationship_preference' => ! empty($user['final_preference']) ? [
+                'relationship_preference' => !empty($user['final_preference']) ? [
                     'id' => $user['final_preference']['id'],
                     'preference' => $user['final_preference']['preference'],
                 ] : null,
@@ -329,7 +329,6 @@ class UserService
 
     /**
      * Обновить информацию пользователя
-     *
      * @throws Exception
      */
     public function updateUserInformation(string $userId, array $data): bool
@@ -365,13 +364,13 @@ class UserService
 
             if (isset($data['interests'])) {
                 $user->interests()->delete();
-                $interests = array_map(fn ($id) => ['interest_id' => $id], $data['interests']);
+                $interests = array_map(fn($id) => ['interest_id' => $id], $data['interests']);
                 $user->interests()->createMany($interests);
             }
 
             if (isset($data['show_me'])) {
                 $user->preferences()->delete();
-                $preferences = array_map(fn ($gender) => ['gender' => $gender], $data['show_me']);
+                $preferences = array_map(fn($gender) => ['gender' => $gender], $data['show_me']);
                 $user->preferences()->createMany($preferences);
             }
 
@@ -402,8 +401,8 @@ class UserService
 
         $user->pets()->delete();
 
-        if (! empty($pets)) {
-            $petsData = array_map(fn ($pet) => ['pet' => $pet], $pets);
+        if (!empty($pets)) {
+            $petsData = array_map(fn($pet) => ['pet' => $pet], $pets);
             $user->pets()->createMany($petsData);
         }
     }
@@ -449,10 +448,10 @@ class UserService
 
     public function getUserLikes(Secondaryuser $user, ?string $filter = null, ?LikeSettings $userSettings = null): \Illuminate\Support\Collection
     {
-        // координты по умолчанию если у юзера нет местоположения  
+        // координты по умолчанию если у юзера нет местоположения
         $userLat = $user->lat ?? 0;
         $userLong = $user->long ?? 0;
-        
+
         // Параметры для фильтров (точно как в Node.js)
         $hasUserSettings = $userSettings ? 1 : 0;
         $filterValue = $filter ?? '';
@@ -467,22 +466,22 @@ class UserService
             WITH users_near AS (
                 SELECT u.id FROM users u
                 WHERE (6371 * acos(
-                    cos(radians(?)) * cos(radians(COALESCE(u.lat, 0))) * 
-                    cos(radians(COALESCE(u.long, 0)) - radians(?)) + 
+                    cos(radians(?)) * cos(radians(COALESCE(u.lat, 0))) *
+                    cos(radians(COALESCE(u.long, 0)) - radians(?)) +
                     sin(radians(?)) * sin(radians(COALESCE(u.lat, 0)))
                 )) <= 30
             ),
             users_in_radius AS (
-                SELECT u.id FROM users u  
+                SELECT u.id FROM users u
                 WHERE (6371 * acos(
-                    cos(radians(?)) * cos(radians(COALESCE(u.lat, 0))) * 
-                    cos(radians(COALESCE(u.long, 0)) - radians(?)) + 
+                    cos(radians(?)) * cos(radians(COALESCE(u.lat, 0))) *
+                    cos(radians(COALESCE(u.long, 0)) - radians(?)) +
                     sin(radians(?)) * sin(radians(COALESCE(u.lat, 0)))
                 )) <= ?
             ),
             my_matches AS (
                 SELECT ure.user_id FROM user_reactions ure
-                LEFT JOIN user_reactions ur ON ur.reactor_id = ure.user_id 
+                LEFT JOIN user_reactions ur ON ur.reactor_id = ure.user_id
                     AND ur.user_id = ? AND ure.reactor_id = ?
                 WHERE ure.user_id != ? AND ure.type != 'dislike' AND ur.type != 'dislike'
             ),
@@ -502,40 +501,40 @@ class UserService
                 SELECT gender FROM like_preferences
                 WHERE user_id = ?
             )
-            
+
             SELECT u.id,
                 u.name,
                 (SELECT image FROM user_images WHERE user_id = u.id LIMIT 1) as image,
                 CAST(
                     IF(
-                        (SELECT COUNT(*) FROM bought_subscriptions bs 
-                         JOIN transactions t ON t.id = bs.transaction_id 
-                         WHERE t.user_id = u.id AND bs.due_date > NOW()) > 0 
+                        (SELECT COUNT(*) FROM bought_subscriptions bs
+                         JOIN transactions t ON t.id = bs.transaction_id
+                         WHERE t.user_id = u.id AND bs.due_date > NOW()) > 0
                          AND COALESCE(us.show_my_age, 1) = 0,
                         NULL,
                         u.age
-                    ) AS CHAR 
+                    ) AS CHAR
                 ) as age,
                 CAST(
                     IF(
-                        (SELECT COUNT(*) FROM bought_subscriptions bs 
-                         JOIN transactions t ON t.id = bs.transaction_id 
-                         WHERE t.user_id = u.id AND bs.due_date > NOW()) > 0 
+                        (SELECT COUNT(*) FROM bought_subscriptions bs
+                         JOIN transactions t ON t.id = bs.transaction_id
+                         WHERE t.user_id = u.id AND bs.due_date > NOW()) > 0
                          AND COALESCE(us.show_distance_from_me, 1) = 0,
                         NULL,
                         ROUND((6371 * acos(
-                            cos(radians(?)) * cos(radians(COALESCE(u.lat, 0))) * 
-                            cos(radians(COALESCE(u.long, 0)) - radians(?)) + 
+                            cos(radians(?)) * cos(radians(COALESCE(u.lat, 0))) *
+                            cos(radians(COALESCE(u.long, 0)) - radians(?)) +
                             sin(radians(?)) * sin(radians(COALESCE(u.lat, 0)))
                         )), 0)
                     ) AS CHAR
                 ) as distance,
                 CAST((u.id IN (SELECT * FROM users_superliked_me)) AS CHAR) as superliked_me,
-                CAST(IF(COALESCE(us.status_online, 1), u.is_online, 0) AS CHAR) as is_online          
+                CAST(IF(COALESCE(us.status_online, 1), u.is_online, 0) AS CHAR) as is_online
             FROM users u
             LEFT JOIN user_settings us ON us.user_id = u.id
             LEFT JOIN user_information ui ON ui.user_id = u.id
-            WHERE u.id IN (SELECT * FROM users_liked_me) 
+            WHERE u.id IN (SELECT * FROM users_liked_me)
                 AND u.id NOT IN (SELECT * FROM my_matches)
                 AND u.id NOT IN (SELECT * FROM my_dislikes)
                 AND IF(
@@ -546,14 +545,14 @@ class UserService
                     AND IF(? = 1, (SELECT status FROM verification_requests WHERE user_id = u.id AND status = 'approved') IS NOT NULL, 1)
                     AND IF(? = 1, ui.bio IS NOT NULL, 1)
                     AND (SELECT COUNT(*) FROM user_images WHERE user_id = u.id) >= ?,
-                    IF(? = 'by_distance', u.id IN (SELECT * FROM users_near), 
-                       IF(? = 'by_verification_status', (SELECT status FROM verification_requests WHERE user_id = u.id AND status = 'approved') IS NOT NULL, 
+                    IF(? = 'by_distance', u.id IN (SELECT * FROM users_near),
+                       IF(? = 'by_verification_status', (SELECT status FROM verification_requests WHERE user_id = u.id AND status = 'approved') IS NOT NULL,
                           IF(? = 'by_information', ui.bio IS NOT NULL, 1)))
                 )
         ", [
             // users_near CTE (3 параметра)
             $userLat, $userLong, $userLat,
-            // users_in_radius CTE (4 параметра) 
+            // users_in_radius CTE (4 параметра)
             $userLat, $userLong, $userLat, $userSettingsRadius,
             // my_matches CTE (3 параметра)
             $user->id, $user->id, $user->id,
@@ -578,7 +577,7 @@ class UserService
 
         // Преобразуем результаты точно как в Node.js
         return collect($results)->map(function ($user) {
-            return (object) [
+            return (object)[
                 'id' => $user->id,
                 'name' => $user->name,
                 'image' => $user->image,
@@ -590,4 +589,61 @@ class UserService
         });
     }
 
+    public function getFilterSettings(string $user_id): array
+    {
+        $user = Secondaryuser::with(['userSettings', 'userPreferences'])
+            ->find($user_id);
+
+        return [
+            'is_global_search' => $user->userSettings->is_global_search,
+            'age_range' => implode("-", $user->userSettings->age_range ?? []),
+            'search_radius' => $user->userSettings->search_radius,
+            'show_me' => $user->userPreferences
+                ->map(function ($pref) {
+                    return [
+                        'key' => $pref->gender,
+                        'translation_ru' => trans("genders.{$pref->gender}")
+                    ];
+                })
+                ->filter(fn($item) => !empty($item['translation_ru']))
+                ->values()
+                ->toArray()
+        ];
+    }
+
+    /**
+     * @param string $user_id
+     * @param array $data
+     * @return string[]
+     * @throws \Throwable
+     */
+    public function updateFilterSettings(string $user_id, array $data): array
+    {
+        return DB::transaction(function () use ($user_id, $data) {
+            // Обновляем основные настройки
+            UserSettings::updateOrCreate([
+                'user_id' => $user_id
+            ], [
+                'is_global_search' => $data['is_global_search'] ?? null,
+                'search_radius' => $data['search_radius'] ?? null,
+                'age_range' => $data['age_range'] ?? null,
+            ]);
+
+            // Обновляем предпочтения по полу, если переданы
+            if (isset($data['show_me'])) {
+                UserPreference::where('user_id', $user_id)->delete();
+
+                $preferences = array_map(function ($gender) use ($user_id) {
+                    return [
+                        'user_id' => $user_id,
+                        'gender' => $gender
+                    ];
+                }, $data['show_me']);
+
+                UserPreference::insert($preferences);
+            }
+
+            return ['message' => 'Data updated successfully'];
+        });
+    }
 }
