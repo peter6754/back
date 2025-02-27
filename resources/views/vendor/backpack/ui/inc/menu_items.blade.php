@@ -58,12 +58,6 @@
 
 <span class="nav-separator">Прочее</span>
 <li class="nav-item">
-    <a class="nav-link" href="/admin/seaweed" target="_blank">
-        <i class="nav-icon la la-cloud d-block d-lg-none d-xl-block"></i>
-        <span>Seaweed</span>
-    </a>
-</li>
-<li class="nav-item">
     <a class="nav-link" href="/api/docs" target="_blank">
         <i class="nav-icon la la-code d-block d-lg-none d-xl-block"></i>
         <span>Swagger</span>
