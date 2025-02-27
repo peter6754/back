@@ -153,8 +153,13 @@ Route::prefix('users')->middleware('auth')->group(function () {
 
     // Settings
     Route::prefix('settings')->group(function () {
+        // Tokens for push notifications
         Route::delete('token', [SettingsController::class, 'deleteToken']);
         Route::post('token', [SettingsController::class, 'addToken']);
+
+        // Filters
+        Route::put('filter', [SettingsController::class, 'setFilter']);
+        Route::get('filter', [SettingsController::class, 'getFilter']);
     });
 
     // Справочные данные
