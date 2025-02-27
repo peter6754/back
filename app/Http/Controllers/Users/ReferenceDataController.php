@@ -21,7 +21,7 @@ class ReferenceDataController extends Controller
      * @param Request $request
      * @OA\Get(
      *     path="/users/reference-data/interests",
-     *     tags={"User settings"},
+     *     tags={"User Settings"},
      *     summary="Get interests list",
      *     security={{"bearerAuth":{}}},
      *
@@ -99,7 +99,7 @@ class ReferenceDataController extends Controller
     /**
      * @OA\Get(
      *     path="/users/reference-data/relationship-preferences",
-     *     tags={"User settings"},
+     *     tags={"User Settings"},
      *     summary="Get available genders",
      *     description="Returns list of available relationship preferences",
      *     security={{"bearerAuth":{}}},
@@ -176,7 +176,7 @@ class ReferenceDataController extends Controller
     /**
      * @OA\Get(
      *     path="/users/reference-data/genders",
-     *     tags={"User settings"},
+     *     tags={"User Settings"},
      *     summary="Get available genders",
      *     description="Returns list of available gender options with translations",
      *     security={{"bearerAuth":{}}},
@@ -231,7 +231,7 @@ class ReferenceDataController extends Controller
     /**
      * @OA\Get(
      *     path="/users/reference-data/zodiac-signs",
-     *     tags={"User settings"},
+     *     tags={"User Settings"},
      *     summary="Get available zodiac signs",
      *     description="Returns list of available zodiac signs options with translations",
      *     security={{"bearerAuth":{}}},
@@ -294,7 +294,7 @@ class ReferenceDataController extends Controller
      * @param Request $request
      * @OA\Get(
      *     path="/users/reference-data/family-statuses",
-     *     tags={"User settings"},
+     *     tags={"User Settings"},
      *     summary="Get family statuses by gender",
      *     description="Returns list of family statuses with translations based on gender",
      *     security={{"bearerAuth":{}}},
@@ -382,7 +382,7 @@ class ReferenceDataController extends Controller
     /**
      * @OA\Get(
      *     path="/users/reference-data/education",
-     *     tags={"User settings"},
+     *     tags={"User Settings"},
      *     summary="Get education options",
      *     description="Returns list of education levels with translations",
      *     security={{"bearerAuth":{}}},
@@ -439,7 +439,7 @@ class ReferenceDataController extends Controller
     /**
      * @OA\Get(
      *     path="/users/reference-data/family",
-     *     tags={"User settings"},
+     *     tags={"User Settings"},
      *     summary="Get family plans options",
      *     description="Returns list of family plans with translations",
      *     security={{"bearerAuth":{}}},
@@ -494,7 +494,7 @@ class ReferenceDataController extends Controller
      * @param Request $request
      * @OA\Get(
      *     path="/users/reference-data/communication",
-     *     tags={"User settings"},
+     *     tags={"User Settings"},
      *     summary="Get communication preferences",
      *     description="Returns list of communication preferences with translations",
      *     security={{"bearerAuth":{}}},
@@ -547,7 +547,7 @@ class ReferenceDataController extends Controller
     /**
      * @OA\Get(
      *     path="/users/reference-data/love-languages",
-     *     tags={"User settings"},
+     *     tags={"User Settings"},
      *     summary="Get love languages",
      *     description="Returns list of love languages with translations",
      *     security={{"bearerAuth":{}}},
@@ -601,7 +601,7 @@ class ReferenceDataController extends Controller
     /**
      * @OA\Get(
      *     path="/users/reference-data/pets",
-     *     tags={"User settings"},
+     *     tags={"User Settings"},
      *     summary="Get pet preferences",
      *     description="Returns list of pet preferences with translations",
      *     security={{"bearerAuth":{}}},
@@ -661,7 +661,7 @@ class ReferenceDataController extends Controller
     /**
      * @OA\Get(
      *     path="/users/reference-data/alcohol",
-     *     tags={"User settings"},
+     *     tags={"User Settings"},
      *     summary="Get alcohol preferences",
      *     description="Returns list of alcohol preferences with translations",
      *     security={{"bearerAuth":{}}},
@@ -714,7 +714,7 @@ class ReferenceDataController extends Controller
     /**
      * @OA\Get(
      *     path="/users/reference-data/smoking",
-     *     tags={"User settings"},
+     *     tags={"User Settings"},
      *     summary="Get smoking preferences",
      *     description="Returns list of smoking preferences with translations",
      *     security={{"bearerAuth":{}}},
@@ -768,7 +768,7 @@ class ReferenceDataController extends Controller
     /**
      * @OA\Get(
      *     path="/users/reference-data/sport",
-     *     tags={"User settings"},
+     *     tags={"User Settings"},
      *     summary="Get sport preferences",
      *     description="Returns list of sport preferences with translations",
      *     security={{"bearerAuth":{}}},
@@ -821,7 +821,7 @@ class ReferenceDataController extends Controller
     /**
      * @OA\Get(
      *     path="/users/reference-data/food",
-     *     tags={"User settings"},
+     *     tags={"User Settings"},
      *     summary="Get food preferences",
      *     description="Returns list of food preferences with translations",
      *     security={{"bearerAuth":{}}},
@@ -875,7 +875,7 @@ class ReferenceDataController extends Controller
     /**
      * @OA\Get(
      *     path="/users/reference-data/social-network",
-     *     tags={"User settings"},
+     *     tags={"User Settings"},
      *     summary="Get social network preferences",
      *     description="Returns list of social network preferences with translations",
      *     security={{"bearerAuth":{}}},
@@ -928,7 +928,7 @@ class ReferenceDataController extends Controller
     /**
      * @OA\Get(
      *     path="/users/reference-data/sleep",
-     *     tags={"User settings"},
+     *     tags={"User Settings"},
      *     summary="Get sleep chronotypes",
      *     description="Returns list of sleep chronotypes with translations",
      *     security={{"bearerAuth":{}}},
@@ -979,7 +979,7 @@ class ReferenceDataController extends Controller
     /**
      * @OA\Get(
      *     path="/users/reference-data/orientations",
-     *     tags={"User settings"},
+     *     tags={"User Settings"},
      *     summary="Get sexual orientations",
      *     description="Returns list of sexual orientations with translations",
      *     security={{"bearerAuth":{}}},
@@ -1056,7 +1056,7 @@ class ReferenceDataController extends Controller
     /**
      * @OA\Get(
      *     path="/users/reference-data/clubs",
-     *     tags={"User settings"},
+     *     tags={"User Settings"},
      *     summary="Get user clubs and additional clubs",
      *     security={{"bearerAuth":{}}},
      *

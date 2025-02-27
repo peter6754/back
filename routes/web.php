@@ -1,18 +1,18 @@
 <?php
 
-use App\Http\Controllers\Application\PricesController;
-use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\Chat\ChatController;
-use App\Http\Controllers\Migrate\ProxyController;
-use App\Http\Controllers\Payments\PaymentsController;
-use App\Http\Controllers\Payments\StatusesController;
 use App\Http\Controllers\Recommendations\RecommendationsController;
 use App\Http\Controllers\Users\ReferenceDataController;
+use App\Http\Controllers\Application\PricesController;
+use App\Http\Controllers\Payments\PaymentsController;
+use App\Http\Controllers\Payments\StatusesController;
 use App\Http\Controllers\Users\SettingsController;
-use App\Http\Controllers\Users\UserController;
+use App\Http\Controllers\Migrate\ProxyController;
 use App\Http\Controllers\Users\UsersController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Users\InfoController;
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Chat\ChatController;
 use Laravel\Socialite\Facades\Socialite;
+use Illuminate\Support\Facades\Route;
 use OpenApi\Generator;
 
 // Recommendations routes
@@ -130,8 +130,8 @@ Route::prefix('auth')->group(function () {
     Route::any('social/{provider}/callback', [AuthController::class, 'socialCallback']);
     Route::get('social/{provider}', function ($provider) {
         if (
-            ! empty(config("services.{$provider}.client_id")) ||
-            ! empty(config("services.{$provider}.redirect"))
+            !empty(config("services.{$provider}.client_id")) ||
+            !empty(config("services.{$provider}.redirect"))
         ) {
             return Socialite::driver($provider)->redirectUrl(
                 url(config("services.{$provider}.redirect"))
@@ -144,11 +144,11 @@ Route::prefix('auth')->group(function () {
 // Users routes
 Route::prefix('users')->middleware('auth')->group(function () {
     // Users Profile
-    Route::get('info/{id}', [UserController::class, 'getUser']);
+    Route::get('info/{id}', [InfoController::class, 'getUser']);
 
     // My Profile
-    Route::get('profile', [UserController::class, 'getAccountInformation']);
-    Route::put('profile', [UserController::class, 'updateAccountInformation']);
+    Route::get('profile', [UsersController::class, 'getAccountInformation']);
+    Route::put('profile', [UsersController::class, 'updateAccountInformation']);
     Route::get('likes', [UsersController::class, 'getUserLikes']);
 
     // Settings
@@ -188,7 +188,7 @@ Route::prefix('users')->middleware('auth')->group(function () {
 // Default routes
 Route::get('swagger', function () {
     $getGenerator = Generator::scan([
-        base_path().'/app/Http/Controllers',
+        base_path() . '/app/Http/Controllers',
     ]);
 
     return response($getGenerator->toYaml());

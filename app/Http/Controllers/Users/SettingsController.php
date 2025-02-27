@@ -39,7 +39,7 @@ class SettingsController extends Controller
     /**
      * @param Request $request
      * @OA\Delete(
-     *      tags={"User settings"},
+     *      tags={"User Settings"},
      *      path="/users/settings/token",
      *      summary="Remove device token",
      *      security={{"bearerAuth":{}}},
@@ -84,7 +84,7 @@ class SettingsController extends Controller
     /**
      * @param Request $request
      * @OA\Post(
-     *      tags={"User settings"},
+     *      tags={"User Settings"},
      *      path="/users/settings/token",
      *      summary="Add / Register device token",
      *      security={{"bearerAuth":{}}},
@@ -144,7 +144,7 @@ class SettingsController extends Controller
     /**
      * @param Request $request
      * @OA\Get(
-     *      tags={"User settings"},
+     *      tags={"User Settings"},
      *      path="/users/settings/filter",
      *      summary="Get recommendations filters",
      *      security={{"bearerAuth":{}}},
@@ -174,7 +174,7 @@ class SettingsController extends Controller
     /**
      * @param UserFilterSettingsRequest $request
      * @OA\Put(
-     *      tags={"User settings"},
+     *      tags={"User Settings"},
      *      path="/users/settings/filter",
      *      summary="Update recommendations filters",
      *      security={{"bearerAuth":{}}},
