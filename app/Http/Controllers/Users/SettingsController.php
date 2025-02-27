@@ -173,7 +173,7 @@ class SettingsController extends Controller
 
     /**
      * @param UserFilterSettingsRequest $request
-     * @OA\Post(
+     * @OA\Put(
      *      tags={"User settings"},
      *      path="/users/settings/filter",
      *      summary="Update recommendations filters",
