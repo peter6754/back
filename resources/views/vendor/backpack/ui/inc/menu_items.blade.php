@@ -27,7 +27,6 @@
     <x-backpack::menu-item title="Подписки" icon="la la-question" :link="backpack_url('bought-subscriptions')"/>
 @endif
 
-
 <span class="nav-separator">Администрирование</span>
 @if(backpack_user()->hasRole('Superadmin'))
     <x-backpack::menu-dropdown title="Администраторы" icon="la la-lock">
