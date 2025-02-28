@@ -156,6 +156,9 @@ Route::prefix('users')->middleware('auth')->group(function () {
     Route::get('photos/main', [UserPhotosController::class, 'getMainPhoto']);
     Route::patch('photos/main', [UserPhotosController::class, 'setMainPhoto']);
 
+    // User info in registration
+    Route::post('/infoRegistration', [UsersController::class, 'updateUserInfoRegistration']);
+
     // My Profile
     Route::get('profile', [UserController::class, 'getAccountInformation']);
     Route::put('profile', [UserController::class, 'updateAccountInformation']);
