@@ -646,4 +646,112 @@ class UserService
             return ['message' => 'Data updated successfully'];
         });
     }
+
+    /**
+     * Обновить информацию пользователя при регистрации
+     * @param array $data
+     * @param string $userId
+     * @return string[]
+     * @throws \Throwable
+     */
+    public function updateUserInfoRegistration(array $data, string $userId): array
+    {
+
+        try {
+            DB::beginTransaction();
+
+            $user = Secondaryuser::findOrFail($userId);
+
+            if (isset($data['birth_date'])) {
+                $birthDate = Carbon::parse($data['birth_date']);
+                $age = $birthDate->diffInYears(Carbon::now());
+
+                if ($age < 18) {
+                    throw new Exception('Wrong params', 4064);
+                }
+            }
+
+            $updateData = [];
+            $fields = ['name', 'gender', 'email', 'registration_screen', 'username'];
+
+            foreach ($fields as $field) {
+                if (isset($data[$field])) {
+                    $updateData[$field] = $data[$field];
+                }
+            }
+
+            if (isset($data['birth_date'])) {
+                $birthDate = Carbon::parse($data['birth_date']);
+                $updateData['birth_date'] = $birthDate->toDateString();
+                $updateData['age'] = $birthDate->diffInYears(Carbon::now());
+            }
+
+            if (!empty($updateData)) {
+                $user->update($updateData);
+            }
+
+            if (isset($data['family_status'])) {
+                $user->userInformation()->updateOrCreate(
+                    ['user_id' => $userId],
+                    ['family_status' => $data['family_status']]
+                );
+            }
+
+            if (isset($data['sexual_orientation'])) {
+                $user->userInformation()->updateOrCreate(
+                    ['user_id' => $userId],
+                    ['sexual_orientation' => $data['sexual_orientation']]
+                );
+            }
+
+            if (isset($data['interests'])) {
+                $user->interests()->delete();
+                $interests = array_map(fn($id) => ['interest_id' => $id], $data['interests']);
+                $user->interests()->createMany($interests);
+            }
+
+            if (isset($data['relationship_preference_id'])) {
+                $user->relationshipPreference()->updateOrCreate(
+                    ['user_id' => $userId],
+                    ['preference_id' => $data['relationship_preference_id']]
+                );
+            }
+
+            if (isset($data['show_my_orientation']) || isset($data['show_my_gender'])) {
+                $settingsData = [];
+                if (isset($data['show_my_orientation'])) {
+                    $settingsData['show_my_orientation'] = $data['show_my_orientation'];
+                }
+                if (isset($data['show_my_gender'])) {
+                    $settingsData['show_my_gender'] = $data['show_my_gender'];
+                }
+
+                $user->settings()->updateOrCreate(
+                    ['user_id' => $userId],
+                    $settingsData
+                );
+            }
+
+            if (is_array($data['show_me']) && !empty($data['show_me'])) {
+
+                $user->preferences()->delete();
+
+                $preferences = [];
+                foreach ($data['show_me'] as $gender) {
+                    $preferences[] = ['gender' => $gender, 'user_id' => $userId];
+                }
+
+                $user->preferences()->createMany($preferences);
+            }
+
+            DB::commit();
+
+            return ['message' => 'Request has ended successfully'];
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('updateUserInfoRegistration error: ' . $e->getMessage());
+            throw $e;
+        }
+    }
 }
