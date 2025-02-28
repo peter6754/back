@@ -1,18 +1,19 @@
 <?php
 
-use App\Http\Controllers\Recommendations\RecommendationsController;
-use App\Http\Controllers\Users\ReferenceDataController;
 use App\Http\Controllers\Application\PricesController;
-use App\Http\Controllers\Payments\PaymentsController;
-use App\Http\Controllers\Payments\StatusesController;
-use App\Http\Controllers\Users\SettingsController;
-use App\Http\Controllers\Migrate\ProxyController;
-use App\Http\Controllers\Users\UsersController;
-use App\Http\Controllers\Users\InfoController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Chat\ChatController;
-use Laravel\Socialite\Facades\Socialite;
+use App\Http\Controllers\Migrate\ProxyController;
+use App\Http\Controllers\Payments\PaymentsController;
+use App\Http\Controllers\Payments\StatusesController;
+use App\Http\Controllers\Recommendations\RecommendationsController;
+use App\Http\Controllers\Users\ReferenceDataController;
+use App\Http\Controllers\Users\SettingsController;
+use App\Http\Controllers\Users\UserController;
+use App\Http\Controllers\Users\UserPhotosController;
+use App\Http\Controllers\Users\UsersController;
 use Illuminate\Support\Facades\Route;
+use Laravel\Socialite\Facades\Socialite;
 use OpenApi\Generator;
 
 // Recommendations routes
@@ -130,8 +131,8 @@ Route::prefix('auth')->group(function () {
     Route::any('social/{provider}/callback', [AuthController::class, 'socialCallback']);
     Route::get('social/{provider}', function ($provider) {
         if (
-            !empty(config("services.{$provider}.client_id")) ||
-            !empty(config("services.{$provider}.redirect"))
+            ! empty(config("services.{$provider}.client_id")) ||
+            ! empty(config("services.{$provider}.redirect"))
         ) {
             return Socialite::driver($provider)->redirectUrl(
                 url(config("services.{$provider}.redirect"))
@@ -144,25 +145,26 @@ Route::prefix('auth')->group(function () {
 // Users routes
 Route::prefix('users')->middleware('auth')->group(function () {
     // Users Profile
-    Route::get('info/{id}', [InfoController::class, 'getUser']);
+    Route::get('info/{id}', [UserController::class, 'getUser']);
 
-    // User info in registration
-    Route::post('/infoRegistration', [UsersController::class, 'updateUserInfoRegistration']);
+    // Photos route
+    Route::post('photos', [UserPhotosController::class, 'addPhotos']);
+    Route::get('photos', [UserPhotosController::class, 'getPhotos']);
+    Route::delete('photos', [UserPhotosController::class, 'deletePhoto']);
+
+    // Main photo route
+    Route::get('photos/main', [UserPhotosController::class, 'getMainPhoto']);
+    Route::patch('photos/main', [UserPhotosController::class, 'setMainPhoto']);
 
     // My Profile
-    Route::get('profile', [UsersController::class, 'getAccountInformation']);
-    Route::put('profile', [UsersController::class, 'updateAccountInformation']);
+    Route::get('profile', [UserController::class, 'getAccountInformation']);
+    Route::put('profile', [UserController::class, 'updateAccountInformation']);
     Route::get('likes', [UsersController::class, 'getUserLikes']);
 
     // Settings
     Route::prefix('settings')->group(function () {
-        // Tokens for push notifications
         Route::delete('token', [SettingsController::class, 'deleteToken']);
         Route::post('token', [SettingsController::class, 'addToken']);
-
-        // Filters
-        Route::put('filter', [SettingsController::class, 'setFilter']);
-        Route::get('filter', [SettingsController::class, 'getFilter']);
     });
 
     // Справочные данные
@@ -191,17 +193,15 @@ Route::prefix('users')->middleware('auth')->group(function () {
 // Default routes
 Route::get('swagger', function () {
     $getGenerator = Generator::scan([
-        base_path() . '/app/Http/Controllers',
+        base_path().'/app/Http/Controllers',
     ]);
 
     return response($getGenerator->toYaml());
 });
 
 Route::get('/test', function () {
-    $smsCode = new \App\Services\External\GreenSMSService();
-    $smsCode->sendCode('37377807368', 'Test message from GreenSMSService');
-//    $model = new \App\Models\UserReaction;
-//    dd($model->getFillable());
+    $model = new \App\Models\UserReaction;
+    dd($model->getFillable());
 });
 
 Route::get('/', function () {

@@ -66,9 +66,53 @@ class Secondaryuser extends Model
         'is_online' => false,
     ];
 
+    /**
+     * @return Secondaryuser|HasMany
+     */
     public function images()
     {
-        return $this->hasMany(UserImage::class, 'user_id');
+        return $this->hasMany(UserImage::class, 'user_id', 'id');
+    }
+
+    /**
+     * @return UserImage|null
+     */
+    public function mainImage(): ?UserImage
+    {
+        return $this->images()->where('is_main', true)->first();
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getMainImageFid(): ?string
+    {
+        $mainImage = $this->mainImage();
+        return $mainImage ? $mainImage->image : null;
+    }
+
+    /**
+     * @return array
+     */
+    public function getImageFids(): array
+    {
+        return $this->images()->pluck('image')->toArray();
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasImages(): bool
+    {
+        return $this->images()->exists();
+    }
+
+    /**
+     * @return int
+     */
+    public function getImagesCount(): int
+    {
+        return $this->images()->count();
     }
 
     public function verificationRequest()
