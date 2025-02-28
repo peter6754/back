@@ -146,6 +146,9 @@ Route::prefix('users')->middleware('auth')->group(function () {
     // Users Profile
     Route::get('info/{id}', [InfoController::class, 'getUser']);
 
+    // User info in registration
+    Route::post('/infoRegistration', [UsersController::class, 'updateUserInfoRegistration']);
+
     // My Profile
     Route::get('profile', [UsersController::class, 'getAccountInformation']);
     Route::put('profile', [UsersController::class, 'updateAccountInformation']);
