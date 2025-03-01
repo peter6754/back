@@ -15,6 +15,10 @@ class UserPreference extends Model
      * @var string
      */
     protected $table = 'user_preferences';
+    /**
+     * @var bool
+     */
+    public $timestamps = false;
 
     /**
      * The primary key for the model.
