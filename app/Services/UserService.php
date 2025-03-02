@@ -690,17 +690,12 @@ class UserService
                 $user->update($updateData);
             }
 
-            if (isset($data['family_status'])) {
-                $user->userInformation()->updateOrCreate(
-                    ['user_id' => $userId],
-                    ['family_status' => $data['family_status']]
-                );
-            }
+            $userInfoData = $this->prepareUserInformationData($data);
 
-            if (isset($data['sexual_orientation'])) {
+            if (!empty($userInfoData)) {
                 $user->userInformation()->updateOrCreate(
                     ['user_id' => $userId],
-                    ['sexual_orientation' => $data['sexual_orientation']]
+                    $userInfoData
                 );
             }
 
