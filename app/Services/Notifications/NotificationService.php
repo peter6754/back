@@ -42,16 +42,22 @@ class NotificationService
                     continue;
                 }
 
-                Log::info("[NotificationService] provider {$provider}, push token {$token}");
-
-                // Send message
-                if (app(NotificationManager::class)->sendMessage($provider, [
+                Log::info("[NotificationService] provider {$provider}, push token {$token}", [
                     'data' => $additionalData,
                     'sound' => 'default',
                     'body' => $message,
                     'title' => $title,
                     'to' => $token,
-                ]) === false) {
+                ]);
+
+                // Send message
+                if (app(NotificationManager::class)->sendMessage($provider, [
+                        'data' => $additionalData,
+                        'sound' => 'default',
+                        'body' => $message,
+                        'title' => $title,
+                        'to' => $token,
+                    ]) === false) {
                     Log::error("[NotificationService] provider {$provider}, push token {$token} not sent");
                 }
             }
