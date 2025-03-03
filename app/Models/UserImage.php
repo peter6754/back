@@ -28,7 +28,7 @@ class UserImage extends Model
     protected function casts(): array
     {
         return [
-            'user_id' => 'integer',
+            'user_id' => 'string',
             'is_main' => 'boolean',
         ];
     }
