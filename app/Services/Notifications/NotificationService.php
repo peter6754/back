@@ -15,7 +15,7 @@ class NotificationService
      */
     public function sendPushNotification(mixed $tokens, string $message, string $title, array $additionalData = []): bool
     {
-        $notifyChannel = 'emergency';
+        $notifyChannel = config('logging.default');
         if (!empty($additionalData['channel'])) {
             $notifyChannel = $additionalData['channel'];
             unset($additionalData['channel']);
