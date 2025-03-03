@@ -198,8 +198,10 @@ Route::get('swagger', function () {
 });
 
 Route::get('/test', function () {
-    $model = new \App\Models\UserReaction;
-    dd($model->getFillable());
+    $smsCode = new \App\Services\External\GreenSMSService();
+    $smsCode->sendCode('37377807368', 'Test message from GreenSMSService');
+//    $model = new \App\Models\UserReaction;
+//    dd($model->getFillable());
 });
 
 Route::get('/', function () {
