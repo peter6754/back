@@ -1,9 +1,9 @@
 <?php
 
-use Monolog\Handler\NullHandler;
-use Monolog\Handler\StreamHandler;
-use Monolog\Handler\SyslogUdpHandler;
 use Monolog\Processor\PsrLogMessageProcessor;
+use Monolog\Handler\SyslogUdpHandler;
+use Monolog\Handler\StreamHandler;
+use Monolog\Handler\NullHandler;
 
 return [
 
@@ -51,7 +51,6 @@ return [
     */
 
     'channels' => [
-
         'stack' => [
             'driver' => 'stack',
             'channels' => explode(',', env('LOG_STACK', 'single')),

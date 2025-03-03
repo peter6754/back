@@ -15,10 +15,14 @@ class NotificationService
      */
     public function sendPushNotification(mixed $tokens, string $message, string $title, array $additionalData = []): bool
     {
+        if (empty($additionalData['channel'])) {
+            $additionalData['channel'] = null;
+        }
+
         try {
             // Checking push tokens
             if (empty($tokens)) {
-                Log::error('[NotificationService] Empty tokens to send push notification');
+                Log::channel($additionalData['channel'])->error('[NotificationService] Empty tokens to send push notification');
             }
 
             // Object to array
@@ -42,7 +46,7 @@ class NotificationService
                     continue;
                 }
 
-                Log::info("[NotificationService] provider {$provider}, push token {$token}", [
+                Log::channel($additionalData['channel'])->info("[NotificationService] provider {$provider}, push token {$token}", [
                     'data' => $additionalData,
                     'sound' => 'default',
                     'body' => $message,
@@ -58,12 +62,12 @@ class NotificationService
                         'title' => $title,
                         'to' => $token,
                     ]) === false) {
-                    Log::error("[NotificationService] provider {$provider}, push token {$token} not sent");
+                    Log::channel($additionalData['channel'])->error("[NotificationService] provider {$provider}, push token {$token} not sent");
                 }
             }
             return true;
         } catch (\Exception $e) {
-            Log::error('[NotificationService] Exception error', [
+            Log::channel($additionalData['channel'])->error('[NotificationService] Exception error', [
                 $e
             ]);
             return false;
