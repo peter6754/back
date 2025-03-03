@@ -55,27 +55,23 @@ class GreenSMSService
                 return true;
             }
 
+            // Пробуем отправить сообщение через каждый канал в порядке приоритета
             foreach (self::$defaultChannelsPriority as $channel) {
                 try {
-                    if ($channel === 'sms') {
-                        $response = $this->client->sms->send([
-                            'to' => preg_replace("/[^,.0-9]/", '', $phone),
-                            'txt' => $message
-                        ]);
-                    } else {
-                        $response = $this->client->call->send([
-                            'to' => preg_replace("/[^,.0-9]/", '', $phone),
-                            'msg' => $message,
-                            'type' => $channel
-                        ]);
-                    }
+                    // Пробуем отправить сообщение через канал
+                    $response = $this->client->{$channel}->send([
+                        'to' => preg_replace("/[^,.0-9]/", '', $phone),
+                        'txt' => $message
+                    ]);
 
+                    // Если отправка успешна, логируем и выходим из функции
                     if (!empty($response->request_id)) {
                         Log::info("GreenSMSService: сообщение отправлено через {$channel}", [
                             'phone' => $phone,
                             'channel' => $channel,
                             'response' => $response
                         ]);
+
                         return true;
                     }
                 } catch (\Exception $e) {
@@ -83,13 +79,10 @@ class GreenSMSService
                         'phone' => $phone,
                         'error' => $e->getMessage()
                     ]);
-                    continue;
                 }
             }
 
-            // Если все каналы упали
             return false;
-
         } catch (\Exception $e) {
             Log::error("GreenSMSService::sendCode(): {$e->getMessage()}", [
                 'error' => $e->getMessage(),
