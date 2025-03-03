@@ -9,7 +9,7 @@ use App\Http\Controllers\Payments\StatusesController;
 use App\Http\Controllers\Recommendations\RecommendationsController;
 use App\Http\Controllers\Users\ReferenceDataController;
 use App\Http\Controllers\Users\SettingsController;
-use App\Http\Controllers\Users\UserController;
+use App\Http\Controllers\Users\InfoController;
 use App\Http\Controllers\Users\UserPhotosController;
 use App\Http\Controllers\Users\UsersController;
 use Illuminate\Support\Facades\Route;
@@ -145,29 +145,38 @@ Route::prefix('auth')->group(function () {
 // Users routes
 Route::prefix('users')->middleware('auth')->group(function () {
     // Users Profile
-    Route::get('info/{id}', [UserController::class, 'getUser']);
-
-    // Photos route
-    Route::post('photos', [UserPhotosController::class, 'addPhotos']);
-    Route::get('photos', [UserPhotosController::class, 'getPhotos']);
-    Route::delete('photos', [UserPhotosController::class, 'deletePhoto']);
-
-    // Main photo route
-    Route::get('photos/main', [UserPhotosController::class, 'getMainPhoto']);
-    Route::patch('photos/main', [UserPhotosController::class, 'setMainPhoto']);
+    Route::get('info/{id}', [InfoController::class, 'getUser']);
 
     // User info in registration
     Route::post('/infoRegistration', [UsersController::class, 'updateUserInfoRegistration']);
 
     // My Profile
-    Route::get('profile', [UserController::class, 'getAccountInformation']);
-    Route::put('profile', [UserController::class, 'updateAccountInformation']);
+    Route::get('profile', [UsersController::class, 'getAccountInformation']);
+    Route::put('profile', [UsersController::class, 'updateAccountInformation']);
     Route::get('likes', [UsersController::class, 'getUserLikes']);
+
+
+    // Photos route
+    Route::prefix('photos')->group(function () {
+        // CRUD photos
+        Route::delete('/', [UserPhotosController::class, 'deletePhoto']);
+        Route::post('/', [UserPhotosController::class, 'addPhotos']);
+        Route::get('/', [UserPhotosController::class, 'getPhotos']);
+
+        // Main photo route
+        Route::patch('main', [UserPhotosController::class, 'setMainPhoto']);
+        Route::get('main', [UserPhotosController::class, 'getMainPhoto']);
+    });
 
     // Settings
     Route::prefix('settings')->group(function () {
+        // Tokens for push notifications
         Route::delete('token', [SettingsController::class, 'deleteToken']);
         Route::post('token', [SettingsController::class, 'addToken']);
+
+        // Filters
+        Route::put('filter', [SettingsController::class, 'setFilter']);
+        Route::get('filter', [SettingsController::class, 'getFilter']);
     });
 
     // Справочные данные
@@ -200,11 +209,6 @@ Route::get('swagger', function () {
     ]);
 
     return response($getGenerator->toYaml());
-});
-
-Route::get('/test', function () {
-    $model = new \App\Models\UserReaction;
-    dd($model->getFillable());
 });
 
 Route::get('/', function () {
