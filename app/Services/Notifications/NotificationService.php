@@ -15,16 +15,16 @@ class NotificationService
      */
     public function sendPushNotification(mixed $tokens, string $message, string $title, array $additionalData = []): bool
     {
-        $notifyChannel = config('logging.default');
+//        $notifyChannel = config('logging.default');
         if (!empty($additionalData['channel'])) {
-            $notifyChannel = $additionalData['channel'];
+//            $notifyChannel = $additionalData['channel'];
             unset($additionalData['channel']);
         }
 
         try {
             // Checking push tokens
             if (empty($tokens)) {
-                Log::channel($notifyChannel)->error('[NotificationService] Empty tokens to send push notification');
+                Log::error('[NotificationService] Empty tokens to send push notification');
             }
 
             // Object to array
@@ -44,11 +44,11 @@ class NotificationService
 
                 // Provider not found
                 if ($provider === 'unknown') {
-                    Log::channel($notifyChannel)->error("Invalid push token {$token}");
+                    Log::error("Invalid push token {$token}");
                     continue;
                 }
 
-                Log::channel($notifyChannel)->info("[NotificationService] provider {$provider}, push token {$token}", [
+                Log::info("[NotificationService] provider {$provider}, push token {$token}", [
                     'data' => $additionalData,
                     'sound' => 'default',
                     'body' => $message,
@@ -64,12 +64,12 @@ class NotificationService
                         'title' => $title,
                         'to' => $token,
                     ]) === false) {
-                    Log::channel($notifyChannel)->error("[NotificationService] provider {$provider}, push token {$token} not sent");
+                    Log::error("[NotificationService] provider {$provider}, push token {$token} not sent");
                 }
             }
             return true;
         } catch (\Exception $e) {
-            Log::channel($notifyChannel)->error('[NotificationService] Exception error', [
+            Log::error('[NotificationService] Exception error', [
                 $e
             ]);
             return false;
