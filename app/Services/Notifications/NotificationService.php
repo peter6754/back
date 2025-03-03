@@ -16,7 +16,7 @@ class NotificationService
     public function sendPushNotification(mixed $tokens, string $message, string $title, array $additionalData = []): bool
     {
         if (empty($additionalData['channel'])) {
-            $additionalData['channel'] = null;
+            $additionalData['channel'] = 'emergency';
         }
 
         try {
