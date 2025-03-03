@@ -3,6 +3,7 @@
 namespace App\Services\External;
 
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use GreenSMS\GreenSMS;
 
 class GreenSMSService
@@ -18,6 +19,12 @@ class GreenSMSService
     ];
 
     /**
+     * Канал по умолчанию, если все уже использованы
+     * @var string
+     */
+    static string $defaultChannel = 'sms';
+
+    /**
      * @var GreenSMS|null
      */
     protected ?GreenSMS $client = null;
@@ -28,13 +35,11 @@ class GreenSMSService
      */
     public function __construct()
     {
-        // Login / Password default auth
         $authData = [
             'user' => config('greensms.sms_user'),
             'pass' => config('greensms.sms_pass')
         ];
 
-        // GreenSMS token auth
         if (!empty(config('greensms.token'))) {
             $authData['token'] = config('greensms.token');
         }
@@ -52,77 +57,89 @@ class GreenSMSService
     public function sendCode(string $phone, string $message, array $exceptions = []): bool
     {
         try {
-            // Запрещаем работу сервиса в локальной среде
             if (app()->environment('local')) {
 //                return true;
             }
 
-            // Получаем каналы связи с учётом исключений
-            $channels = $this->getChannels($exceptions);
+            $normalizedPhone = preg_replace("/[^0-9]/", '', $phone);
+            $channels = array_diff(self::$defaultChannelsPriority, $exceptions);
+
+            // Получаем историю использованных каналов для этого номера
+            $usedChannels = Cache::get('greensms_used_channels:' . $normalizedPhone, []);
+
+            // Сортируем каналы: сначала неиспользованные, потом использованные
+            $sortedChannels = [];
+            foreach ($channels as $channel) {
+                if (!in_array($channel, $usedChannels)) {
+                    $sortedChannels[] = $channel;
+                }
+            }
+
+            // Если все каналы уже использованы, берем канал по умолчанию
+            if (empty($sortedChannels)) {
+                $sortedChannels[] = self::$defaultChannel;
+            } else {
+                // Добавляем использованные каналы после неиспользованных
+                foreach ($channels as $channel) {
+                    if (in_array($channel, $usedChannels)) {
+                        $sortedChannels[] = $channel;
+                    }
+                }
+            }
 
             // Пробуем отправить сообщение через каждый канал в порядке приоритета
-            foreach ($channels as $channel) {
+            foreach ($sortedChannels as $channel) {
                 try {
-                    // Параметры отправки (по умолчанию для всех каналов)
-                    $sendParams = [];
+                    $sendParams = [
+                        'to' => $normalizedPhone,
+                        'txt' => $message
+                    ];
 
-                    // Канал-специфичные параметры
                     switch ($channel) {
                         case 'telegram':
-                            $sendParams['txt'] = preg_replace("/[^,.0-9]/", '', $message);
-                            break;
-                        case 'sms':
-                            $sendParams['from'] = 'TinderOne';
+                            $sendParams['txt'] = preg_replace("/[^0-9]/", '', $sendParams['txt']);
                             break;
                         case 'whatsapp':
                             $sendParams['from'] = 'GREENSMS';
                             break;
+                        case 'sms':
+                            $sendParams['from'] = 'TinderOne';
+                            break;
                     }
 
-                    // Пробуем отправить сообщение через канал
-                    $response = $this->client->{$channel}->send(array_merge([
-                        'to' => preg_replace("/[^,.0-9]/", '', $phone),
-                        'txt' => $message
-                    ], $sendParams));
+                    $response = $this->client->{$channel}->send($sendParams);
 
-                    // Если отправка успешна, логируем и выходим из функции
                     if (!empty($response->request_id)) {
+                        // Обновляем историю использованных каналов
+                        if (!in_array($channel, $usedChannels)) {
+                            $usedChannels[] = $channel;
+                            Cache::put('greensms_used_channels:' . $normalizedPhone, $usedChannels, 120);
+                        }
+
                         Log::info("GreenSMSService: сообщение отправлено через {$channel}", [
-                            'phone' => $phone,
-                            'channel' => $channel,
-                            'response' => $response
+                            'phone' => $normalizedPhone,
+                            'channel' => $channel
                         ]);
 
                         return true;
                     }
                 } catch (\Exception $e) {
                     Log::warning("GreenSMSService: не удалось отправить через {$channel}", [
-                        'phone' => $phone,
+                        'phone' => $normalizedPhone,
                         'error' => $e->getMessage()
                     ]);
+                    continue;
                 }
             }
 
             return false;
         } catch (\Exception $e) {
             Log::error("GreenSMSService::sendCode(): {$e->getMessage()}", [
-                'error' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
+                'phone' => $phone,
+                'error' => $e->getMessage()
             ]);
             return false;
         }
-    }
-
-    /**
-     * Получение каналов за вычетом исключений
-     * @param array $exceptions
-     * @return array
-     */
-    function getChannels(array $exceptions = []): array
-    {
-        return array_diff(self::$defaultChannelsPriority, $exceptions);
     }
 
     /**
