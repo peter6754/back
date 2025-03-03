@@ -54,7 +54,7 @@ class GreenSMSService
         try {
             // Запрещаем работу сервиса в локальной среде
             if (app()->environment('local')) {
-                return true;
+//                return true;
             }
 
             // Получаем каналы связи с учётом исключений
@@ -70,6 +70,9 @@ class GreenSMSService
                     switch ($channel) {
                         case 'telegram':
                             $sendParams['txt'] = preg_replace("/[^,.0-9]/", '', $message);
+                            break;
+                        case 'sms':
+                            $sendParams['from'] = 'TinderOne';
                             break;
                         case 'whatsapp':
                             $sendParams['from'] = 'GREENSMS';
