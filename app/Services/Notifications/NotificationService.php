@@ -44,7 +44,7 @@ class NotificationService
 
                 // Provider not found
                 if ($provider === 'unknown') {
-                    Log::error("Invalid push token {$token}");
+                    Log::channel($notifyChannel)->error("Invalid push token {$token}");
                     continue;
                 }
 
