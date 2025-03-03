@@ -65,5 +65,10 @@ return [
         'team_id' => env('APPLE_TEAM_ID'),
         'key_id' => env('APPLE_KEY_ID'),
         'private_key' => env('APPLE_PRIVATE_KEY'),
+    ],
+
+    'seaweedfs' => [
+        'master_url' => env('SEAWEEDFS_MASTER_URL', 'http://193.233.103.132:9333'),
+        'dev_volume_url' => env('DEV_SEAWEEDFS_VOLUME_URL', 'http://localhost:8080'),
     ]
 ];

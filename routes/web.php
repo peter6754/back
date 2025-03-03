@@ -1,18 +1,19 @@
 <?php
 
-use App\Http\Controllers\Recommendations\RecommendationsController;
-use App\Http\Controllers\Users\ReferenceDataController;
 use App\Http\Controllers\Application\PricesController;
-use App\Http\Controllers\Payments\PaymentsController;
-use App\Http\Controllers\Payments\StatusesController;
-use App\Http\Controllers\Users\SettingsController;
-use App\Http\Controllers\Migrate\ProxyController;
-use App\Http\Controllers\Users\UsersController;
-use App\Http\Controllers\Users\InfoController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Chat\ChatController;
-use Laravel\Socialite\Facades\Socialite;
+use App\Http\Controllers\Migrate\ProxyController;
+use App\Http\Controllers\Payments\PaymentsController;
+use App\Http\Controllers\Payments\StatusesController;
+use App\Http\Controllers\Recommendations\RecommendationsController;
+use App\Http\Controllers\Users\ReferenceDataController;
+use App\Http\Controllers\Users\SettingsController;
+use App\Http\Controllers\Users\InfoController;
+use App\Http\Controllers\Users\UserPhotosController;
+use App\Http\Controllers\Users\UsersController;
 use Illuminate\Support\Facades\Route;
+use Laravel\Socialite\Facades\Socialite;
 use OpenApi\Generator;
 
 // Recommendations routes
@@ -130,8 +131,8 @@ Route::prefix('auth')->group(function () {
     Route::any('social/{provider}/callback', [AuthController::class, 'socialCallback']);
     Route::get('social/{provider}', function ($provider) {
         if (
-            !empty(config("services.{$provider}.client_id")) ||
-            !empty(config("services.{$provider}.redirect"))
+            ! empty(config("services.{$provider}.client_id")) ||
+            ! empty(config("services.{$provider}.redirect"))
         ) {
             return Socialite::driver($provider)->redirectUrl(
                 url(config("services.{$provider}.redirect"))
@@ -153,6 +154,19 @@ Route::prefix('users')->middleware('auth')->group(function () {
     Route::get('profile', [UsersController::class, 'getAccountInformation']);
     Route::put('profile', [UsersController::class, 'updateAccountInformation']);
     Route::get('likes', [UsersController::class, 'getUserLikes']);
+
+
+    // Photos route
+    Route::prefix('photos')->group(function () {
+        // CRUD photos
+        Route::delete('/', [UserPhotosController::class, 'deletePhoto']);
+        Route::post('/', [UserPhotosController::class, 'addPhotos']);
+        Route::get('/', [UserPhotosController::class, 'getPhotos']);
+
+        // Main photo route
+        Route::patch('main', [UserPhotosController::class, 'setMainPhoto']);
+        Route::get('main', [UserPhotosController::class, 'getMainPhoto']);
+    });
 
     // Settings
     Route::prefix('settings')->group(function () {
@@ -188,18 +202,17 @@ Route::prefix('users')->middleware('auth')->group(function () {
     });
 });
 
+Route::prefix('users')->group(function () {
+    Route::get('email-exist', [UsersController::class, 'getEmailExistenceStatus']);
+});
+
 // Default routes
 Route::get('swagger', function () {
     $getGenerator = Generator::scan([
-        base_path() . '/app/Http/Controllers',
+        base_path().'/app/Http/Controllers',
     ]);
 
     return response($getGenerator->toYaml());
-});
-
-Route::get('/test', function () {
-    $model = new \App\Models\UserReaction;
-    dd($model->getFillable());
 });
 
 Route::get('/', function () {

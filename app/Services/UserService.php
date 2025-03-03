@@ -702,7 +702,14 @@ class UserService
             if (! empty($userInfoData)) {
                 $user->userInformation()->updateOrCreate(
                     ['user_id' => $userId],
-                    $userInfoData
+                    ['family_status' => $data['family_status']]
+                );
+            }
+
+            if (isset($data['sexual_orientation'])) {
+                $user->userInformation()->updateOrCreate(
+                    ['user_id' => $userId],
+                    ['sexual_orientation' => $data['sexual_orientation']]
                 );
             }
 
@@ -754,6 +761,22 @@ class UserService
             DB::rollBack();
             Log::error('updateUserInfoRegistration error: '.$e->getMessage());
             throw $e;
+        }
+    }
+
+    /**
+     * Проверяет существование email
+     *
+     * @param string $email
+     * @return bool
+     * @throws Exception
+     */
+    public function getEmailExistenceStatus(string $email): bool
+    {
+        try {
+            return Secondaryuser::where('email', $email)->exists();
+        } catch (Exception $e) {
+            throw new Exception('Ошибка при проверке существования email: ' . $e->getMessage(), 500);
         }
     }
 }

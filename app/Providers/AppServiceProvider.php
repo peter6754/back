@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\Payments\PaymentsService;
 use App\Services\External\GreenSMSService;
+use App\Services\SeaweedFsService;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Event;
 use App\Services\AuthService;
@@ -60,6 +61,10 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(JwtService::class, function () {
             return new JwtService();
+        });
+
+        $this->app->bind(SeaweedFsService::class, function ($app) {
+            return new SeaweedFsService();
         });
 
     }

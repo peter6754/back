@@ -1,9 +1,9 @@
 <?php
 
-use Monolog\Handler\NullHandler;
-use Monolog\Handler\StreamHandler;
-use Monolog\Handler\SyslogUdpHandler;
 use Monolog\Processor\PsrLogMessageProcessor;
+use Monolog\Handler\SyslogUdpHandler;
+use Monolog\Handler\StreamHandler;
+use Monolog\Handler\NullHandler;
 
 return [
 
@@ -51,7 +51,6 @@ return [
     */
 
     'channels' => [
-
         'stack' => [
             'driver' => 'stack',
             'channels' => explode(',', env('LOG_STACK', 'single')),
@@ -130,6 +129,13 @@ return [
         // Custom logs channels
         'recommendations' => [
             'path' => storage_path('logs/recommendations.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => env('LOG_DAILY_DAYS', 14),
+            'driver' => 'daily'
+        ],
+
+        'authservice' => [
+            'path' => storage_path('logs/authservice.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => env('LOG_DAILY_DAYS', 14),
             'driver' => 'daily'
