@@ -67,22 +67,23 @@ class AuthService
 
         if ($user) {
             // Отправка SMS зарегистрированному пользователю
-            Log::info("[Login], send code {$code}, user: " . json_encode($user));
+            Log::channel("authservice")->info("[Login], send code {$code}, user: " . json_encode($user));
             if (!in_array($userPhone, $this->specialNumbers)) {
                 $this->greenSmsService->sendCode($userPhone, "Ваш код подтверждения: {$code}");
             }
             $type = 'login';
         } else {
             // Отправка push-уведомления новому пользователю
-            Log::info("[Register], send code {$code}, new user: " . $userPhone);
+            Log::channel("authservice")->info("[Register], send code {$code}, new user: " . $userPhone);
             if ($userToken === "huawei-device-token") {
                 $this->greenSmsService->sendCode($userPhone, "Ваш код подтверждения: {$code}", [
                     'sms'
                 ]);
             } else {
                 (new NotificationService())->sendPushNotification($userToken ?? "",
-                    $code, "Ваш код подтверждения"
-                );
+                    $code, "Ваш код подтверждения", [
+                        'channel' => 'authservice',
+                    ]);
             }
             $type = 'register';
         }
@@ -102,7 +103,7 @@ class AuthService
      */
     public function verifyLogin($body, $tokenPayload): array
     {
-        Log::info("verifyLogin", [
+        Log::channel("authservice")->info("verifyLogin", [
             'tokenPayload' => $tokenPayload,
             'body' => $body,
         ]);
@@ -112,7 +113,7 @@ class AuthService
 
         // Проверяем, не удален ли пользователь
         if ($user && $user->mode === 'deleted') {
-            Log::warning("verifyLogin is FORBIDDEN", [
+            Log::channel("authservice")->warning("verifyLogin is FORBIDDEN", [
                 'body' => $body,
                 'tokenPayload' => $tokenPayload,
                 'user' => $user
@@ -124,7 +125,7 @@ class AuthService
             !password_verify($body['code'], $tokenPayload['code']) &&
             !in_array($body['code'], ['7878', '1409'])
         ) {
-            Log::warning("verifyLogin is INVALID CODE", [
+            Log::channel("authservice")->warning("verifyLogin is INVALID CODE", [
                 'tokenPayload' => $tokenPayload,
                 'body' => $body,
                 'user' => $user
@@ -191,7 +192,7 @@ class AuthService
 
         // Проверяем, не удален ли пользователь
         if ($account && $account->user->mode === 'deleted') {
-            Log::warning("loginBySocial is FORBIDDEN", [
+            Log::channel("authservice")->warning("loginBySocial is FORBIDDEN", [
                 'user' => $account
             ]);
 
@@ -261,7 +262,7 @@ class AuthService
 
         // Проверяем, не удален ли пользователь
         if ($account && $account->user->mode === 'deleted') {
-            Log::warning("loginBySocial is FORBIDDEN", [
+            Log::channel("authservice")->warning("loginBySocial is FORBIDDEN", [
                 'user' => $account
             ]);
 
