@@ -116,7 +116,7 @@ class GreenSMSService
                             Cache::put('greensms_used_channels:' . $normalizedPhone, $usedChannels, 120);
                         }
 
-                        Log::info("GreenSMSService: сообщение отправлено через {$channel}", [
+                        Log::channel("greensms")->info("GreenSMSService: сообщение отправлено через {$channel}", [
                             'phone' => $normalizedPhone,
                             'channel' => $channel
                         ]);
@@ -124,7 +124,7 @@ class GreenSMSService
                         return true;
                     }
                 } catch (\Exception $e) {
-                    Log::warning("GreenSMSService: не удалось отправить через {$channel}", [
+                    Log::channel("greensms")->warning("GreenSMSService: не удалось отправить через {$channel}", [
                         'phone' => $normalizedPhone,
                         'error' => $e->getMessage()
                     ]);
@@ -134,7 +134,7 @@ class GreenSMSService
 
             return false;
         } catch (\Exception $e) {
-            Log::error("GreenSMSService::sendCode(): {$e->getMessage()}", [
+            Log::channel("greensms")->error("GreenSMSService::sendCode(): {$e->getMessage()}", [
                 'phone' => $phone,
                 'error' => $e->getMessage()
             ]);
