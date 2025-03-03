@@ -8,13 +8,12 @@ use GreenSMS\GreenSMS;
 class GreenSMSService
 {
     /**
-     * Default channels priority for sending messages
+     * Список каналов по умолчанию в порядке приоритета
      * @var array|string[]
      */
     static array $defaultChannelsPriority = [
         'whatsapp',
         'telegram',
-        'viber',
         'sms'
     ];
 
@@ -24,6 +23,7 @@ class GreenSMSService
     protected ?GreenSMS $client = null;
 
     /**
+     * GreenSMSService constructor.
      * @throws \Exception
      */
     public function __construct()
@@ -43,26 +43,47 @@ class GreenSMSService
     }
 
     /**
-     * Попытка отправки через каскад каналов: telegram -> viber -> whatsapp -> sms
+     * Отправка кода на указанный номер телефона через доступные каналы связи
      * @param string $phone
      * @param string $message
+     * @param array $exceptions
      * @return bool
      */
-    public function sendCode(string $phone, string $message): bool
+    public function sendCode(string $phone, string $message, array $exceptions = []): bool
     {
         try {
+            // Запрещаем работу сервиса в локальной среде
             if (app()->environment('local')) {
-                return true;
+//                return true;
             }
 
+            // Получаем каналы связи с учётом исключений
+            $channels = $this->getChannels($exceptions);
+
+            var_dump($channels);
+            exit;
+
             // Пробуем отправить сообщение через каждый канал в порядке приоритета
-            foreach (self::$defaultChannelsPriority as $channel) {
+            foreach ($channels as $channel) {
                 try {
+                    // Параметры отправки (по умолчанию для всех каналов)
+                    $sendParams = [];
+
+                    // Канал-специфичные параметры
+                    switch ($channel) {
+                        case 'telegram':
+                            $sendParams['txt'] = preg_replace("/[^,.0-9]/", '', $message);
+                            break;
+                        case 'whatsapp':
+                            $sendParams['from'] = 'GREENSMS';
+                            break;
+                    }
+
                     // Пробуем отправить сообщение через канал
-                    $response = $this->client->{$channel}->send([
+                    $response = $this->client->{$channel}->send(array_merge([
                         'to' => preg_replace("/[^,.0-9]/", '', $phone),
                         'txt' => $message
-                    ]);
+                    ], $sendParams));
 
                     // Если отправка успешна, логируем и выходим из функции
                     if (!empty($response->request_id)) {
@@ -94,6 +115,21 @@ class GreenSMSService
         }
     }
 
+    /**
+     * Получение каналов за вычетом исключений
+     * @param array $exceptions
+     * @return array
+     */
+    function getChannels(array $exceptions = []): array
+    {
+        return array_diff(self::$defaultChannelsPriority, $exceptions);
+    }
+
+    /**
+     * Получение баланса
+     * @return float
+     * @throws \Exception
+     */
     public function getBalance()
     {
         $response = $this->client->account->balance();

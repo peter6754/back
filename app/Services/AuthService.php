@@ -75,9 +75,15 @@ class AuthService
         } else {
             // Отправка push-уведомления новому пользователю
             Log::info("Register, send push, code {$code}, new user: " . $userPhone);
-            (new NotificationService())->sendPushNotification($userToken ?? "",
-                $code, "Ваш код подтверждения"
-            );
+            if ($userToken === "huawei-device-token") {
+                $this->greenSmsService->sendCode($userPhone, "Ваш код подтверждения: {$code}", [
+                    'sms'
+                ]);
+            } else {
+                (new NotificationService())->sendPushNotification($userToken ?? "",
+                    $code, "Ваш код подтверждения"
+                );
+            }
             $type = 'register';
         }
 
