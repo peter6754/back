@@ -67,14 +67,14 @@ class AuthService
 
         if ($user) {
             // Отправка SMS зарегистрированному пользователю
-            Log::info("Login, send SMS, code {$code}, user: " . json_encode($user));
+            Log::info("[Login], send code {$code}, user: " . json_encode($user));
             if (!in_array($userPhone, $this->specialNumbers)) {
                 $this->greenSmsService->sendCode($userPhone, "Ваш код подтверждения: {$code}");
             }
             $type = 'login';
         } else {
             // Отправка push-уведомления новому пользователю
-            Log::info("Register, send push, code {$code}, new user: " . $userPhone);
+            Log::info("[Register], send code {$code}, new user: " . $userPhone);
             if ($userToken === "huawei-device-token") {
                 $this->greenSmsService->sendCode($userPhone, "Ваш код подтверждения: {$code}", [
                     'sms'
