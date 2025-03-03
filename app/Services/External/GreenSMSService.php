@@ -54,14 +54,11 @@ class GreenSMSService
         try {
             // Запрещаем работу сервиса в локальной среде
             if (app()->environment('local')) {
-//                return true;
+                return true;
             }
 
             // Получаем каналы связи с учётом исключений
             $channels = $this->getChannels($exceptions);
-
-            var_dump($channels);
-            exit;
 
             // Пробуем отправить сообщение через каждый канал в порядке приоритета
             foreach ($channels as $channel) {
