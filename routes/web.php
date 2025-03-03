@@ -202,6 +202,10 @@ Route::prefix('users')->middleware('auth')->group(function () {
     });
 });
 
+Route::prefix('users')->group(function () {
+    Route::get('email-exist', [UsersController::class, 'getEmailExistenceStatus']);
+});
+
 // Default routes
 Route::get('swagger', function () {
     $getGenerator = Generator::scan([
