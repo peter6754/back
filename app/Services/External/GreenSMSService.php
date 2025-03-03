@@ -58,7 +58,7 @@ class GreenSMSService
     {
         try {
             if (app()->environment('local')) {
-//                return true;
+                return true;
             }
 
             $normalizedPhone = preg_replace("/[^0-9]/", '', $phone);
