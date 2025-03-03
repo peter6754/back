@@ -740,4 +740,97 @@ class UsersController extends Controller
             );
         }
     }
+
+    /**
+     * @OA\Get(
+     *     path="/users/email-exist",
+     *     summary="get email exist status",
+     *     description="check email exist status",
+     *     tags={"Users email exist check"},
+     *     @OA\Parameter(
+     *         name="email",
+     *         in="query",
+     *         description="Email для проверки",
+     *         required=true,
+     *         @OA\Schema(
+     *             type="string",
+     *             format="email"
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Успешный ответ",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="status",
+     *                 type="boolean",
+     *                 description="true - email существует, false - не существует"
+     *             ),
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 description="Сообщение об успехе"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Некорректный запрос",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="status",
+     *                 type="boolean",
+     *                 example=false
+     *             ),
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 example="Некорректный email адрес"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="status",
+     *                 type="boolean",
+     *                 example=false
+     *             ),
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 example="Error check email exist"
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function getEmailExistenceStatus(Request $request): JsonResponse
+    {
+        $email = $request->query('email');
+
+        if (!$email) {
+            return $this->errorResponse('Email обязателен для заполнения', 400);
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return $this->errorResponse('Некорректный формат email', 400);
+        }
+
+        try {
+            $exists = $this->userService->getEmailExistenceStatus($email);
+
+            return $this->successResponse([
+                'status' => $exists,
+                'message' => $exists ? 'Email существует' : 'Email не существует'
+            ]);
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage(),
+                (int)$e->getCode() ?: 500
+            );
+        }
+    }
 }

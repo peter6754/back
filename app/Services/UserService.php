@@ -754,4 +754,20 @@ class UserService
             throw $e;
         }
     }
+
+    /**
+     * Проверяет существование email
+     *
+     * @param string $email
+     * @return bool
+     * @throws Exception
+     */
+    public function getEmailExistenceStatus(string $email): bool
+    {
+        try {
+            return Secondaryuser::where('email', $email)->exists();
+        } catch (Exception $e) {
+            throw new Exception('Ошибка при проверке существования email: ' . $e->getMessage(), 500);
+        }
+    }
 }
