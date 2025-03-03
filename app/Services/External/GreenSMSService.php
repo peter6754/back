@@ -13,8 +13,8 @@ class GreenSMSService
      * @var array|string[]
      */
     static array $defaultChannelsPriority = [
-        'whatsapp',
         'telegram',
+        'whatsapp',
         'sms'
     ];
 
