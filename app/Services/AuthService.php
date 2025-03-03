@@ -69,7 +69,7 @@ class AuthService
             // Отправка SMS зарегистрированному пользователю
             Log::info("Login, send SMS, code {$code}, user: " . json_encode($user));
             if (!in_array($userPhone, $this->specialNumbers)) {
-                $this->greenSmsService->sendSMS($userPhone, "Ваш код подтверждения: {$code}");
+                $this->greenSmsService->sendCode($userPhone, "Ваш код подтверждения: {$code}");
             }
             $type = 'login';
         } else {
