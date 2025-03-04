@@ -46,7 +46,7 @@ class Secondaryuser extends Model
      * @var array
      */
     protected $casts = [
-        'birth_date' => 'date',
+        'birth_date' => 'date:Y-m-d',
         'lat' => 'decimal:8',
         'long' => 'decimal:8',
         'is_online' => 'boolean',
