@@ -763,4 +763,44 @@ class UserService
             throw new Exception('Ошибка при проверке существования email: ' . $e->getMessage(), 500);
         }
     }
+
+    /**
+     * Get user packages and limits
+     *
+     * @param string $userId
+     * @return array
+     * @throws Exception
+     */
+    public function getUserPackages(string $userId): array
+    {
+        try {
+            $user = Secondaryuser::with([
+                'userInformation:user_id,superboom_due_date,superbooms,superlikes',
+                'activeSubscription.package.subscription:id,type'
+            ])
+                ->find($userId, ['id']);
+
+            if (!$user) {
+                throw new Exception('User not found', 404);
+            }
+
+            $subscriptionData = null;
+            if ($user->activeSubscription) {
+                $subscriptionData = [
+                    'type' => $user->activeSubscription->package->subscription->type ?? null,
+                    'due_date' => $user->activeSubscription->due_date->format('Y-m-d H:i:s')
+                ];
+            }
+
+            return [
+                'subscription_package' => $subscriptionData,
+                'superboom_due_date' => $user->userInformation->superboom_due_date ?? null,
+                'superbooms' => $user->userInformation->superbooms ?? 0,
+                'superlikes' => $user->userInformation->superlikes ?? 0
+            ];
+
+        } catch (Exception $e) {
+            throw new Exception('Failed to get user packages: ' . $e->getMessage(), 500);
+        }
+    }
 }
