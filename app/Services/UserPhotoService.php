@@ -43,6 +43,9 @@ class UserPhotoService
             $photosFids = [];
             $isFirstPhoto = $existingPhotosCount === 0; // Первое фото автоматически главное
 
+            // Проверяем, нужно ли устанавливать дату регистрации
+            $shouldSetRegistrationDate = empty($user->registration_date);
+
             foreach ($photos as $index => $photo) {
                 $fid = $this->imageOptimizationService->optimizeAndUploadPhoto($photo);
                 $photosFids[] = [
@@ -53,6 +56,12 @@ class UserPhotoService
             }
 
             UserImage::insert($photosFids);
+
+            // Устанавливаем дату регистрации, если она еще не установлена
+            if ($shouldSetRegistrationDate) {
+                $user->registration_date = now();
+                $user->save();
+            }
 
             DB::commit();
 
