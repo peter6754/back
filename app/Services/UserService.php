@@ -672,7 +672,7 @@ class UserService
             }
 
             $updateData = [];
-            $fields = ['name', 'gender', 'email', 'registration_screen', 'username'];
+            $fields = ['name', 'gender', 'email', 'registration_screen', 'username', 'sexual_orientation'];
 
             foreach ($fields as $field) {
                 if (isset($data[$field])) {
@@ -694,13 +694,6 @@ class UserService
                 $user->userInformation()->updateOrCreate(
                     ['user_id' => $userId],
                     ['family_status' => $data['family_status']]
-                );
-            }
-
-            if (isset($data['sexual_orientation'])) {
-                $user->userInformation()->updateOrCreate(
-                    ['user_id' => $userId],
-                    ['sexual_orientation' => $data['sexual_orientation']]
                 );
             }
 
