@@ -833,4 +833,57 @@ class UsersController extends Controller
             );
         }
     }
+    /**
+     * @OA\Get(
+     *     path="/users/packagesInfo",
+     *     tags={"User Packages"},
+     *     summary="Get user packages and limits",
+     *     description="Returns user subscription packages and superboom/superlike limits",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Response(
+     *          response=200,
+     *          description="Successful operation",
+     *          @OA\JsonContent(
+     *              @OA\Property(property="meta", type="object",
+     *                  @OA\Property(property="error", type="null"),
+     *                  @OA\Property(property="status", type="integer", example=200)
+     *              ),
+     *              @OA\Property(property="data", type="object",
+     *                  @OA\Property(property="subscription_package", type="object", nullable=true,
+     *                      @OA\Property(property="type", type="string", example="premium"),
+     *                      @OA\Property(property="due_date", type="string", format="date-time", example="2038-12-31 00:00:00")
+     *                  ),
+     *                  @OA\Property(property="superboom_due_date", type="string", format="date-time", nullable=true, example="2038-12-31 00:00:00"),
+     *                  @OA\Property(property="superbooms", type="integer", example=5),
+     *                  @OA\Property(property="superlikes", type="integer", example=257)
+     *              )
+     *          )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(ref="#/components/schemas/Unauthorized")
+     *     ),
+     *
+     *     @OA\Response(
+     *          response=500,
+     *          description="Server error"
+     *      )
+     * )
+     */
+    public function getUserPackages(Request $request): JsonResponse
+    {
+        try {
+            $userPackages = $this->userService->getUserPackages($request->user()->id);
+
+            return $this->successResponse($userPackages);
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage(),
+                (int)$e->getCode()
+            );
+        }
+    }
 }
