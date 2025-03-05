@@ -681,8 +681,8 @@ class UserService
             }
 
             if (isset($data['birth_date'])) {
-                $birthDate = Carbon::parse($data['birth_date']);
-                $updateData['birth_date'] = $birthDate->toDateString();
+                $birthDate = Carbon::createFromFormat('Y-m-d', $data['birth_date']);
+                $updateData['birth_date'] = $birthDate->format('Y-m-d');
                 $updateData['age'] = $birthDate->diffInYears(Carbon::now());
             }
 
