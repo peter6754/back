@@ -18,7 +18,8 @@ class UserPhotosRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'photo' => [
+            'photo' => 'required|array',
+            'photo.*' => [
                 'required',
                 'file',
                 'image',
@@ -35,10 +36,12 @@ class UserPhotosRequest extends FormRequest
     {
         return [
             'photo.required' => 'Необходимо загрузить фото',
-            'photo.file' => 'Файл должен быть файлом',
-            'photo.image' => 'Файл должен быть изображением',
-            'photo.mimes' => 'Поддерживаемые форматы: jpeg, jpg, png, gif, webp',
-            'photo.max' => 'Размер файла не должен превышать 10MB',
+            'photo.array' => 'Неверный формат данных',
+            'photo.*.required' => 'Фото обязательно для загрузки',
+            'photo.*.file' => 'Файл должен быть файлом',
+            'photo.*.image' => 'Файл должен быть изображением',
+            'photo.*.mimes' => 'Поддерживаемые форматы: jpeg, jpg, png, gif, webp',
+            'photo.*.max' => 'Размер файла не должен превышать 10MB',
         ];
     }
 
