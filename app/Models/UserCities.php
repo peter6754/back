@@ -10,7 +10,7 @@ class UserCities extends Model
     use HasFactory;
     protected $table = 'user_cities';
     public $incrementing = false;
-    protected $fillable = ['user_id', 'lat', '`long`', 'formatted_address', 'place_id'];
+    protected $fillable = ['user_id', 'lat', 'long', 'formatted_address', 'place_id'];
     public $timestamps = false;
 
     /**
