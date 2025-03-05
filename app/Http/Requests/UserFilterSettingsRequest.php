@@ -33,8 +33,7 @@ class UserFilterSettingsRequest extends FormRequest
                 'string',
                 Rule::in(['male', 'female', 'm_f', 'm_m', 'f_f'])
             ],
-            'cities' => 'sometimes|array',
-            'cities.*' => 'string'
+            'cities' => 'string'
         ];
     }
 
