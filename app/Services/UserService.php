@@ -628,7 +628,14 @@ class UserService
                 'is_global_search' => $data['is_global_search'] ?? null,
                 'search_radius' => $data['search_radius'] ?? null,
                 'age_range' => $data['age_range'] ?? null,
-            ]);
+                'filter_cities' => $data['cities'] ?? null,
+            ], function ($value) {
+                return $value !== null;
+            });
+
+            UserSettings::updateOrCreate([
+                'user_id' => $user_id,
+            ], $updateData);
 
             // Обновляем предпочтения по полу, если переданы
             if (isset($data['show_me'])) {
@@ -691,7 +698,9 @@ class UserService
                 $user->update($updateData);
             }
 
-            if (isset($data['family_status'])) {
+            $userInfoData = $this->prepareUserInformationData($data);
+
+            if (! empty($userInfoData)) {
                 $user->userInformation()->updateOrCreate(
                     ['user_id' => $userId],
                     ['family_status' => $data['family_status']]

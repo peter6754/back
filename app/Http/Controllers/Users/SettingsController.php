@@ -211,6 +211,15 @@ class SettingsController extends Controller
      *                      example="male",
      *                      type="string"
      *                  )
+     *              ),
+     *              @OA\Property(
+     *                  description="Cities filter array",
+     *                  property="cities",
+     *                  type="array",
+     *                  @OA\Items(
+     *                      example="Moscow",
+     *                      type="string"
+     *                  )
      *              )
      *          )
      *      ),
