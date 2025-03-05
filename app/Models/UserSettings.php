@@ -71,7 +71,7 @@ class UserSettings extends Model
         'age_range',
         'visibility',
         'recommendations',
-        'age_range'
+        'filter_cities'
     ];
 
     /**
@@ -102,6 +102,7 @@ class UserSettings extends Model
         'is_phone_verified' => 'boolean',
         'is_email_verified' => 'boolean',
         'search_radius' => 'integer',
+        'filter_cities' => 'array',
     ];
 
     /**
