@@ -35,6 +35,12 @@ class UserInformation extends Model
         'family_status',
         'role',
         'company',
+        'streak',
+        'superlikes',
+        'superbooms',
+        'superboom_due_date',
+        'like_update',
+        'last_banner'
     ];
 
     /**
