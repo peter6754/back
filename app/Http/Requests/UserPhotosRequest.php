@@ -18,9 +18,15 @@ class UserPhotosRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'photo' => 'required|array',
+            'photo' => [
+                'nullable',
+                'file',
+                'image',
+                'mimes:jpeg,jpg,png,gif,webp',
+                'max:10240',
+            ],
             'photo.*' => [
-                'required',
+                'nullable',
                 'file',
                 'image',
                 'mimes:jpeg,jpg,png,gif,webp',
@@ -29,17 +35,28 @@ class UserPhotosRequest extends FormRequest
         ];
     }
 
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            if (!$this->hasFile('photo') && !($this->hasFile('photo.0'))) {
+                $validator->errors()->add('photo', 'Необходимо загрузить фото');
+            }
+        });
+    }
+
     /**
      * Get custom error messages for validation rules.
      */
     public function messages(): array
     {
         return [
-            'photo.required' => 'Необходимо загрузить фото',
-            'photo.array' => 'Неверный формат данных',
-            'photo.*.required' => 'Фото обязательно для загрузки',
-            'photo.*.file' => 'Файл должен быть файлом',
-            'photo.*.image' => 'Файл должен быть изображением',
+            'photo.file' => 'Файл должен быть файлом',
+            'photo.image' => 'Файл должен быть изображением',
+            'photo.mimes' => 'Поддерживаемые форматы: jpeg, jpg, png, gif, webp',
+            'photo.max' => 'Размер файла не должен превышать 10MB',
+
+            'photo.*.file' => 'Каждый файл должен быть файлом',
+            'photo.*.image' => 'Каждый файл должен быть изображением',
             'photo.*.mimes' => 'Поддерживаемые форматы: jpeg, jpg, png, gif, webp',
             'photo.*.max' => 'Размер файла не должен превышать 10MB',
         ];
