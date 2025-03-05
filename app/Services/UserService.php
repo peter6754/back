@@ -600,6 +600,7 @@ class UserService
             'is_global_search' => $user->userSettings->is_global_search,
             'age_range' => implode('-', $user->userSettings->age_range ?? []),
             'search_radius' => $user->userSettings->search_radius,
+            'filter_cities' => $user->userSettings->filter_cities,
             'show_me' => $user->userPreferences
                 ->map(function ($pref) {
                     return [
@@ -623,19 +624,13 @@ class UserService
         return DB::transaction(function () use ($user_id, $data) {
             // Обновляем основные настройки
             UserSettings::updateOrCreate([
-                'user_id' => $user_id,
+                'user_id' => $user_id
             ], [
                 'is_global_search' => $data['is_global_search'] ?? null,
                 'search_radius' => $data['search_radius'] ?? null,
                 'age_range' => $data['age_range'] ?? null,
                 'filter_cities' => $data['cities'] ?? null,
-            ], function ($value) {
-                return $value !== null;
-            });
-
-            UserSettings::updateOrCreate([
-                'user_id' => $user_id,
-            ], $updateData);
+            ]);
 
             // Обновляем предпочтения по полу, если переданы
             if (isset($data['show_me'])) {
@@ -644,7 +639,7 @@ class UserService
                 $preferences = array_map(function ($gender) use ($user_id) {
                     return [
                         'user_id' => $user_id,
-                        'gender' => $gender,
+                        'gender' => $gender
                     ];
                 }, $data['show_me']);
 

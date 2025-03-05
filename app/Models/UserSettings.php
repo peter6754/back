@@ -102,7 +102,7 @@ class UserSettings extends Model
         'is_phone_verified' => 'boolean',
         'is_email_verified' => 'boolean',
         'search_radius' => 'integer',
-        'filter_cities' => 'array',
+        'filter_cities' => 'string',
     ];
 
     /**
