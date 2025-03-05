@@ -38,7 +38,9 @@ class UserPhotosRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            if (!$this->hasFile('photo') && !($this->hasFile('photo.0'))) {
+            // Проверяем, есть ли в запросе поле 'photo' и является ли оно массивом
+            // или одиночным файлом. Если нет, добавляем ошибку.
+            if (! $this->hasFile('photo') || (is_array($this->file('photo')) && count($this->file('photo')) === 0)) {
                 $validator->errors()->add('photo', 'Необходимо загрузить фото');
             }
         });
