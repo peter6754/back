@@ -97,56 +97,56 @@ class UserService
         $gender = $info['gender'] ?? null;
 
         $infoItems = [
-            $userSettings['show_my_orientation'] ?? false
-            ? UserInformationTranslator::translate('orientations', $info['sexual_orientation'])
-            : null,
-            ! empty($userInformation['zodiac_sign'])
-            ? UserInformationTranslator::translate('zodiac_signs', $userInformation['zodiac_sign'])
-            : null,
-            ! empty($userInformation['alcohole'])
-            ? UserInformationTranslator::translate('alcohol', $userInformation['alcohole'])
-            : null,
-            ! empty($userInformation['smoking'])
-            ? UserInformationTranslator::translate('smoking', $userInformation['smoking'])
-            : null,
-            ! empty($userInformation['education'])
-            ? UserInformationTranslator::translate('education', $userInformation['education'])
-            : null,
-            ! empty($userInformation['family'])
-            ? UserInformationTranslator::translate('family', $userInformation['family'])
-            : null,
-            ! empty($userInformation['communication'])
-            ? UserInformationTranslator::translate('communication', $userInformation['communication'])
-            : null,
+            ($userSettings['show_my_orientation'] ?? false) && !empty($info['sexual_orientation'])
+                ? UserInformationTranslator::translate('orientations', $info['sexual_orientation'])
+                : null,
+            !empty($userInformation['zodiac_sign'])
+                ? UserInformationTranslator::translate('zodiac_signs', $userInformation['zodiac_sign'])
+                : null,
+            !empty($userInformation['alcohole'])
+                ? UserInformationTranslator::translate('alcohol', $userInformation['alcohole'])
+                : null,
+            !empty($userInformation['smoking'])
+                ? UserInformationTranslator::translate('smoking', $userInformation['smoking'])
+                : null,
+            !empty($userInformation['education'])
+                ? UserInformationTranslator::translate('education', $userInformation['education'])
+                : null,
+            !empty($userInformation['family'])
+                ? UserInformationTranslator::translate('family', $userInformation['family'])
+                : null,
+            !empty($userInformation['communication'])
+                ? UserInformationTranslator::translate('communication', $userInformation['communication'])
+                : null,
             ...array_map(function ($pet) {
-                return isset($pet['pet']) && $pet['pet']
+                return !empty($pet['pet'])
                     ? UserInformationTranslator::translate('pets', $pet['pet'])
                     : null;
             }, $info['pets'] ?? $info['user_pets'] ?? []),
-            ! empty($userInformation['sport'])
-            ? UserInformationTranslator::translate('sport', $userInformation['sport'])
-            : null,
-            ! empty($userInformation['love_language'])
-            ? UserInformationTranslator::translate('love_language', $userInformation['love_language'])
-            : null,
-            ! empty($userInformation['food'])
-            ? UserInformationTranslator::translate('food', $userInformation['food'])
-            : null,
-            ! empty($userInformation['social_network'])
-            ? UserInformationTranslator::translate('social_network', $userInformation['social_network'])
-            : null,
-            ! empty($userInformation['sleep'])
-            ? UserInformationTranslator::translate('sleep', $userInformation['sleep'])
-            : null,
-            ! empty($userInformation['family_status'])
-            ? UserInformationTranslator::translate(
+            !empty($userInformation['sport'])
+                ? UserInformationTranslator::translate('sport', $userInformation['sport'])
+                : null,
+            !empty($userInformation['love_language'])
+                ? UserInformationTranslator::translate('love_language', $userInformation['love_language'])
+                : null,
+            !empty($userInformation['food'])
+                ? UserInformationTranslator::translate('food', $userInformation['food'])
+                : null,
+            !empty($userInformation['social_network'])
+                ? UserInformationTranslator::translate('social_network', $userInformation['social_network'])
+                : null,
+            !empty($userInformation['sleep'])
+                ? UserInformationTranslator::translate('sleep', $userInformation['sleep'])
+                : null,
+            !empty($userInformation['family_status'])
+                ? UserInformationTranslator::translate(
                 'family_statuses',
                 $userInformation['family_status'],
                 in_array($gender, $this->maleGenders) ? 'male' : 'female'
             )
-            : null,
+                : null,
             $info['final_preference']['preference'] ??
-            $info['user_relationship_preferences'][0]['preference']['preference'] ?? null,
+                $info['user_relationship_preferences'][0]['preference']['preference'] ?? null,
         ];
 
         return [
@@ -157,7 +157,7 @@ class UserService
             'role' => $userInformation['role'] ?? null,
             'residence' => $info['city']['formatted_address'] ?? null,
             'company' => $userInformation['company'] ?? null,
-            'gender' => $userSettings['show_my_gender'] ?? false
+            'gender' => ($userSettings['show_my_gender'] ?? false) && !empty($info['gender'])
                 ? UserInformationTranslator::translate('genders', $info['gender'])
                 : null,
             'age' => $withQueryRaw['age'] ? (int) $withQueryRaw['age'] : null,
