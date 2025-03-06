@@ -384,20 +384,18 @@ class RecommendationService
                     AND u.id != ?
             ),
             my_matches AS (
-                SELECT
-                    ure.user_id
-                FROM
-                    user_reactions ure
-                WHERE
-                    ure.reactor_id = ?
-                    AND NOT EXISTS (
-                        SELECT
-                            1
-                        FROM
-                            user_reactions ur
-                        WHERE
-                            ur.user_id = ?
-                            AND ur.reactor_id = ure.user_id)
+                SELECT user_id FROM (
+                    SELECT user_id
+                    FROM user_reactions
+                    WHERE reactor_id = ?
+                    
+                    UNION ALL
+                    
+                    SELECT reactor_id as user_id
+                    FROM user_reactions
+                    WHERE user_id = ?
+                        AND type = 'dislike'
+                ) AS combined_results
             ),
             users_blocked_by_me AS (
                 SELECT phone
