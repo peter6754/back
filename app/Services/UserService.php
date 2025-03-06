@@ -600,7 +600,7 @@ class UserService
             'is_global_search' => $user->userSettings->is_global_search,
             'age_range' => implode('-', $user->userSettings->age_range ?? []),
             'search_radius' => $user->userSettings->search_radius,
-            'filter_cities' => $user->userSettings->filter_cities,
+            'filter_city' => $user->userSettings->filter_cities,
             'show_me' => $user->userPreferences
                 ->map(function ($pref) {
                     return [
