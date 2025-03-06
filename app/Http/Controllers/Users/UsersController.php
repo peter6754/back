@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Users;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\GetUserLikesRequest;
+use App\Http\Requests\UpdateCoordinatesRequest;
 use App\Http\Requests\updateUserInfoRegistrationRequest;
 use App\Http\Requests\UpdateUserInformationRequest;
 use App\Http\Traits\ApiResponseTrait;
 use App\Models\BoughtSubscriptions;
 use App\Models\LikeSettings;
+use App\Models\Secondaryuser;
 use App\Services\UserService;
 use Exception;
 use Illuminate\Http\JsonResponse;

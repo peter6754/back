@@ -152,6 +152,10 @@ Route::prefix('users')->middleware('auth')->group(function () {
 
     Route::get('packagesInfo', [UsersController::class, 'getUserPackages']);
 
+
+    // update users coordinates
+    Route::post('coordinates', [UsersController::class, 'updateCoordinates']);
+
     // My Profile
     Route::get('profile', [UsersController::class, 'getAccountInformation']);
     Route::put('profile', [UsersController::class, 'updateAccountInformation']);
