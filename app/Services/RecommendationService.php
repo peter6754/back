@@ -216,7 +216,10 @@ class RecommendationService
                 $forPage = array_splice($fromDb, 0, $this->recommendationsPageSize);
 
                 if (empty($forPage)) {
-                    return ['items' => []];
+                    return [
+                        'message' => 'Мы не нашли анкеты с данным критериями поиска',
+                        'items' => []
+                    ];
                 }
 
                 if (!empty($fromDb)) {
