@@ -303,6 +303,7 @@ class RecommendationsController extends Controller
             if (is_string($getResponse)) {
                 return $this->errorResponse(
                     $getResponse,
+                    9404,
                     404
                 );
             }
