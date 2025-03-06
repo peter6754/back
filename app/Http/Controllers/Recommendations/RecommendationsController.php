@@ -301,11 +301,15 @@ class RecommendationsController extends Controller
 
             // Return string error
             if (is_string($getResponse)) {
-                return $this->errorResponse(
-                    $getResponse,
-                    9404,
-                    404
-                );
+                // ToDo: Временная затычка до следующего релиза от 04.09.2025
+                return $this->successResponse([
+                    'items' => []
+                ]);
+//                return $this->errorResponse(
+//                    $getResponse,
+//                    9404,
+//                    404
+//                );
             }
 
             // Return data
