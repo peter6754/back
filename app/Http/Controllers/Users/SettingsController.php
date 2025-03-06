@@ -6,8 +6,8 @@ use App\DTO\UsersSettingsDto;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UserFilterSettingsRequest;
 use App\Http\Traits\ApiResponseTrait;
-use App\Models\UserCities;
 use App\Models\UserDeviceToken;
+use App\Services\CitiesService;
 use App\Services\UserService;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -24,10 +24,12 @@ class SettingsController extends Controller
     use ApiResponseTrait;
 
     private UserService $userService;
+    private CitiesService $citiesService;
 
-    public function __construct(UserService $userService)
+    public function __construct(UserService $userService, CitiesService $citiesService)
     {
         $this->userService = $userService;
+        $this->citiesService = $citiesService;
     }
 
     /**
@@ -330,15 +332,11 @@ class SettingsController extends Controller
     public function allCities(Request $request): JsonResponse
     {
         try {
-            $query = UserCities::select('formatted_address')->distinct();
-
             $searchQuery = $request->query('q');
-            if ($searchQuery) {
-                $query->where('formatted_address', 'LIKE', $searchQuery.'%');
-            }
-
-            return $this->successResponse($query->get());
-        } catch (\Exception $e) {
+            $cities = $this->citiesService->getCities($searchQuery);
+            
+            return $this->successResponse($cities);
+        } catch (Exception $e) {
             return $this->errorResponse(
                 'Произошла ошибка при получении городов',
                 (int) $e->getCode() ?: 500
