@@ -214,7 +214,7 @@ class SettingsController extends Controller
      *              ),
      *              @OA\Property(
      *                  description="City filter",
-     *                  property="cities",
+     *                  property="city",
      *                  example="Moscow",
      *                  type="string"
      *              )

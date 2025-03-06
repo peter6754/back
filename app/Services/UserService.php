@@ -596,11 +596,18 @@ class UserService
         $user = Secondaryuser::with(['userSettings', 'userPreferences'])
             ->find($user_id);
 
+        $filterCities = $user->userSettings->filter_cities;
+        $city = null;
+        if ($filterCities) {
+            $cities = json_decode($filterCities, true);
+            $city = is_array($cities) && !empty($cities) ? $cities[0] : null;
+        }
+
         return [
             'is_global_search' => $user->userSettings->is_global_search,
             'age_range' => implode('-', $user->userSettings->age_range ?? []),
             'search_radius' => $user->userSettings->search_radius,
-            'filter_city' => $user->userSettings->filter_cities,
+            'filter_city' => $city,
             'show_me' => $user->userPreferences
                 ->map(function ($pref) {
                     return [
@@ -629,7 +636,7 @@ class UserService
                 'is_global_search' => $data['is_global_search'] ?? null,
                 'search_radius' => $data['search_radius'] ?? null,
                 'age_range' => $data['age_range'] ?? null,
-                'filter_cities' => $data['cities'] ?? null,
+                'filter_cities' => isset($data['city']) ? json_encode([$data['city']]) : null,
             ]);
 
             // Обновляем предпочтения по полу, если переданы
