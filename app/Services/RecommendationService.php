@@ -202,7 +202,7 @@ class RecommendationService
         $keyPart4 = isset($query['interest_id']) ? ':'.$query['interest_id'] : '';
 
         // Configure cache
-        $key = "recommended_v2:{$userId}:{$keyPart1}:{$keyPart2}:{$keyPart3}{$keyPart4}";
+        $key = "recommendations:{$userId}:{$keyPart1}:{$keyPart2}:{$keyPart3}{$keyPart4}";
         $recommendationsCacheSize = $this->recommendationsPageSize;
 
         try {
