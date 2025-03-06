@@ -510,7 +510,7 @@ class RecommendationService
                 'photos' => $photos,
                 'age' => $r->age ? (int) $r->age : null,
                 'distance' => $r->distance !== null ? (int) $r->distance : null,
-                'new_user'=> $r->registration_date && (now()->diffInDays($r->registration_date) <= 1)
+                'new_user'=> strtotime($r->registration_date) > strtotime("-1 day")
             ];
         }, $recommendations);
 
