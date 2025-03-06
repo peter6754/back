@@ -507,10 +507,10 @@ class RecommendationService
                 'bio' => $r->bio,
                 'is_verified' => (bool) $r->is_verified,
                 'is_online' => (bool) $r->is_online,
+                'is_new' => strtotime($r->registration_date) > strtotime("-1 day"),
                 'photos' => $photos,
                 'age' => $r->age ? (int) $r->age : null,
                 'distance' => $r->distance !== null ? (int) $r->distance : null,
-                'new_user'=> strtotime($r->registration_date) > strtotime("-1 day")
             ];
         }, $recommendations);
 
