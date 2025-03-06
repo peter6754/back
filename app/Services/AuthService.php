@@ -35,17 +35,16 @@ class AuthService
     protected int $codeExpiration = 9;
 
     /**
-     * @param GreenSMSService $greenSmsService
+     * @param  GreenSMSService  $greenSmsService
      */
     public function __construct(
         GreenSMSService $greenSmsService
-    )
-    {
+    ) {
         $this->greenSmsService = $greenSmsService;
     }
 
     /**
-     * @param array $params
+     * @param  array  $params
      * @return array
      * @throws \Exception
      */
@@ -53,7 +52,7 @@ class AuthService
     {
         $userToken = $params['device_token'] ?? null;
         $userPhone = $params['phone'];
-        $code = (string)rand(1000, 9999);
+        $code = (string) rand(1000, 9999);
 
         if (!(new PhoneNumber($userPhone))->isValid()) {
             throw new \Exception('Invalid phone number');
@@ -67,14 +66,14 @@ class AuthService
 
         if ($user) {
             // Отправка SMS зарегистрированному пользователю
-            Log::channel("authservice")->info("[Login], send code {$code}, user: " . json_encode($user));
+            Log::channel("authservice")->info("[Login], send code {$code}, user: ".json_encode($user));
             if (!in_array($userPhone, $this->specialNumbers)) {
                 $this->greenSmsService->sendCode($userPhone, "Ваш код подтверждения: {$code}");
             }
             $type = 'login';
         } else {
             // Отправка push-уведомления новому пользователю
-            Log::channel("authservice")->info("[Register], send code {$code}, new user: " . $userPhone);
+            Log::channel("authservice")->info("[Register], send code {$code}, new user: ".$userPhone);
             if ($userToken === "huawei-device-token") {
                 $this->greenSmsService->sendCode($userPhone, "Ваш код подтверждения: {$code}", [
                     'sms'
@@ -159,7 +158,7 @@ class AuthService
     }
 
     /**
-     * @param array $params
+     * @param  array  $params
      * @return array|string[]
      * @throws \Throwable
      */
@@ -180,8 +179,8 @@ class AuthService
 
         // Извлечение данных пользователя
         $userData = json_decode($parsedData['user'], true);
-        $name = $userData['first_name'] . " " . $userData['last_name'];
-        $email = $userData['id'] . "@t.me";
+        $name = $userData['first_name']." ".$userData['last_name'];
+        $email = $userData['id']."@t.me";
         $provider = "telegram";
 
         DB::beginTransaction();
@@ -201,10 +200,10 @@ class AuthService
         if (empty($account)) {
             $getUser = Secondaryuser::where('email', $email)->first();
             if (!empty($getUser)) {
-                throw new \Exception("User already exists " . PHP_EOL .
-                    "account: " . print_r($account, true) . PHP_EOL .
-                    "getUser: " . print_r($getUser, true) . PHP_EOL .
-                    "user: " . print_r($userData, true)
+                throw new \Exception("User already exists ".PHP_EOL.
+                    "account: ".print_r($account, true).PHP_EOL.
+                    "getUser: ".print_r($getUser, true).PHP_EOL.
+                    "user: ".print_r($userData, true)
                 );
             }
 
@@ -247,8 +246,8 @@ class AuthService
     }
 
     /**
-     * @param string $provider
-     * @param object $user
+     * @param  string  $provider
+     * @param  object  $user
      * @return array
      * @throws \Throwable
      */
@@ -271,10 +270,10 @@ class AuthService
         if (empty($account)) {
             $getUser = Secondaryuser::where('email', $user->getEmail())->first();
             if (!empty($getUser)) {
-                throw new \Exception("User already exists " . PHP_EOL .
-                    "account: " . print_r($account, true) . PHP_EOL .
-                    "getUser: " . print_r($getUser, true) . PHP_EOL .
-                    "user: " . print_r($user, true)
+                throw new \Exception("User already exists ".PHP_EOL.
+                    "account: ".print_r($account, true).PHP_EOL.
+                    "getUser: ".print_r($getUser, true).PHP_EOL.
+                    "user: ".print_r($user, true)
                 );
             }
 
@@ -306,8 +305,8 @@ class AuthService
     }
 
     /**
-     * @param array $data
-     * @param string $appId
+     * @param  array  $data
+     * @param  string  $appId
      * @return bool
      */
     private function verifyTelegramHash(array $data, string $appId): bool
@@ -326,7 +325,7 @@ class AuthService
         // Генерация секретного ключа
         $secretKey = hash_hmac(
             'sha256',
-            config('services.telegram.client_secret' . $appId),
+            config('services.telegram.client_secret'.$appId),
             "WebAppData",
             true
         );
@@ -342,11 +341,11 @@ class AuthService
 
     /**
      * Создает нового пользователя с базовой информацией и связанными записями
-     * @param string|null $phone Номер телефона (null для социальной аутентификации)
-     * @param string|null $email Email (для социальной аутентификации)
-     * @param string|null $provider Провайдер (apple/google)
-     * @param string|null $name Имя пользователя
-     * @param bool $withSocialSettings Создавать ли настройки для социального входа
+     * @param  string|null  $phone  Номер телефона (null для социальной аутентификации)
+     * @param  string|null  $email  Email (для социальной аутентификации)
+     * @param  string|null  $provider  Провайдер (apple/google)
+     * @param  string|null  $name  Имя пользователя
+     * @param  bool  $withSocialSettings  Создавать ли настройки для социального входа
      * @return Secondaryuser
      */
     protected function createNewUser(
@@ -354,9 +353,8 @@ class AuthService
         ?string $email = null,
         ?string $provider = null,
         ?string $name = null,
-        bool    $withSocialSettings = false
-    ): Secondaryuser
-    {
+        bool $withSocialSettings = false
+    ): Secondaryuser {
         return DB::transaction(function () use ($phone, $email, $provider, $name, $withSocialSettings) {
             // Создаем основную запись пользователя
             $userData = [];
@@ -373,6 +371,7 @@ class AuthService
                 $userData['name'] = $name;
             }
 
+            // Регистрируем дату регистрации, если это не социальный вход
             $user = Secondaryuser::create($userData);
 
             // Создаем связанные записи

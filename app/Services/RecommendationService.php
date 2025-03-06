@@ -66,12 +66,12 @@ class RecommendationService
     }
 
     /**
-     * @param array $customer
+     * @param  array  $customer
      * @return array
      */
     public function getTopProfiles(mixed $customer): array
     {
-        $key = "top-profiles:" . $customer['id'];
+        $key = "top-profiles:".$customer['id'];
         $topProfiles = Redis::get($key);
 
         if (!empty($topProfiles)) {
@@ -169,7 +169,7 @@ class RecommendationService
 
             $topProfiles = $query->get();
             foreach ($topProfiles as &$row) {
-                $row->blocked_me = (bool)$row->blocked_me;
+                $row->blocked_me = (bool) $row->blocked_me;
             }
 
             Redis::setex($key, 900, json_encode($topProfiles));
@@ -181,8 +181,8 @@ class RecommendationService
     }
 
     /**
-     * @param string $userId
-     * @param array $query
+     * @param  string  $userId
+     * @param  array  $query
      * @return array|array[]|void
      */
     public function getRecommendations(string $userId, array $query)
@@ -199,10 +199,10 @@ class RecommendationService
         $keyPart1 = implode('-', $user->userSettings->age_range);
         $keyPart2 = $user->userSettings->is_global_search ? 'global' : $user->userSettings->search_radius;
         $keyPart3 = implode(',', $user->userPreferences->pluck('gender')->toArray());
-        $keyPart4 = isset($query['interest_id']) ? ':' . $query['interest_id'] : '';
+        $keyPart4 = isset($query['interest_id']) ? ':'.$query['interest_id'] : '';
 
         // Configure cache
-        $key = "recommended:{$userId}:{$keyPart1}:{$keyPart2}:{$keyPart3}{$keyPart4}";
+        $key = "recommended_v2:{$userId}:{$keyPart1}:{$keyPart2}:{$keyPart3}{$keyPart4}";
         $recommendationsCacheSize = $this->recommendationsPageSize;
 
         try {
@@ -227,7 +227,7 @@ class RecommendationService
 
             return $this->_getRecommendationsPage($userId, $forPage);
         } catch (\Exception $e) {
-            Log::channel('recommendations')->error('getRecommendations_v2 error: ' . $e->getMessage(), [
+            Log::channel('recommendations')->error('getRecommendations_v2 error: '.$e->getMessage(), [
                 'user_id' => $userId,
                 'error' => $e
             ]);
@@ -235,8 +235,8 @@ class RecommendationService
     }
 
     /**
-     * @param string $userId
-     * @param array $params
+     * @param  string  $userId
+     * @param  array  $params
      * @return array
      */
     public function like(string $userId, array $params)
@@ -264,8 +264,8 @@ class RecommendationService
     }
 
     /**
-     * @param string $userId
-     * @param array $params
+     * @param  string  $userId
+     * @param  array  $params
      * @return array|null
      */
     public function dislike(string $userId, array $params)
@@ -282,8 +282,8 @@ class RecommendationService
     }
 
     /**
-     * @param string $userId
-     * @param array $params
+     * @param  string  $userId
+     * @param  array  $params
      * @return bool[]
      */
     public function superlike(string $userId, array $params)
@@ -318,8 +318,8 @@ class RecommendationService
     }
 
     /**
-     * @param string $userId
-     * @param array $params
+     * @param  string  $userId
+     * @param  array  $params
      * @return string[]
      * @throws \Exception
      */
@@ -344,8 +344,8 @@ class RecommendationService
     }
 
     /**
-     * @param string $matchedId
-     * @param string $userId
+     * @param  string  $matchedId
+     * @param  string  $userId
      * @return array
      */
     public function deleteMatchedUser(string $matchedId, string $userId)
@@ -361,9 +361,9 @@ class RecommendationService
     }
 
     /**
-     * @param string $userId
-     * @param array $query
-     * @param int $cacheSize
+     * @param  string  $userId
+     * @param  array  $query
+     * @param  int  $cacheSize
      * @return array
      */
     private function _getRecommendationsForCache(string $userId, array $query, int $cacheSize): array
@@ -384,14 +384,20 @@ class RecommendationService
                     AND u.id != ?
             ),
             my_matches AS (
-                SELECT ure.user_id
-                FROM user_reactions ure
-                LEFT JOIN user_reactions ur ON ur.reactor_id = ure.user_id
-                    AND ur.user_id = ?
-                    AND ure.reactor_id = ?
-                WHERE ure.user_id != ?
-                    AND ure.type != 'dislike'
-                    AND ur.type != 'dislike'
+                SELECT
+                    ure.user_id
+                FROM
+                    user_reactions ure
+                WHERE
+                    ure.reactor_id = ?
+                    AND NOT EXISTS (
+                        SELECT
+                            1
+                        FROM
+                            user_reactions ur
+                        WHERE
+                            ur.user_id = ?
+                            AND ur.reactor_id = ure.user_id)
             ),
             users_blocked_by_me AS (
                 SELECT phone
@@ -415,7 +421,7 @@ class RecommendationService
                 )
                 AND u.age BETWEEN ? AND ?
                 AND u.id NOT IN (SELECT user_id FROM my_matches)
-                AND u.gender IN(" . (empty($preferences) ? 'NULL' : " '" . implode("', '", $preferences) . "' ") . ")
+                AND u.gender IN(".(empty($preferences) ? 'NULL' : " '".implode("', '", $preferences)."' ").")
                 AND u.phone NOT IN (SELECT phone FROM users_blocked_by_me)
                 AND u.id NOT IN (SELECT user_id FROM users_who_blocked_me)
                 AND u.registration_date IS NOT NULL
@@ -433,7 +439,7 @@ class RecommendationService
             $user->lat,
             $user->settings->search_radius,
             $userId,
-            $userId,
+//            $userId,
             $userId,
             $userId,
             $userId,
@@ -449,7 +455,7 @@ class RecommendationService
     }
 
     /**
-     * @param string $userId
+     * @param  string  $userId
      * @param $usersIds
      * @return array
      */
@@ -481,7 +487,7 @@ class RecommendationService
             FROM users u
             LEFT JOIN user_information ui ON ui.user_id = u.id
             LEFT JOIN user_settings us ON us.user_id = u.id
-            WHERE u.id IN (" . implode(',', array_fill(0, count($usersIds), '?')) . ")
+            WHERE u.id IN (".implode(',', array_fill(0, count($usersIds), '?')).")
                 AND u.mode = 'authenticated'
             ORDER BY u.is_online DESC;
         ", array_merge([
@@ -500,11 +506,11 @@ class RecommendationService
                 'id' => $r->id,
                 'name' => $r->name,
                 'bio' => $r->bio,
-                'is_verified' => (bool)$r->is_verified,
-                'is_online' => (bool)$r->is_online,
+                'is_verified' => (bool) $r->is_verified,
+                'is_online' => (bool) $r->is_online,
                 'photos' => $photos,
-                'age' => $r->age ? (int)$r->age : null,
-                'distance' => $r->distance !== null ? (int)$r->distance : null
+                'age' => $r->age ? (int) $r->age : null,
+                'distance' => $r->distance !== null ? (int) $r->distance : null
             ];
         }, $recommendations);
 
@@ -541,9 +547,9 @@ class RecommendationService
 
 
     /**
-     * @param string $user_id
-     * @param bool $is_match
-     * @param bool $superlike
+     * @param  string  $user_id
+     * @param  bool  $is_match
+     * @param  bool  $superlike
      * @return bool
      */
     public function handleLikeNotification(string $userId = "", bool $isMatch = false, bool $superLike = false): bool
@@ -570,16 +576,18 @@ class RecommendationService
                         "Вам поставили суперлайк! Заходите в TinderOne, чтобы найти свою пару!",
                         "Вы кому-то нравитесь!"
                     );
-                } else if ($superLike === false && $getUserData->userSettings->new_likes_push) {
-                    (new NotificationService())->sendPushNotification($userTokens,
-                        "Вам поставили лайк! Заходите в TinderOne, чтобы найти свою пару!",
-                        "Вы кому-то нравитесь!"
-                    );
+                } else {
+                    if ($superLike === false && $getUserData->userSettings->new_likes_push) {
+                        (new NotificationService())->sendPushNotification($userTokens,
+                            "Вам поставили лайк! Заходите в TinderOne, чтобы найти свою пару!",
+                            "Вы кому-то нравитесь!"
+                        );
+                    }
                 }
             }
             return true;
         } catch (\Exception $e) {
-            Log::channel('recommendations')->error('LikeNotification error: ' . $e->getMessage(), [
+            Log::channel('recommendations')->error('LikeNotification error: '.$e->getMessage(), [
                 'user_id' => $userId,
                 'error' => $e
             ]);
@@ -588,9 +596,9 @@ class RecommendationService
     }
 
     /**
-     * @param string $comment
-     * @param string $authorId
-     * @param string $recipientId
+     * @param  string  $comment
+     * @param  string  $authorId
+     * @param  string  $recipientId
      * @return void
      */
     private function leaveComment(string $comment, string $authorId, string $recipientId)
@@ -599,8 +607,8 @@ class RecommendationService
     }
 
     /**
-     * @param array $attributes
-     * @param array $values
+     * @param  array  $attributes
+     * @param  array  $values
      * @return UserReaction
      */
     private function updateOrCreateReaction(array $attributes, array $values): UserReaction
