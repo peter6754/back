@@ -600,6 +600,7 @@ class UserService
             'is_global_search' => $user->userSettings->is_global_search,
             'age_range' => implode('-', $user->userSettings->age_range ?? []),
             'search_radius' => $user->userSettings->search_radius,
+            'filter_cities' => $user->userSettings->filter_cities,
             'show_me' => $user->userPreferences
                 ->map(function ($pref) {
                     return [
@@ -610,7 +611,6 @@ class UserService
                 ->filter(fn ($item) => ! empty($item['translation_ru']))
                 ->values()
                 ->toArray(),
-            'cities' => $user->userSettings->filter_cities ?? [],
         ];
     }
 
@@ -622,19 +622,15 @@ class UserService
     public function updateFilterSettings(string $user_id, array $data): array
     {
         return DB::transaction(function () use ($user_id, $data) {
-            // Обновляем основные параметры
-            $updateData = array_filter([
+            // Обновляем основные настройки
+            UserSettings::updateOrCreate([
+                'user_id' => $user_id
+            ], [
                 'is_global_search' => $data['is_global_search'] ?? null,
                 'search_radius' => $data['search_radius'] ?? null,
                 'age_range' => $data['age_range'] ?? null,
                 'filter_cities' => $data['cities'] ?? null,
-            ], function ($value) {
-                return $value !== null;
-            });
-
-            UserSettings::updateOrCreate([
-                'user_id' => $user_id,
-            ], $updateData);
+            ]);
 
             // Обновляем предпочтения по полу, если переданы
             if (isset($data['show_me'])) {
@@ -643,7 +639,7 @@ class UserService
                 $preferences = array_map(function ($gender) use ($user_id) {
                     return [
                         'user_id' => $user_id,
-                        'gender' => $gender,
+                        'gender' => $gender
                     ];
                 }, $data['show_me']);
 
@@ -760,8 +756,6 @@ class UserService
     /**
      * Проверяет существование email
      *
-     * @param string $email
-     * @return bool
      * @throws Exception
      */
     public function getEmailExistenceStatus(string $email): bool
@@ -769,15 +763,13 @@ class UserService
         try {
             return Secondaryuser::where('email', $email)->exists();
         } catch (Exception $e) {
-            throw new Exception('Ошибка при проверке существования email: ' . $e->getMessage(), 500);
+            throw new Exception('Ошибка при проверке существования email: '.$e->getMessage(), 500);
         }
     }
 
     /**
      * Get user packages and limits
      *
-     * @param string $userId
-     * @return array
      * @throws Exception
      */
     public function getUserPackages(string $userId): array
@@ -785,11 +777,11 @@ class UserService
         try {
             $user = Secondaryuser::with([
                 'userInformation:user_id,superboom_due_date,superbooms,superlikes',
-                'activeSubscription.package.subscription:id,type'
+                'activeSubscription.package.subscription:id,type',
             ])
                 ->find($userId, ['id']);
 
-            if (!$user) {
+            if (! $user) {
                 throw new Exception('User not found', 404);
             }
 
@@ -797,7 +789,7 @@ class UserService
             if ($user->activeSubscription) {
                 $subscriptionData = [
                     'type' => $user->activeSubscription->package->subscription->type ?? null,
-                    'due_date' => $user->activeSubscription->due_date->format('Y-m-d H:i:s')
+                    'due_date' => $user->activeSubscription->due_date->format('Y-m-d H:i:s'),
                 ];
             }
 
@@ -805,11 +797,84 @@ class UserService
                 'subscription_package' => $subscriptionData,
                 'superboom_due_date' => $user->userInformation->superboom_due_date ?? null,
                 'superbooms' => $user->userInformation->superbooms ?? 0,
-                'superlikes' => $user->userInformation->superlikes ?? 0
+                'superlikes' => $user->userInformation->superlikes ?? 0,
             ];
 
         } catch (Exception $e) {
-            throw new Exception('Failed to get user packages: ' . $e->getMessage(), 500);
+            throw new Exception('Failed to get user packages: '.$e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Save user coordinates and update location data
+     * Реплицирует точную логику из Node.js проекта метода saveCoordinates
+     *
+     * @throws Exception
+     */
+    public function saveCoordinates(Secondaryuser $user, array $data): array
+    {
+        try {
+            DB::beginTransaction();
+
+            // Получаем начало дня последней проверки как в node js
+            $startOfLastCheckDay = $user->last_check ? Carbon::parse($user->last_check)->startOfDay() : null;
+            $now = Carbon::now();
+
+            $userInfo = $user->userInformation;
+            $currentStreak = $userInfo ? ($userInfo->streak ?? 0) : 0;
+
+            // Вычисляем новый streak
+            $streakIncrement = 0;
+            if ($startOfLastCheckDay) {
+                $dayAfterLastCheck = $startOfLastCheckDay->copy()->addDay();
+                $twoDaysAfterLastCheck = $startOfLastCheckDay->copy()->addDays(2);
+
+                if (($now->greaterThan($dayAfterLastCheck) && $now->lessThan($twoDaysAfterLastCheck)) || $currentStreak == 0) {
+                    $streakIncrement = 1;
+                }
+            } else {
+                $streakIncrement = 1;
+            }
+
+            // Обновляем пользователя как в node js
+            $user->update([
+                'lat' => $data['lat'],
+                'long' => $data['long'],
+                'last_check' => $now,
+                'is_online' => true,
+            ]);
+
+            // Обновляем или создаем город
+            $user->city()->updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'lat' => $data['lat'],
+                    'long' => $data['long'],
+                    'formatted_address' => $data['formatted_address'] ?? null,
+                ]
+            );
+
+            // Обновляем или создаем user_information с инкрементом streak
+            $user->userInformation()->updateOrCreate(
+                ['user_id' => $user->id],
+                []
+            );
+
+            // Используем оригинальный SQL запрос
+            DB::statement('UPDATE user_information SET streak = streak + ? WHERE user_id = ?', [$streakIncrement, $user->id]);
+
+            DB::commit();
+
+            return ['message' => 'Coordinates saved successfully'];
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('saveCoordinates error: '.$e->getMessage(), [
+                'user_id' => $user->id,
+                'data' => $data,
+                'error' => $e->getTraceAsString(),
+            ]);
+            throw new Exception('Failed to save coordinates: '.$e->getMessage(), 500);
         }
     }
 }

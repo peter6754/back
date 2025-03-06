@@ -221,7 +221,7 @@ class SettingsController extends Controller
      *              ),
      *
      *              @OA\Property(
-     *                  description="Cities filter array",
+     *                  description="City filter",
      *                  property="cities",
      *                  type="array",
      *
@@ -289,11 +289,9 @@ class SettingsController extends Controller
      *                  },
      *                  "data": {
      *                      {
-     *                          "user_id": "3ade5db5-fe5e-4f8c-a3bf-94d1d6ab1043",
      *                          "formatted_address": "Белгород, Белгородская область, Россия"
      *                      },
      *                      {
-     *                          "user_id": "4bde6db6-ge6f-5g9d-b4cg-95e2e7bc2d54",
      *                          "formatted_address": "Белая Церковь, Киевская область, Украина"
      *                      }
      *                  }
@@ -332,7 +330,7 @@ class SettingsController extends Controller
     public function allCities(Request $request): JsonResponse
     {
         try {
-            $query = UserCities::select('user_id', 'formatted_address');
+            $query = UserCities::select('formatted_address')->distinct();
 
             $searchQuery = $request->query('q');
             if ($searchQuery) {

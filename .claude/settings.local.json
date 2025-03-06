@@ -20,7 +20,14 @@
       "Bash(ss:*)",
       "Bash(kill:*)",
       "WebFetch(domain:dev.to)",
-      "Bash(composer:*)"
+      "Bash(composer:*)",
+      "Read(/home/peter/**)",
+      "Read(/home/peter/tinderone-back/**)",
+      "Read(/home/peter/tinderone-back/**)",
+      "Read(/home/peter/tinderone-back/src/**)",
+      "Read(/home/peter/tinderone-back/src/routes/user/**)",
+      "Read(/home/peter/tinderone-back/src/routes/user/**)",
+      "Read(/home/peter/tinderone-back/src/routes/user/**)"
     ],
     "deny": []
   }

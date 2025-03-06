@@ -10,6 +10,7 @@ use App\Http\Traits\ApiResponseTrait;
 use App\Models\BoughtSubscriptions;
 use App\Models\LikeSettings;
 use App\Services\UserService;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -943,6 +944,137 @@ class UsersController extends Controller
             return $this->errorResponse(
                 $e->getMessage(),
                 (int) $e->getCode()
+            );
+        }
+    }
+
+    /**
+     * Update user coordinates and location
+     *
+     * @OA\Post(
+     *     path="/users/coordinates",
+     *     tags={"User Location"},
+     *     summary="Update user coordinates",
+     *     description="Update user coordinates, location and streak counter",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *
+     *         @OA\JsonContent(
+     *             required={"lat", "long"},
+     *
+     *             @OA\Property(
+     *                 property="lat",
+     *                 type="string",
+     *                 example="47.123456",
+     *                 description="Latitude (-90 to 90)"
+     *             ),
+     *             @OA\Property(
+     *                 property="long",
+     *                 type="string",
+     *                 example="28.123456",
+     *                 description="Longitude (-180 to 180)"
+     *             ),
+     *             @OA\Property(
+     *                 property="formatted_address",
+     *                 type="string",
+     *                 nullable=true,
+     *                 example="New York, NY, USA",
+     *                 description="Human-readable address"
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Coordinates updated successfully",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="message", type="string", example="Coordinates saved successfully")
+     *             ),
+     *             @OA\Property(
+     *                 property="meta",
+     *                 type="object",
+     *                 @OA\Property(property="error", type="null"),
+     *                 @OA\Property(property="status", type="integer", example=200)
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="lat",
+     *                     type="array",
+     *
+     *                     @OA\Items(type="string", example="Latitude is required")
+     *                 ),
+     *
+     *                 @OA\Property(
+     *                     property="long",
+     *                     type="array",
+     *
+     *                     @OA\Items(type="string", example="Longitude is required")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *
+     *         @OA\JsonContent(ref="#/components/schemas/Unauthorized")
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Internal server error",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(property="message", type="string", example="Failed to save coordinates"),
+     *             @OA\Property(property="code", type="integer", example=500)
+     *         )
+     *     )
+     * )
+     */
+    public function updateCoordinates(UpdateCoordinatesRequest $request): JsonResponse
+    {
+        try {
+            $authUser = $request->user();
+            $user = Secondaryuser::find($authUser->id);
+
+            if (! $user) {
+                return $this->errorResponse('User not found', 404);
+            }
+
+            $data = $request->validated();
+
+            $result = $this->userService->saveCoordinates($user, $data);
+
+            return $this->successResponse($result);
+
+        } catch (Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage(),
+                (int) $e->getCode() ?: 500
             );
         }
     }

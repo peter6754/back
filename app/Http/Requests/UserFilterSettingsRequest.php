@@ -21,20 +21,25 @@ class UserFilterSettingsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'age_range' => [
-                'sometimes',
-                'string',
-                'regex:/^(?:1[89]|[2-9][0-9]|100)-(?:1[89]|[2-9][0-9]|100)$/'
-            ],
-            'is_global_search' => 'sometimes|boolean',
             'search_radius' => 'sometimes|integer|min:1|max:1000',
+            'is_global_search' => 'sometimes|boolean',
             'show_me' => 'sometimes|array',
-            'show_me.*' => [
-                'string',
-                Rule::in(['male', 'female', 'm_f', 'm_m', 'f_f'])
+            'cities' => 'string',
+            'age_range' => [
+                'regex:/^(?:1[89]|[2-9][0-9]|100)-(?:1[89]|[2-9][0-9]|100)$/',
+                'sometimes',
+                'string'
             ],
-            'cities' => 'sometimes|array',
-            'cities.*' => 'string'
+            'show_me.*' => [
+                Rule::in([
+                    'female',
+                    'male',
+                    'm_f',
+                    'm_m',
+                    'f_f'
+                ]),
+                'string'
+            ]
         ];
     }
 
@@ -45,7 +50,7 @@ class UserFilterSettingsRequest extends FormRequest
     {
         return [
             'age_range.regex' => 'Age range must be in format "18-35" with values between 18-100',
-            'show_me.*.in' => 'Invalid gender value. Allowed values: male, female, m_f, m_m, f_f',
+            'show_me.*.in' => 'Invalid gender value. Allowed values: female, male, m_f, m_m, f_f'
         ];
     }
 }

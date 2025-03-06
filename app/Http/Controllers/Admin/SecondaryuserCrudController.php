@@ -268,7 +268,7 @@ class SecondaryuserCrudController extends CrudController
         CRUD::column('is_online')->label('Онлайн статус');
         CRUD::column('phone')->label('Телефон');
         CRUD::column('email')->label('Электронная почта');
-        //        CRUD::column('birth_date')->label('Дата рождения');
+        CRUD::column('birth_date')->label('Дата рождения')->type('date');
         CRUD::column('mode')
             ->label('Режим')
             ->type('select_from_array')

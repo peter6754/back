@@ -92,6 +92,12 @@ class UserPhotosController extends Controller
             $user = $request->user();
             $photos = $request->file('photo');
 
+            \Log::info('Полученные файлы', [
+                'type' => gettype($photos),
+                'count' => is_array($photos) ? count($photos) : 1,
+                'is_instance_of_uploaded_file' => $photos instanceof \Illuminate\Http\UploadedFile,
+            ]);
+
             if ($photos instanceof \Illuminate\Http\UploadedFile) {
                 $photos = [$photos];
             }

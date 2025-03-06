@@ -213,11 +213,12 @@ class Secondaryuser extends Model
                 ]);
             }
 
-            if ($user->isDirty('age')) {
-                $user->forceFill([
-                    'birth_date' => Carbon::now()->subYears($user->age)->format('Y-m-d'),
-                ]);
-            }
+            // Test fix birth_date bug
+//            if ($user->isDirty('age')) {
+//                $user->forceFill([
+//                    'birth_date' => Carbon::now()->subYears($user->age)->format('Y-m-d'),
+//                ]);
+//            }
         });
 
         static::creating(function ($model) {
