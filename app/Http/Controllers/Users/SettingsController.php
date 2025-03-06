@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers\Users;
 
-use App\Http\Traits\ApiResponseTrait;
-use App\Http\Controllers\Controller;
-use Illuminate\Http\JsonResponse;
-use App\Models\UserDeviceToken;
-use App\Services\UserService;
 use App\DTO\UsersSettingsDto;
-use Illuminate\Http\Request;
-use Exception;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\UserFilterSettingsRequest;
+use App\Http\Traits\ApiResponseTrait;
+use App\Models\UserDeviceToken;
+use App\Services\CitiesService;
+use App\Services\UserService;
+use Exception;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 /**
  * Class SettingsController
- * @package App\Http\Controllers\Users
  */
 class SettingsController extends Controller
 {
@@ -23,30 +23,28 @@ class SettingsController extends Controller
      */
     use ApiResponseTrait;
 
-    /**
-     * @var UserService
-     */
     private UserService $userService;
+    private CitiesService $citiesService;
 
-    /**
-     * @param UserService $userService
-     */
-    public function __construct(UserService $userService)
+    public function __construct(UserService $userService, CitiesService $citiesService)
     {
         $this->userService = $userService;
+        $this->citiesService = $citiesService;
     }
 
     /**
-     * @param Request $request
      * @OA\Delete(
      *      tags={"User Settings"},
      *      path="/users/settings/token",
      *      summary="Remove device token",
      *      security={{"bearerAuth":{}}},
+     *
      *      @OA\RequestBody(
      *          required=true,
+     *
      *          @OA\JsonContent(
      *              required={"token"},
+     *
      *              @OA\Property(
      *                  example="20bdb8fb3bdadc1bef037eefcaeb56ad6e57f3241c99e734062b6ee829271b71",
      *                  description="Device Token",
@@ -55,12 +53,15 @@ class SettingsController extends Controller
      *              )
      *          )
      *      ),
+     *
      *      @OA\Response(
+     *
      *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse"),
      *          description="Successful operation",
      *          response=201,
      *      )
      *  )
+     *
      * @return JsonResponse
      */
     public function deleteToken(Request $request)
@@ -71,27 +72,29 @@ class SettingsController extends Controller
             UserDeviceToken::removeToken($request->customer['id'], $query);
 
             return $this->successResponse([
-                'message' => 'Request has ended successfully'
+                'message' => 'Request has ended successfully',
             ]);
         } catch (Exception $e) {
             return $this->errorResponse(
                 $e->getMessage(),
-                (int)$e->getCode()
+                (int) $e->getCode()
             );
         }
     }
 
     /**
-     * @param Request $request
      * @OA\Post(
      *      tags={"User Settings"},
      *      path="/users/settings/token",
      *      summary="Add / Register device token",
      *      security={{"bearerAuth":{}}},
+     *
      *      @OA\RequestBody(
      *          required=true,
+     *
      *          @OA\JsonContent(
      *              required={"token"},
+     *
      *              @OA\Property(
      *                  example="20bdb8fb3bdadc1bef037eefcaeb56ad6e57f3241c99e734062b6ee829271b71",
      *                  description="Device Token",
@@ -112,12 +115,15 @@ class SettingsController extends Controller
      *              ),
      *          )
      *      ),
+     *
      *      @OA\Response(
+     *
      *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse"),
      *          description="Successful operation",
      *          response=201,
      *      )
      *  )
+     *
      * @return JsonResponse
      */
     public function addToken(Request $request)
@@ -125,36 +131,36 @@ class SettingsController extends Controller
         try {
             $query = UsersSettingsDto::tokenRequest($request, [
                 'application' => 'string|nullable',
-                'device' => 'string|nullable'
+                'device' => 'string|nullable',
             ]);
 
             UserDeviceToken::addToken($request->user()->id, $query);
 
             return $this->successResponse([
-                'message' => 'Request has ended successfully'
+                'message' => 'Request has ended successfully',
             ]);
         } catch (Exception $e) {
             return $this->errorResponse(
                 $e->getMessage(),
-                (int)$e->getCode()
+                (int) $e->getCode()
             );
         }
     }
 
     /**
-     * @param Request $request
      * @OA\Get(
      *      tags={"User Settings"},
      *      path="/users/settings/filter",
      *      summary="Get recommendations filters",
      *      security={{"bearerAuth":{}}},
+     *
      *      @OA\Response(
+     *
      *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse"),
      *          description="Successful operation",
      *          response=201,
      *      )
      *  )
-     * @return JsonResponse
      */
     public function getFilter(Request $request): JsonResponse
     {
@@ -166,21 +172,23 @@ class SettingsController extends Controller
         } catch (Exception $e) {
             return $this->errorResponse(
                 $e->getMessage(),
-                (int)$e->getCode()
+                (int) $e->getCode()
             );
         }
     }
 
     /**
-     * @param UserFilterSettingsRequest $request
      * @OA\Put(
      *      tags={"User Settings"},
      *      path="/users/settings/filter",
      *      summary="Update recommendations filters",
      *      security={{"bearerAuth":{}}},
+     *
      *      @OA\RequestBody(
      *          required=true,
+     *
      *          @OA\JsonContent(
+     *
      *              @OA\Property(
      *                  description="Search Radius in km (1-1000)",
      *                  property="search_radius",
@@ -206,27 +214,35 @@ class SettingsController extends Controller
      *                  description="Gender preferences array",
      *                  property="show_me",
      *                  type="array",
+     *
      *                  @OA\Items(
      *                      enum={"male", "female", "m_f", "m_m", "f_f"},
      *                      example="male",
      *                      type="string"
      *                  )
      *              ),
+     *
      *              @OA\Property(
      *                  description="City filter",
      *                  property="cities",
-     *                  example="Moscow",
-     *                  type="string"
+     *                  type="array",
+     *
+     *                  @OA\Items(
+     *                      example="Moscow",
+     *                      type="string"
+     *                  )
      *              )
      *          )
      *      ),
+     *
      *      @OA\Response(
+     *
      *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse"),
      *          description="Successful operation",
      *          response=201,
      *      )
      *  )
-     * @return JsonResponse
+     *
      * @throws \Throwable
      */
     public function setFilter(UserFilterSettingsRequest $request): JsonResponse
@@ -240,7 +256,90 @@ class SettingsController extends Controller
         } catch (Exception $e) {
             return $this->errorResponse(
                 $e->getMessage(),
-                (int)$e->getCode()
+                (int) $e->getCode()
+            );
+        }
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/users/settings/cities",
+     *     tags={"User Settings"},
+     *     summary="Get cities for filter settings",
+     *     description="Returns available cities for user filter settings with optional search functionality",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="q",
+     *         in="query",
+     *         description="Search query for filtering cities by name (searches cities that start with the query)",
+     *         required=false,
+     *
+     *         @OA\Schema(type="string", example="Белго")
+     *     ),
+     *
+     *     @OA\Response(
+     *          response=200,
+     *          description="Successful operation",
+     *
+     *          @OA\JsonContent(
+     *              ref="#/components/schemas/SuccessResponse",
+     *              example={
+     *                  "meta": {
+     *                      "error": null,
+     *                      "status": 200
+     *                  },
+     *                  "data": {
+     *                      {
+     *                          "formatted_address": "Белгород, Белгородская область, Россия"
+     *                      },
+     *                      {
+     *                          "formatted_address": "Белая Церковь, Киевская область, Украина"
+     *                      }
+     *                  }
+     *              }
+     *          )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *
+     *         @OA\JsonContent(ref="#/components/schemas/Unauthorized")
+     *     ),
+     *
+     *     @OA\Response(
+     *          response=500,
+     *          description="Server error",
+     *
+     *          @OA\JsonContent(
+     *              type="object",
+     *
+     *              @OA\Property(
+     *                  property="message",
+     *                  type="string",
+     *                  example="Произошла ошибка при получении городов"
+     *              ),
+     *              @OA\Property(
+     *                  property="errors",
+     *                  type="string",
+     *                  example="Database connection error"
+     *              )
+     *          )
+     *      )
+     * )
+     */
+    public function allCities(Request $request): JsonResponse
+    {
+        try {
+            $searchQuery = $request->query('q');
+            $cities = $this->citiesService->getCities($searchQuery);
+            
+            return $this->successResponse($cities);
+        } catch (Exception $e) {
+            return $this->errorResponse(
+                'Произошла ошибка при получении городов',
+                (int) $e->getCode() ?: 500
             );
         }
     }

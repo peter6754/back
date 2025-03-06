@@ -157,9 +157,6 @@ Route::prefix('users')->middleware('auth')->group(function () {
     Route::put('profile', [UsersController::class, 'updateAccountInformation']);
     Route::get('likes', [UsersController::class, 'getUserLikes']);
 
-    // update users coordinates
-    Route::post('coordinates', [UsersController::class, 'updateCoordinates']);
-
     // Photos route
     Route::prefix('photos')->group(function () {
         // CRUD photos
@@ -181,6 +178,9 @@ Route::prefix('users')->middleware('auth')->group(function () {
         // Filters
         Route::put('filter', [SettingsController::class, 'setFilter']);
         Route::get('filter', [SettingsController::class, 'getFilter']);
+
+        // Cities filter
+        Route::get('cities', [SettingsController::class, 'allCities']);
     });
 
     // Справочные данные
