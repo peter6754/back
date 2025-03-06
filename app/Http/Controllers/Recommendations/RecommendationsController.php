@@ -30,7 +30,7 @@ class RecommendationsController extends Controller
     }
 
     /**
-     * @param Request $request
+     * @param  Request  $request
      * @OA\Get(
      *      path="/recommendations/top-profiles",
      *      tags={"Recommendations"},
@@ -65,7 +65,7 @@ class RecommendationsController extends Controller
     }
 
     /**
-     * @param Request $request
+     * @param  Request  $request
      * @OA\Delete(
      *      path="/recommendations/match/{id}",
      *      tags={"Recommendations"},
@@ -108,7 +108,7 @@ class RecommendationsController extends Controller
                 $this->recommendations->deleteMatchedUser($request->user()->id, $query['user_id'])
             );
         } catch (Exception $e) {
-            Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
+            Log::channel('recommendations')->error(basename(__FILE__, ".php").' > '.__FUNCTION__.' error:', [
                 'user_id' => $request->user()->id ?? 'unknown',
                 'error' => $e->getMessage()
             ]);
@@ -119,7 +119,7 @@ class RecommendationsController extends Controller
     }
 
     /**
-     * @param Request $request
+     * @param  Request  $request
      * @OA\Post(
      *      path="/recommendations/dislike",
      *      tags={"Recommendations"},
@@ -163,7 +163,7 @@ class RecommendationsController extends Controller
                 $this->recommendations->dislike($request->user()->id, $query)
             );
         } catch (Exception $e) {
-            Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
+            Log::channel('recommendations')->error(basename(__FILE__, ".php").' > '.__FUNCTION__.' error:', [
                 'user_id' => $request->user()->id ?? 'unknown',
                 'error' => $e->getMessage()
             ]);
@@ -174,7 +174,7 @@ class RecommendationsController extends Controller
     }
 
     /**
-     * @param Request $request
+     * @param  Request  $request
      * @OA\Post(
      *      path="/recommendations/like",
      *      tags={"Recommendations"},
@@ -227,7 +227,7 @@ class RecommendationsController extends Controller
                 $this->recommendations->like($request->user()->id, $query)
             );
         } catch (Exception $e) {
-            Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
+            Log::channel('recommendations')->error(basename(__FILE__, ".php").' > '.__FUNCTION__.' error:', [
                 'user_id' => $request->user()->id ?? 'unknown',
                 'error' => $e->getMessage()
             ]);
@@ -238,7 +238,7 @@ class RecommendationsController extends Controller
     }
 
     /**
-     * @param Request $request
+     * @param  Request  $request
      * @OA\Get(
      *       path="/recommendations",
      *       tags={"Recommendations"},
@@ -297,12 +297,22 @@ class RecommendationsController extends Controller
             // Get queries
             $query = RecommendationsDto::forRecommendations($request);
 
+            $getResponse = $this->recommendations->getRecommendations($request->user()->id, $query);
+
+            // Return string error
+            if (is_string($getResponse)) {
+                return $this->errorResponse(
+                    $getResponse,
+                    404
+                );
+            }
+
             // Return data
             return $this->successResponse(
-                $this->recommendations->getRecommendations($request->user()->id, $query)
+                $getResponse
             );
         } catch (Exception $e) {
-            Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
+            Log::channel('recommendations')->error(basename(__FILE__, ".php").' > '.__FUNCTION__.' error:', [
                 'user_id' => $request->user()->id ?? 'unknown',
                 'error' => $e->getMessage()
             ]);
@@ -313,7 +323,7 @@ class RecommendationsController extends Controller
     }
 
     /**
-     * @param Request $request
+     * @param  Request  $request
      * @OA\Post(
      *      path="/recommendations/superlike",
      *      tags={"Recommendations"},
@@ -372,7 +382,7 @@ class RecommendationsController extends Controller
                 $this->recommendations->superlike($request->user()->id, $query)
             );
         } catch (Exception $e) {
-            Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
+            Log::channel('recommendations')->error(basename(__FILE__, ".php").' > '.__FUNCTION__.' error:', [
                 'user_id' => $request->user()->id ?? 'unknown',
                 'error' => $e->getMessage()
             ]);
@@ -383,7 +393,7 @@ class RecommendationsController extends Controller
     }
 
     /**
-     * @param Request $request
+     * @param  Request  $request
      * @OA\Post(
      *      path="/recommendations/rollback",
      *      tags={"Recommendations"},
@@ -427,7 +437,7 @@ class RecommendationsController extends Controller
                 $this->recommendations->rollback($request->user()->id, $query)
             );
         } catch (Exception $e) {
-            Log::channel('recommendations')->error(basename(__FILE__, ".php") . ' > ' . __FUNCTION__ . ' error:', [
+            Log::channel('recommendations')->error(basename(__FILE__, ".php").' > '.__FUNCTION__.' error:', [
                 'user_id' => $request->user()->id ?? 'unknown',
                 'error' => $e->getMessage()
             ]);

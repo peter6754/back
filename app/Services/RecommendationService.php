@@ -183,9 +183,9 @@ class RecommendationService
     /**
      * @param  string  $userId
      * @param  array  $query
-     * @return array|array[]|void
+     * @return string|array
      */
-    public function getRecommendations(string $userId, array $query)
+    public function getRecommendations(string $userId, array $query): string|array
     {
         $user = Secondaryuser::with(['userSettings', 'userPreferences'])
             ->select(['id', 'phone', 'lat', 'long'])
@@ -216,10 +216,7 @@ class RecommendationService
                 $forPage = array_splice($fromDb, 0, $this->recommendationsPageSize);
 
                 if (empty($forPage)) {
-                    return [
-                        'message' => 'Мы не нашли анкеты с данным критериями поиска',
-                        'items' => []
-                    ];
+                    return "Мы не нашли анкеты с данным критериями поиска";
                 }
 
                 if (!empty($fromDb)) {
