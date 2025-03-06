@@ -443,7 +443,7 @@ class RecommendationService
             $userId,
             $user->phone,
             $userId,
-            $user->settings->is_global_search,
+            (int) $user->settings->is_global_search,
             $ageRange[0],
             $ageRange[1],
             $cacheSize
