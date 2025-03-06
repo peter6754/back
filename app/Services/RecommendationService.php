@@ -368,12 +368,12 @@ class RecommendationService
      */
     private function _getRecommendationsForCache(string $userId, array $query, int $cacheSize): array
     {
-        $user = Secondaryuser::with(['settings', 'preferences'])
+        $user = Secondaryuser::with(['userSettings', 'preferences'])
             ->select(['id', 'phone', 'lat', 'long'])
             ->findOrFail($userId);
 
         $preferences = $user->preferences->pluck('gender')->toArray();
-        $ageRange = $user->settings->age_range;
+        $ageRange = $user->userSettings->age_range;
 
         $query = DB::select("
             WITH
@@ -435,7 +435,7 @@ class RecommendationService
         ", [
             $user->long,
             $user->lat,
-            $user->settings->search_radius,
+            $user->userSettings->search_radius,
             $userId,
 //            $userId,
             $userId,
@@ -443,7 +443,7 @@ class RecommendationService
             $userId,
             $user->phone,
             $userId,
-            (int) $user->settings->is_global_search,
+            $user->userSettings->is_global_search,
             $ageRange[0],
             $ageRange[1],
             $cacheSize
