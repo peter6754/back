@@ -52,7 +52,9 @@ class AuthService
     {
         $userToken = $params['device_token'] ?? null;
         $userPhone = $params['phone'];
+
         $code = (string) rand(1000, 9999);
+        $msgType = null;
 
         if (!(new PhoneNumber($userPhone))->isValid()) {
             throw new \Exception('Invalid phone number');

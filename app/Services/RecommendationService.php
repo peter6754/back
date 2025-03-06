@@ -468,6 +468,7 @@ class RecommendationService
                 u.name,
                 ui.bio,
                 u.is_online,
+                u.registration_date,
                 CAST(
                     IF(has_user_subscription(u.id) AND NOT us.show_my_age, NULL, u.age)
                     AS UNSIGNED
@@ -508,7 +509,8 @@ class RecommendationService
                 'is_online' => (bool) $r->is_online,
                 'photos' => $photos,
                 'age' => $r->age ? (int) $r->age : null,
-                'distance' => $r->distance !== null ? (int) $r->distance : null
+                'distance' => $r->distance !== null ? (int) $r->distance : null,
+                'new_user'=> $r->registration_date && (now()->diffInDays($r->registration_date) <= 1)
             ];
         }, $recommendations);
 
