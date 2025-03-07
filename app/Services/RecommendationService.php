@@ -415,7 +415,7 @@ class RecommendationService
                 AND u.lat IS NOT NULL
                 AND u.long IS NOT NULL
                 AND (u.id IN (SELECT id FROM users_in_my_radius)
-                    OR ('uc'.'formatted_address' is not null AND 'uc'.'formatted_address' = ?)
+                    OR (uc.formatted_address is not null AND uc.formatted_address = ?)
                     OR ?
                 )
                 AND u.age BETWEEN ? AND ?
