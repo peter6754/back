@@ -410,12 +410,11 @@ class RecommendationService
             SELECT DISTINCT u.id AS id
             FROM users u
             LEFT JOIN user_settings us ON us.user_id = u.id
-            LEFT JOIN user_cities uc ON us.user_id = u.id
             WHERE u.id != ?
                 AND u.lat IS NOT NULL
                 AND u.long IS NOT NULL
-                AND (u.id IN (SELECT id FROM users_in_my_radius)
-                    OR (uc.formatted_address is not null AND uc.formatted_address = ?)
+                AND (
+                    u.id IN (SELECT id FROM users_in_my_radius)
                     OR ?
                 )
                 AND u.age BETWEEN ? AND ?
@@ -443,7 +442,6 @@ class RecommendationService
             $userId,
             $user->phone,
             $userId,
-            $user->userSettings->filter_cities,
             $user->userSettings->is_global_search,
             $ageRange[0],
             $ageRange[1],
