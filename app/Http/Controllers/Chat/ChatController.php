@@ -323,7 +323,7 @@ class ChatController extends Controller
                             'user_id' => $lastMessage->sender_id,
                             'username' => $lastMessage->sender->name ?? null,
                             'text' => $lastMessage->message,
-                            'timestamp' => $lastMessage->created_at ?? now(),
+                            'timestamp' => $lastMessage->date ? $lastMessage->date->toISOString() : now()->toISOString(),
                         ] : null,
                         'is_pinned' => $isPinned,
                         'unread_count' => $unreadCount,
