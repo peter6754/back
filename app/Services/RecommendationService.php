@@ -198,11 +198,12 @@ class RecommendationService
         // Configure cache params
         $keyPart1 = implode('-', $user->userSettings->age_range);
         $keyPart2 = $user->userSettings->is_global_search ? 'global' : $user->userSettings->search_radius;
-        $keyPart3 = implode(',', $user->userPreferences->pluck('gender')->toArray());
-        $keyPart4 = isset($query['interest_id']) ? ':'.$query['interest_id'] : '';
+        $keyPart3 = $user->userSettings->filter_cities ? 'cities' : 'all';
+        $keyPart4 = implode(',', $user->userPreferences->pluck('gender')->toArray());
+        $keyPart5 = isset($query['interest_id']) ? ':'.$query['interest_id'] : '';
 
         // Configure cache
-        $key = "recommendations:{$userId}:{$keyPart1}:{$keyPart2}:{$keyPart3}{$keyPart4}";
+        $key = "recommendations:{$userId}:{$keyPart1}:{$keyPart2}:{$keyPart3}{$keyPart4}{$keyPart5}";
         $recommendationsCacheSize = $this->recommendationsPageSize;
 
         try {
@@ -212,7 +213,7 @@ class RecommendationService
             })[0];
 
             if (empty($forPage)) {
-                $fromDb = $this->_getRecommendationsForCache($userId, $query, $this->recommendationsCacheSize);
+                $fromDb = $this->_getRecommendationsForCache($userId, $query);
                 $forPage = array_splice($fromDb, 0, $this->recommendationsPageSize);
 
                 if (empty($forPage)) {
@@ -362,11 +363,10 @@ class RecommendationService
 
     /**
      * @param  string  $userId
-     * @param  array  $query
-     * @param  int  $cacheSize
+     * @param  array  $filters
      * @return array
      */
-    private function _getRecommendationsForCache(string $userId, array $query, int $cacheSize): array
+    private function _getRecommendationsForCache(string $userId, array $filters): array
     {
         $user = Secondaryuser::with(['userSettings', 'preferences'])
             ->select(['id', 'phone', 'lat', 'long'])
@@ -410,11 +410,12 @@ class RecommendationService
             SELECT DISTINCT u.id AS id
             FROM users u
             LEFT JOIN user_settings us ON us.user_id = u.id
+            LEFT JOIN user_cities uc ON us.user_id = u.id
             WHERE u.id != ?
                 AND u.lat IS NOT NULL
                 AND u.long IS NOT NULL
-                AND (
-                    u.id IN (SELECT id FROM users_in_my_radius)
+                AND (u.id IN (SELECT id FROM users_in_my_radius)
+                    OR ('uc'.'formatted_address' is not null AND 'uc'.'formatted_address' = ?)
                     OR ?
                 )
                 AND u.age BETWEEN ? AND ?
@@ -437,16 +438,16 @@ class RecommendationService
             $user->lat,
             $user->userSettings->search_radius,
             $userId,
-//            $userId,
             $userId,
             $userId,
             $userId,
             $user->phone,
             $userId,
+            $user->userSettings->filter_cities,
             $user->userSettings->is_global_search,
             $ageRange[0],
             $ageRange[1],
-            $cacheSize
+            $this->recommendationsCacheSize
         ]);
 
         return array_map(fn($item) => $item->id, $query);
