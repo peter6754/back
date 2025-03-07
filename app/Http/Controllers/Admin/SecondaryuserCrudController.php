@@ -6,6 +6,7 @@ use App\Http\Requests\SecondaryuserRequest;
 use App\Models\UserInformation;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
+use DB;
 
 /**
  * Class SecondaryuserCrudController
@@ -407,6 +408,62 @@ class SecondaryuserCrudController extends CrudController
                     CRUD::addClause('whereDoesntHave', 'activeSubscription');
                 }
             });
+        // Фильтр по версии приложения
+        $this->crud->addFilter([
+            'name' => 'app_version',
+            'type' => 'dropdown',
+            'label' => 'Версия приложения'
+        ], function() {
+            return DB::table('user_device_tokens')
+                ->select(DB::raw("DISTINCT TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(application, 'version: ', -1), ',', 1)) as version"))
+                ->whereNotNull('application')
+                ->where('application', 'like', '%version:%')
+                ->orderBy('version', 'desc')
+                ->pluck('version', 'version')
+                ->toArray();
+        }, function($value) {
+            $this->crud->query->where(function($query) use ($value) {
+                $query->whereIn('id', function($subquery) use ($value) {
+                    $subquery->select('user_id')
+                        ->from('user_device_tokens')
+                        ->where('application', 'like', '%version: ' . $value . '%');
+                });
+            });
+        });
+        // Фильтр по маркету
+        $this->crud->addFilter([
+            'name' => 'app_market',
+            'type' => 'dropdown',
+            'label' => 'Магазин приложения'
+        ], function() {
+            $markets = DB::table('user_device_tokens')
+                ->whereNotNull('application')
+                ->where('application', '!=', '')
+                ->get()
+                ->map(function($item) {
+                    if (preg_match('/market:\s*([^,]+)/', $item->application, $matches)) {
+                        return trim($matches[1]);
+                    }
+                    return null;
+                })
+                ->filter()
+                ->unique()
+                ->values()
+                ->mapWithKeys(function($market) {
+                    return [$market => $market];
+                })
+                ->toArray();
+
+            return $markets;
+        }, function($value) {
+            $this->crud->query->where(function($query) use ($value) {
+                $query->whereIn('id', function($subquery) use ($value) {
+                    $subquery->select('user_id')
+                        ->from('user_device_tokens')
+                        ->where('application', 'like', '%market: ' . $value . '%');
+                });
+            });
+        });
     }
 
     /**
@@ -437,6 +494,28 @@ class SecondaryuserCrudController extends CrudController
         CRUD::column('mode')->label('Режим');
         CRUD::column('registration_date')->label('Дата регистрации');
         $this->crud->query->orderBy('registration_date', 'desc');
+        CRUD::column('app_info')
+            ->label('Приложение')
+            ->type('custom_html')
+            ->value(function($entry) {
+                $application = DB::table('user_device_tokens')
+                    ->where('user_id', $entry->id)
+                    ->value('application');
+
+                if (!$application) {
+                    return '-';
+                }
+
+                $info = [];
+                if (preg_match('/version:\s*([^,]+)/', $application, $matches)) {
+                    $info[] = "<strong>Version:</strong> " . trim($matches[1]);
+                }
+                if (preg_match('/market:\s*([^,]+)/', $application, $matches)) {
+                    $info[] = "<strong>Market:</strong> " . trim($matches[1]);
+                }
+
+                return implode('<br>', $info);
+            });
         CRUD::column('last_check')->label('Последняя проверка');
         CRUD::column('is_online')->label('Онлайн');
         CRUD::disableResponsiveTable();
