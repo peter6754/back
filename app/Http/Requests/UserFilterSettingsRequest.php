@@ -24,7 +24,7 @@ class UserFilterSettingsRequest extends FormRequest
             'search_radius' => 'sometimes|integer|min:1|max:1000',
             'is_global_search' => 'sometimes|boolean',
             'show_me' => 'sometimes|array',
-            'cities' => 'string',
+            'city' => 'string',
             'age_range' => [
                 'regex:/^(?:1[89]|[2-9][0-9]|100)-(?:1[89]|[2-9][0-9]|100)$/',
                 'sometimes',

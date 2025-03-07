@@ -8,6 +8,7 @@ use App\Models\Conversation;
 use App\Models\Gifts;
 use App\Models\Secondaryuser as User;
 use App\Models\UserReaction;
+use Exception;
 
 class ChatService
 {
@@ -27,7 +28,10 @@ class ChatService
     }
 
     /**
+     * @param  array  $payload
+     * @param  bool  $isFirst
      * @return void
+     * @throws Exception
      */
     public function sendGift(array $payload, bool $isFirst = false)
     {
@@ -42,10 +46,10 @@ class ChatService
             ->first();
         $gift = Gifts::findOrFail($payload['gift_id']);
 
-        if (! $conversation) {
+        if (!$conversation) {
             // Check for mutual likes before creating conversation
-            if (! UserReaction::haveMutualLikes($payload['sender_id'], $payload['user_id'])) {
-                throw new \Exception('Conversation can only be created after mutual likes');
+            if (!UserReaction::haveMutualLikes($payload['sender_id'], $payload['user_id'])) {
+                throw new Exception('Conversation can only be created after mutual likes');
             }
 
             $conversation = Conversation::create([
@@ -88,7 +92,7 @@ class ChatService
                 })
                 ->first();
 
-            if (! $conversation) {
+            if (!$conversation) {
                 return [
                     'error' => [
                         'message' => 'Conversation not found or access denied',
@@ -107,7 +111,7 @@ class ChatService
 
             $senderInfo = User::find($senderId, ['name', 'age']);
 
-            if (! $senderInfo) {
+            if (!$senderInfo) {
                 return [
                     'error' => [
                         'message' => 'Sender not found',
@@ -176,7 +180,7 @@ class ChatService
 
             return ['error' => null];
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             \Log::error('Failed to emit message: '.$e->getMessage());
 
             return [

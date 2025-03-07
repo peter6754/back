@@ -2,23 +2,22 @@
 
 namespace App\Http\Controllers\Users;
 
-use App\Http\Requests\updateUserInfoRegistrationRequest;
-use App\Http\Requests\UpdateUserInformationRequest;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\GetUserLikesRequest;
 use App\Http\Requests\UpdateCoordinatesRequest;
+use App\Http\Requests\updateUserInfoRegistrationRequest;
+use App\Http\Requests\UpdateUserInformationRequest;
 use App\Http\Traits\ApiResponseTrait;
-use App\Http\Controllers\Controller;
 use App\Models\BoughtSubscriptions;
-use Illuminate\Http\JsonResponse;
-use App\Services\UserService;
 use App\Models\LikeSettings;
 use App\Models\Secondaryuser;
-use Illuminate\Http\Request;
+use App\Services\UserService;
 use Exception;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 /**
  * Class UsersController
- * @package App\Http\Controllers\Users
  */
 class UsersController extends Controller
 {
@@ -27,15 +26,10 @@ class UsersController extends Controller
      */
     use ApiResponseTrait;
 
-    /**
-     * @var UserService
-     */
     private UserService $userService;
 
     /**
      * UsersController constructor.
-     *
-     * @param UserService $userService
      */
     public function __construct(UserService $userService)
     {
@@ -43,7 +37,6 @@ class UsersController extends Controller
     }
 
     /**
-     * @param Request $request
      * @OA\Get(
      *     path="/users/profile",
      *     tags={"User Settings"},
@@ -54,6 +47,7 @@ class UsersController extends Controller
      *     @OA\Response(
      *          response=200,
      *          description="Successful operation",
+     *
      *          @OA\JsonContent(
      *              ref="#/components/schemas/SuccessResponse",
      *              example={
@@ -170,10 +164,11 @@ class UsersController extends Controller
      *     @OA\Response(
      *         response=401,
      *         description="Unauthorized",
+     *
      *         @OA\JsonContent(ref="#/components/schemas/Unauthorized")
      *     )
      * )
-     * @return JsonResponse
+     *
      * @throws Exception
      */
     public function getAccountInformation(Request $request): JsonResponse
@@ -186,24 +181,26 @@ class UsersController extends Controller
         } catch (Exception $e) {
             return $this->errorResponse(
                 $e->getMessage(),
-                (int)$e->getCode()
+                (int) $e->getCode()
             );
         }
     }
 
     /**
-     * @param UpdateUserInformationRequest $request
      * @OA\Put(
      *     path="/users/profile",
      *     tags={"User Settings"},
      *     summary="Update user information",
      *     description="Update comprehensive user profile information including personal details, preferences, pets, and settings",
      *     security={{"bearerAuth":{}}},
+     *
      *     @OA\RequestBody(
      *         required=false,
      *         description="User information to update (all fields are optional)",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(
      *                 property="bio",
      *                 type="string",
@@ -337,17 +334,20 @@ class UsersController extends Controller
      *                 minItems=3,
      *                 maxItems=5,
      *                 description="User interests (minimum 3, maximum 5)",
+     *
      *                 @OA\Items(
      *                     type="integer",
      *                     example=1,
      *                     description="Interest ID"
      *                 )
      *             ),
+     *
      *             @OA\Property(
      *                 property="pets",
      *                 type="array",
      *                 maxItems=10,
      *                 description="User pets (maximum 10)",
+     *
      *                 @OA\Items(
      *                     type="string",
      *                     enum={"dog", "cat", "reptile", "amphibian", "bird", "fish", "turtle", "rabbit", "hamster", "i_want", "dont_have"},
@@ -355,6 +355,7 @@ class UsersController extends Controller
      *                     description="Pet type"
      *                 )
      *             ),
+     *
      *             @OA\Property(
      *                 property="relationship_preference_id",
      *                 type="integer",
@@ -377,12 +378,14 @@ class UsersController extends Controller
      *                 property="show_me",
      *                 type="array",
      *                 description="Gender preferences for matching",
+     *
      *                 @OA\Items(
      *                     type="string",
      *                     enum={"male", "female", "m_f", "m_m", "f_f"},
      *                     example="female"
      *                 )
      *             ),
+     *
      *             @OA\Property(
      *                 property="registration_screen",
      *                 type="string",
@@ -393,11 +396,14 @@ class UsersController extends Controller
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Information updated successfully",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(
      *                 property="message",
      *                 type="string",
@@ -406,11 +412,14 @@ class UsersController extends Controller
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=422,
      *         description="Validation error",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(
      *                 property="message",
      *                 type="string",
@@ -424,30 +433,37 @@ class UsersController extends Controller
      *                 @OA\Property(
      *                     property="bio",
      *                     type="array",
+     *
      *                     @OA\Items(
      *                         type="string",
      *                         example="Биография не должна превышать 500 символов"
      *                     )
      *                 ),
+     *
      *                 @OA\Property(
      *                     property="interests",
      *                     type="array",
+     *
      *                     @OA\Items(
      *                         type="string",
      *                         example="Необходимо выбрать минимум 3 интереса"
      *                     )
      *                 ),
+     *
      *                 @OA\Property(
      *                     property="pets",
      *                     type="array",
+     *
      *                     @OA\Items(
      *                         type="string",
      *                         example="Можно выбрать максимум 10 питомцев"
      *                     )
      *                 ),
+     *
      *                 @OA\Property(
      *                     property="email",
      *                     type="array",
+     *
      *                     @OA\Items(
      *                         type="string",
      *                         example="Этот email уже используется другим пользователем"
@@ -456,11 +472,14 @@ class UsersController extends Controller
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=500,
      *         description="Server error",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(
      *                 property="message",
      *                 type="string",
@@ -475,13 +494,14 @@ class UsersController extends Controller
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(
+     *
      *         @OA\JsonContent(ref="#/components/schemas/Unauthorized"),
      *         description="Unauthorized",
      *         response=401
      *     )
      * )
-     * @return JsonResponse
      */
     public function updateAccountInformation(UpdateUserInformationRequest $request): JsonResponse
     {
@@ -496,10 +516,11 @@ class UsersController extends Controller
         } catch (Exception $e) {
             return $this->errorResponse(
                 $e->getMessage(),
-                (int)$e->getCode()
+                (int) $e->getCode()
             );
         }
     }
+
     /**
      * @OA\Post(
      *     path="/users/infoRegistration",
@@ -507,10 +528,13 @@ class UsersController extends Controller
      *     summary="Update user information during registration",
      *     description="Update user profile information, preferences, and settings during registration process",
      *     security={{"bearerAuth":{}}},
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\JsonContent(
      *             required={},
+     *
      *             @OA\Property(property="name", type="string", example="John", maxLength=255),
      *             @OA\Property(
      *                 property="gender",
@@ -540,15 +564,18 @@ class UsersController extends Controller
      *             @OA\Property(
      *                 property="show_me",
      *                 type="array",
+     *
      *                 @OA\Items(
      *                     type="string",
      *                     enum={"male", "female", "m_f", "m_m", "f_f"}
      *                 ),
      *                 example={"male", "female"}
      *             ),
+     *
      *             @OA\Property(
      *                 property="interests",
      *                 type="array",
+     *
      *                 @OA\Items(type="integer"),
      *                 minItems=3,
      *                 maxItems=5,
@@ -556,11 +583,14 @@ class UsersController extends Controller
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="User information updated successfully",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
@@ -574,20 +604,26 @@ class UsersController extends Controller
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=406,
      *         description="Validation error - wrong parameters",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="message", type="string", example="Wrong params"),
      *             @OA\Property(property="code", type="integer", example=4064)
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=422,
      *         description="Validation error - invalid input data",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(
      *                 property="message",
      *                 type="string",
@@ -599,16 +635,20 @@ class UsersController extends Controller
      *                 @OA\Property(
      *                     property="field_name",
      *                     type="array",
+     *
      *                     @OA\Items(type="string", example="The field name is required.")
      *                 )
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=500,
      *         description="Internal server error",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="message", type="string", example="Внутренняя ошибка сервера"),
      *             @OA\Property(property="code", type="integer", example=500)
      *         )
@@ -627,24 +667,25 @@ class UsersController extends Controller
             return $this->successResponse(['message' => 'Данные успешно обновлены']);
 
         } catch (\Exception $e) {
-            \Log::error('User info update error: ' . $e->getMessage());
+            \Log::error('User info update error: '.$e->getMessage());
 
             if ($e->getCode() === 4064) {
                 return response()->json([
                     'code' => 4064,
-                    'message' => 'Wrong params'
+                    'message' => 'Wrong params',
                 ], 406);
             }
 
             return $this->errorResponse(
                 $e->getMessage(),
-                (int)$e->getCode()
+                (int) $e->getCode()
             );
         }
     }
 
     /**
      * Get user likes with filtering options
+     *
      * @OA\Get(
      *     description="Retrieve users who liked the authenticated user with various filtering options",
      *     tags={"User Settings"},
@@ -658,6 +699,7 @@ class UsersController extends Controller
      *         required=false,
      *         name="filter",
      *         in="query",
+     *
      *         @OA\Schema(
      *             type="string",
      *             enum={"by_distance", "by_information", "by_verification_status", "by_settings"}
@@ -667,11 +709,15 @@ class UsersController extends Controller
      *     @OA\Response(
      *         description="Successful operation",
      *         response=200,
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(
      *                 property="items",
      *                 type="array",
+     *
      *                 @OA\Items(
+     *
      *                     @OA\Property(property="id", type="string"),
      *                     @OA\Property(property="name", type="string"),
      *                     @OA\Property(property="image", type="string"),
@@ -688,7 +734,6 @@ class UsersController extends Controller
      *         response=401,
      *         description="Unauthorized"
      *     ),
-     *
      *     @OA\Response(
      *         response=500,
      *         description="Server error"
@@ -750,20 +795,25 @@ class UsersController extends Controller
      *     summary="get email exist status",
      *     description="check email exist status",
      *     tags={"Users email exist check"},
+     *
      *     @OA\Parameter(
      *         name="email",
      *         in="query",
      *         description="Email для проверки",
      *         required=true,
+     *
      *         @OA\Schema(
      *             type="string",
      *             format="email"
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Успешный ответ",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(
      *                 property="status",
      *                 type="boolean",
@@ -776,10 +826,13 @@ class UsersController extends Controller
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=400,
      *         description="Некорректный запрос",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(
      *                 property="status",
      *                 type="boolean",
@@ -792,10 +845,13 @@ class UsersController extends Controller
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=500,
      *         description="Server error",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(
      *                 property="status",
      *                 type="boolean",
@@ -814,11 +870,11 @@ class UsersController extends Controller
     {
         $email = $request->query('email');
 
-        if (!$email) {
+        if (! $email) {
             return $this->errorResponse('Email обязателен для заполнения', 400);
         }
 
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return $this->errorResponse('Некорректный формат email', 400);
         }
 
@@ -827,15 +883,16 @@ class UsersController extends Controller
 
             return $this->successResponse([
                 'status' => $exists,
-                'message' => $exists ? 'Email существует' : 'Email не существует'
+                'message' => $exists ? 'Email существует' : 'Email не существует',
             ]);
         } catch (\Exception $e) {
             return $this->errorResponse(
                 $e->getMessage(),
-                (int)$e->getCode() ?: 500
+                (int) $e->getCode() ?: 500
             );
         }
     }
+
     /**
      * @OA\Get(
      *     path="/users/packagesInfo",
@@ -847,7 +904,9 @@ class UsersController extends Controller
      *     @OA\Response(
      *          response=200,
      *          description="Successful operation",
+     *
      *          @OA\JsonContent(
+     *
      *              @OA\Property(property="meta", type="object",
      *                  @OA\Property(property="error", type="null"),
      *                  @OA\Property(property="status", type="integer", example=200)
@@ -867,6 +926,7 @@ class UsersController extends Controller
      *     @OA\Response(
      *         response=401,
      *         description="Unauthorized",
+     *
      *         @OA\JsonContent(ref="#/components/schemas/Unauthorized")
      *     ),
      *
@@ -885,24 +945,27 @@ class UsersController extends Controller
         } catch (\Exception $e) {
             return $this->errorResponse(
                 $e->getMessage(),
-                (int)$e->getCode()
+                (int) $e->getCode()
             );
         }
     }
 
     /**
      * Update user coordinates and location
-     * 
+     *
      * @OA\Post(
      *     path="/users/coordinates",
      *     tags={"User Location"},
      *     summary="Update user coordinates",
      *     description="Update user coordinates, location and streak counter",
      *     security={{"bearerAuth":{}}},
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\JsonContent(
      *             required={"lat", "long"},
+     *
      *             @OA\Property(
      *                 property="lat",
      *                 type="string",
@@ -911,7 +974,7 @@ class UsersController extends Controller
      *             ),
      *             @OA\Property(
      *                 property="long",
-     *                 type="string", 
+     *                 type="string",
      *                 example="28.123456",
      *                 description="Longitude (-180 to 180)"
      *             ),
@@ -924,11 +987,14 @@ class UsersController extends Controller
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Coordinates updated successfully",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
@@ -942,11 +1008,14 @@ class UsersController extends Controller
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=422,
      *         description="Validation error",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="message", type="string", example="The given data was invalid."),
      *             @OA\Property(
      *                 property="errors",
@@ -954,26 +1023,34 @@ class UsersController extends Controller
      *                 @OA\Property(
      *                     property="lat",
      *                     type="array",
+     *
      *                     @OA\Items(type="string", example="Latitude is required")
      *                 ),
+     *
      *                 @OA\Property(
      *                     property="long",
-     *                     type="array", 
+     *                     type="array",
+     *
      *                     @OA\Items(type="string", example="Longitude is required")
      *                 )
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=401,
      *         description="Unauthorized",
+     *
      *         @OA\JsonContent(ref="#/components/schemas/Unauthorized")
      *     ),
+     *
      *     @OA\Response(
      *         response=500,
      *         description="Internal server error",
+     *
      *         @OA\JsonContent(
      *             type="object",
+     *
      *             @OA\Property(property="message", type="string", example="Failed to save coordinates"),
      *             @OA\Property(property="code", type="integer", example=500)
      *         )
@@ -985,8 +1062,8 @@ class UsersController extends Controller
         try {
             $authUser = $request->user();
             $user = Secondaryuser::find($authUser->id);
-            
-            if (!$user) {
+
+            if (! $user) {
                 return $this->errorResponse('User not found', 404);
             }
 
@@ -999,7 +1076,7 @@ class UsersController extends Controller
         } catch (Exception $e) {
             return $this->errorResponse(
                 $e->getMessage(),
-                (int)$e->getCode() ?: 500
+                (int) $e->getCode() ?: 500
             );
         }
     }
