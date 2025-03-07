@@ -11,6 +11,7 @@ class UserImage extends Model
     use HasFactory;
 
     public $incrementing = true;
+    public $timestamps = false;
     protected $primaryKey = 'id';
 
     /**
