@@ -247,6 +247,8 @@ class ChatController extends Controller
      *                         @OA\Property(property="online", type="boolean", example=true)
      *                     ),
      *                     @OA\Property(property="last_message", type="object", nullable=true,
+     *                         @OA\Property(property="user_id", type="string", example="sender-uuid"),
+     *                         @OA\Property(property="username", type="string", example="John Doe"),
      *                         @OA\Property(property="text", type="string", example="Hello!"),
      *                         @OA\Property(property="timestamp", type="string", format="date-time")
      *                     ),
@@ -294,6 +296,7 @@ class ChatController extends Controller
 
                     // Get last message
                     $lastMessage = ChatMessage::where('conversation_id', $conversation->id)
+                        ->with('sender:id,name')
                         ->orderBy('id', 'desc')
                         ->first();
 
@@ -317,6 +320,8 @@ class ChatController extends Controller
                             'online' => $otherUser->is_online,
                         ],
                         'last_message' => $lastMessage ? [
+                            'user_id' => $lastMessage->sender_id,
+                            'username' => $lastMessage->sender->name ?? null,
                             'text' => $lastMessage->message,
                             'timestamp' => $lastMessage->created_at ?? now(),
                         ] : null,
