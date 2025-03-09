@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Helpers\UserInformationTranslator;
+use App\Models\BlockedContacts;
+use App\Models\ConnectedAccount;
 use App\Models\LikeSettings;
 use App\Models\Secondaryuser;
 use App\Models\UserPreference;
@@ -882,6 +884,163 @@ class UserService
                 'error' => $e->getTraceAsString(),
             ]);
             throw new Exception('Failed to save coordinates: '.$e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * @param string $userId
+     * @return array|null[]
+     * @throws Exception
+     */
+    public function getConnectedAccounts(string $userId): array
+    {
+        try {
+            $google = ConnectedAccount::where('user_id', $userId)
+                ->where('provider', 'google')
+                ->first();
+
+            $facebook = ConnectedAccount::where('user_id', $userId)
+                ->where('provider', 'facebook')
+                ->first();
+
+            $vk = ConnectedAccount::where('user_id', $userId)
+                ->where('provider', 'vkontakte')
+                ->first();
+
+            $apple = ConnectedAccount::where('user_id', $userId)
+                ->where('provider', 'apple')
+                ->first();
+
+            $settings = UserSettings::where('user_id', $userId)
+                ->select([
+                    'login_with_apple',
+                    'login_with_google',
+                    'login_with_facebook',
+                    'login_with_vk'
+                ])
+                ->first();
+
+            return [
+                'google' => !$google ? null : ($settings->login_with_google ?? null),
+                'facebook' => !$facebook ? null : ($settings->login_with_facebook ?? null),
+                'apple' => !$apple ? null : ($settings->login_with_apple ?? null),
+                'vk' => !$vk ? null : ($settings->login_with_vk ?? null)
+            ];
+
+        } catch (Exception $e) {
+            Log::error('Error fetching connected accounts for user: ' . $userId, [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            throw new Exception('Failed to get user packages: '.$e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * @param string $userId
+     * @param string|null $query
+     * @return array
+     */
+    public function getBlockedContacts(string $userId, ?string $query = null): array
+    {
+        try {
+
+            $blockedContacts = BlockedContacts::where('user_id', $userId)
+                ->when($query, function ($queryBuilder) use ($query) {
+                    $queryBuilder->where('phone', 'like', "%{$query}%");
+                })
+                ->get();
+            return $blockedContacts->toArray();
+
+        } catch (Exception $e) {
+            Log::error('Error fetching blocked contacts', [
+                'user_id' => $userId,
+                'query' => $query,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return [];
+        }
+    }
+
+    /**
+     * @param string $userId
+     * @param array $data
+     * @return string[]
+     * @throws \Throwable
+     */
+    public function createBlockedContact(string $userId, array $data): array
+    {
+        DB::beginTransaction();
+
+        try {
+
+            $existingContact = BlockedContacts::where('user_id', $userId)
+                ->where('phone', $data['phone'])
+                ->first();
+
+            if ($existingContact) {
+                throw new Exception('Blocked contact already exists', 406);
+            }
+
+            BlockedContacts::create([
+                'user_id' => $userId,
+                'phone' => $data['phone'],
+                'name' => $data['name'],
+                'date' => now()->toDateString()
+            ]);
+
+            DB::commit();
+
+            return [
+                'message' => 'Data added successfully'
+            ];
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('Transaction failed for blocked contact', [
+                'user_id' => $userId,
+                'error' => $e->getMessage()
+            ]);
+
+            throw new Exception ($e->getMessage(), $e->getCode());
+        }
+    }
+
+    /**
+     * @param string $phone
+     * @param string $userId
+     * @return string[]
+     * @throws Exception
+     */
+    public function deleteBlockedContact(string $phone, string $userId): array
+    {
+        try {
+
+            $blockedContact = BlockedContacts::where('user_id', $userId)
+                ->where('phone', $phone)
+                ->first();
+
+            if (!$blockedContact) {
+                throw new Exception('Data not exist', 404);
+            }
+
+            $blockedContact->delete();
+
+            return [
+                'message' => 'Data deleted successfully'
+            ];
+
+        } catch (Exception $e) {
+            Log::error('Error deleting blocked contact', [
+                'user_id' => $userId,
+                'phone' => $phone,
+                'error' => $e->getMessage()
+            ]);
+
+            throw new Exception ($e->getMessage(), $e->getCode());
         }
     }
 }

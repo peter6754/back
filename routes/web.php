@@ -185,6 +185,12 @@ Route::prefix('users')->middleware('auth')->group(function () {
 
         // Cities filter
         Route::get('cities', [SettingsController::class, 'allCities']);
+
+        // Other
+        Route::get('connected-accounts', [SettingsController::class, 'getConnectedAccounts']);
+        Route::get("blocked-contacts", [SettingsController::class, 'getBlockedContacts']);
+        Route::post("blocked-contacts", [SettingsController::class, 'createBlockedContact']);
+        Route::delete("blocked-contacts", [SettingsController::class, 'deleteBlockedContact']);
     });
 
     // Справочные данные
