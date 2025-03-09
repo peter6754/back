@@ -330,7 +330,7 @@ class SettingsController extends Controller
         try {
             $searchQuery = $request->query('q');
             $cities = $this->citiesService->getCities($searchQuery);
-            
+
             return $this->successResponse($cities);
         } catch (Exception $e) {
             return $this->errorResponse(
@@ -339,4 +339,242 @@ class SettingsController extends Controller
             );
         }
     }
+
+    /**
+     * @param Request $request
+     * @OA\Get(
+     *     tags={"User Settings"},
+     *     path="/users/settings/connected-accounts",
+     *     summary="Get connected accounts",
+     *     description="Get user's connected social accounts with settings",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="google", type="boolean", nullable=true),
+     *             @OA\Property(property="facebook", type="boolean", nullable=true),
+     *             @OA\Property(property="apple", type="boolean", nullable=true),
+     *             @OA\Property(property="vk", type="boolean", nullable=true)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     )
+     * )
+     * @return JsonResponse
+     * @throws Exception
+     */
+    public function getConnectedAccounts(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+
+            $connectedAccounts = $this->userService->getConnectedAccounts($user->id);
+
+            return $this->successResponse($connectedAccounts);
+        } catch (Exception $e) {
+            return $this->errorResponse(
+                'Error get connected accounts',
+                (int) $e->getCode() ?: 500
+            );
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @OA\Get(
+     *     tags={"User Settings"},
+     *     path="/users/settings/blocked-contacts",
+     *     summary="Get blocked contacts",
+     *     description="Get user's blocked contacts with optional phone number search",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="query",
+     *         in="query",
+     *         description="Search query for phone number",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(
+     *                 @OA\Property(property="user_id", type="string", example="user-123"),
+     *                 @OA\Property(property="phone", type="string", example="+1234567890"),
+     *                 @OA\Property(property="name", type="string", example="John Doe"),
+     *                 @OA\Property(property="date", type="string", format="date", example="2024-01-15")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="Failed to retrieve blocked contacts"),
+     *             @OA\Property(property="message", type="string", example="Error message details")
+     *         )
+     *     )
+     * )
+     * @return JsonResponse
+     * @throws Exception
+     */
+    public function getBlockedContacts(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            $query = $request->input('query');
+
+            $blockedContacts = $this->userService->getBlockedContacts($user->id, $query);
+
+            return $this->successResponse($blockedContacts);
+
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Error get blocked contacts',
+                (int) $e->getCode() ?: 500
+            );
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @OA\Post(
+     *     tags={"User Settings"},
+     *     path="/users/settings/blocked-contacts",
+     *     summary="Create blocked contact",
+     *     description="Add a new phone number to blocked contacts",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"phone", "name"},
+     *             @OA\Property(property="phone", type="string", example="+1234567890"),
+     *             @OA\Property(property="name", type="string", example="John Doe")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successfully created",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Data added successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=406,
+     *         description="Already exists",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="Blocked contact already exists"),
+     *             @OA\Property(property="code", type="integer", example=4060)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error"
+     *     )
+     * )
+     * @return JsonResponse
+     * @throws \Throwable
+     */
+    public function createBlockedContact(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'phone' => 'required|string|max:20',
+                'name' => 'required|string|max:255'
+            ]);
+
+            $user = $request->user();
+
+            $result = $this->userService->createBlockedContact($user->id, $validated);
+
+            return $this->successResponse($result);
+
+        } catch (Exception $e) {
+
+            return $this->errorResponse(
+                $e->getMessage(),
+                (int)$e->getCode() ?: 500
+            );
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @param string $phone
+     * @OA\Delete(
+     *     tags={"User Settings"},
+     *     path="/users/settings/blocked-contacts/{phone}",
+     *     summary="Delete blocked contact",
+     *     description="Delete a blocked contact by phone number",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="phone",
+     *         in="path",
+     *         description="Phone number to delete",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successfully deleted",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Data deleted successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="Data doesn't exist"),
+     *             @OA\Property(property="code", type="integer", example=404)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error"
+     *     )
+     * )
+     * @return JsonResponse
+     * @throws Exception
+     */
+    public function deleteBlockedContact(Request $request, string $phone): JsonResponse
+    {
+        try {
+            $user = $request->user();
+
+            $phone = urldecode($phone);
+
+            $result = $this->userService->deleteBlockedContact($phone, $user->id);
+
+            return $this->successResponse($result);
+
+        } catch (Exception $e) {
+
+            return $this->errorResponse(
+                $e->getMessage(),
+                (int)$e->getCode() ?: 500
+            );
+        }
+    }
+
 }

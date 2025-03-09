@@ -437,4 +437,12 @@ class Secondaryuser extends Model
     {
         return $this->hasMany(UserReaction::class, 'user_id');
     }
+
+    /**
+     * @return Secondaryuser|HasMany
+     */
+    public function blockedContacts()
+    {
+        return $this->hasMany(BlockedContacts::class, 'user_id');
+    }
 }
