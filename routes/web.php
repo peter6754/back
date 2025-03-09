@@ -220,6 +220,11 @@ Route::prefix('users')->group(function () {
     Route::get('email-exist', [UsersController::class, 'getEmailExistenceStatus']);
 });
 
+// Image admin view and edit
+Route::get('admin/image-proxy/{imageId}', [
+    App\Http\Controllers\Admin\ImageProxyController::class, 'show'
+])->where('imageId', '.*')->middleware(['web']);
+
 // Default routes
 Route::get('swagger', function () {
     $getGenerator = Generator::scan([

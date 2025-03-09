@@ -41,140 +41,58 @@ class SecondaryuserCrudController extends CrudController
         CRUD::column('name')->label('Имя');
         CRUD::column('age')->label('Возраст');
         $this->crud->addColumn([
-            'name' => 'random_image',
-            'label' => 'Фотография',
+            'name' => 'photos_management',
+            'label' => 'Фотографии',
             'type' => 'custom_html',
             'escaped' => false,
             'value' => function ($entry) {
                 $images = $entry->images;
+                $html = '';
+
                 if ($images->isNotEmpty()) {
-                    // Устанавливаем ширину колонки в зависимости от количества изображений
                     $count = $images->count();
-                    $width = $count * 70; // 60px ширина изображения + 10px отступ для каждого
+                    $width = $count * 70;
 
-                    // Начало строки изображений
-                    $imagesHtml = '<div style="display: flex; width: '.$width.'px; gap: 5px;">';
+                    $html .= '<div style="display: flex; width: '.$width.'px; gap: 5px; margin-bottom: 10px;">';
 
-                    // Добавляем каждое изображение
                     foreach ($images as $idx => $image) {
                         $imageUrl = $image->image_url;
-                        // Передаем массив url и индекс текущего изображения
+                        $isMain = $image->is_main ?? false;
+
                         $allUrls = $images->pluck('image_url')->map(fn ($url) => addslashes($url))->toArray();
-                        $imagesHtml .= '
-                        <img src="'.$imageUrl.'" height="80px" width="60px" style="cursor: pointer;"
-                            onclick="openGlobalModal('.htmlspecialchars(json_encode($allUrls)).', '.$idx.')">
-                    ';
+
+                        $mainIndicator = $isMain ?
+                            '<div style="position: absolute; top: 2px; right: 2px; background: gold; color: black; padding: 1px 4px; font-size: 9px; border-radius: 2px; font-weight: bold;">ГЛАВНОЕ</div>' : '';
+
+                        $borderColor = $isMain ? '#ffd700' : '#ddd';
+
+                        $html .= '
+                <div style="position: relative; flex-shrink: 0;">
+                    <img src="'.$imageUrl.'" height="80px" width="60px"
+                         style="cursor: pointer; border: 2px solid '.$borderColor.'; border-radius: 4px; object-fit: cover;"
+                         onclick="openGlobalModal('.htmlspecialchars(json_encode($allUrls)).', '.$idx.')">
+                    '.$mainIndicator.'
+                </div>';
                     }
 
-                    $imagesHtml .= '</div>';
-
-                    // Скрипт для создания глобального модального окна
-                    $imagesHtml .= '
-    <script>
-        function openGlobalModal(imageUrls, currentIndex) {
-            // Удаляем старое модальное окно, если оно есть
-            closeGlobalModal();
-
-            const modal = document.createElement("div");
-            modal.id = "globalImageModal";
-            modal.style.position = "fixed";
-            modal.style.top = 0;
-            modal.style.left = 0;
-            modal.style.width = "100%";
-            modal.style.height = "100%";
-            modal.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
-            modal.style.display = "flex";
-            modal.style.justifyContent = "center";
-            modal.style.alignItems = "center";
-            modal.style.zIndex = 99999;
-
-            // Кнопка закрытия
-            const closeButton = document.createElement("span");
-            closeButton.innerHTML = "&times;";
-            closeButton.style.position = "absolute";
-            closeButton.style.top = "20px";
-            closeButton.style.right = "30px";
-            closeButton.style.fontSize = "30px";
-            closeButton.style.color = "white";
-            closeButton.style.cursor = "pointer";
-            closeButton.onclick = function() {
-                closeGlobalModal();
-            };
-
-            // Кнопки влево/вправо
-            const leftButton = document.createElement("span");
-            leftButton.innerHTML = "&#8592;";
-            leftButton.style.position = "absolute";
-            leftButton.style.left = "40px";
-            leftButton.style.top = "50%";
-            leftButton.style.fontSize = "40px";
-            leftButton.style.color = "white";
-            leftButton.style.cursor = "pointer";
-            leftButton.style.userSelect = "none";
-            leftButton.onclick = function(e) {
-                e.stopPropagation();
-                showImage(currentIndex - 1);
-            };
-
-            const rightButton = document.createElement("span");
-            rightButton.innerHTML = "&#8594;";
-            rightButton.style.position = "absolute";
-            rightButton.style.right = "40px";
-            rightButton.style.top = "50%";
-            rightButton.style.fontSize = "40px";
-            rightButton.style.color = "white";
-            rightButton.style.cursor = "pointer";
-            rightButton.style.userSelect = "none";
-            rightButton.onclick = function(e) {
-                e.stopPropagation();
-                showImage(currentIndex + 1);
-            };
-
-            // Полноразмерное изображение
-            const img = document.createElement("img");
-            img.style.maxWidth = "90%";
-            img.style.maxHeight = "90%";
-            img.style.borderRadius = "5px";
-
-            function showImage(idx) {
-                if (idx < 0) idx = imageUrls.length - 1;
-                if (idx >= imageUrls.length) idx = 0;
-                currentIndex = idx;
-                img.src = imageUrls[currentIndex];
-            }
-
-            showImage(currentIndex);
-
-            // Добавляем элементы в модальное окно
-            modal.appendChild(closeButton);
-            if (imageUrls.length > 1) {
-                modal.appendChild(leftButton);
-                modal.appendChild(rightButton);
-            }
-            modal.appendChild(img);
-
-            modal.onclick = function(e) {
-                if (e.target === modal) {
-                    closeGlobalModal();
-                }
-            };
-
-            document.body.appendChild(modal);
-        }
-
-        function closeGlobalModal() {
-            const modal = document.getElementById("globalImageModal");
-            if (modal) {
-                document.body.removeChild(modal);
-            }
-        }
-    </script>
-                    ';
-
-                    return $imagesHtml;
+                    $html .= '</div>';
+                } else {
+                    $html .= '<div style="color: #999; margin-bottom: 10px; text-align: center;">Нет фото</div>';
                 }
 
-                return 'Нет фото';
+                $html .= '<a href="'.url('admin/users/'.$entry->id.'/photos').'"
+                     class="btn btn-sm btn-primary" target="_blank"
+                     style="padding: 4px 8px; font-size: 11px; text-decoration: none;">
+                    <i class="fa fa-cog" style="margin-right: 4px;"></i>Управление ('.$images->count().')
+                  </a>';
+
+                static $scriptAdded = false;
+                if (!$scriptAdded) {
+                    $html .= $this->getOriginalModalScript();
+                    $scriptAdded = true;
+                }
+
+                return $html;
             },
         ]);
 
@@ -566,5 +484,128 @@ class SecondaryuserCrudController extends CrudController
     protected function setupUpdateOperation()
     {
         $this->setupCreateOperation();
+    }
+
+    private function getOriginalModalScript()
+    {
+        return '
+    <script>
+    function openGlobalModal(imageUrls, currentIndex) {
+        // Удаляем старое модальное окно, если оно есть
+        closeGlobalModal();
+
+        const modal = document.createElement("div");
+        modal.id = "globalImageModal";
+        modal.style.position = "fixed";
+        modal.style.top = 0;
+        modal.style.left = 0;
+        modal.style.width = "100%";
+        modal.style.height = "100%";
+        modal.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
+        modal.style.display = "flex";
+        modal.style.justifyContent = "center";
+        modal.style.alignItems = "center";
+        modal.style.zIndex = 99999;
+
+        // Кнопка закрытия
+        const closeButton = document.createElement("span");
+        closeButton.innerHTML = "&times;";
+        closeButton.style.position = "absolute";
+        closeButton.style.top = "20px";
+        closeButton.style.right = "30px";
+        closeButton.style.fontSize = "30px";
+        closeButton.style.color = "white";
+        closeButton.style.cursor = "pointer";
+        closeButton.onclick = function() {
+            closeGlobalModal();
+        };
+
+        // Кнопки влево/вправо
+        const leftButton = document.createElement("span");
+        leftButton.innerHTML = "&#8592;";
+        leftButton.style.position = "absolute";
+        leftButton.style.left = "40px";
+        leftButton.style.top = "50%";
+        leftButton.style.fontSize = "40px";
+        leftButton.style.color = "white";
+        leftButton.style.cursor = "pointer";
+        leftButton.style.userSelect = "none";
+        leftButton.onclick = function(e) {
+            e.stopPropagation();
+            showImage(currentIndex - 1);
+        };
+
+        const rightButton = document.createElement("span");
+        rightButton.innerHTML = "&#8594;";
+        rightButton.style.position = "absolute";
+        rightButton.style.right = "40px";
+        rightButton.style.top = "50%";
+        rightButton.style.fontSize = "40px";
+        rightButton.style.color = "white";
+        rightButton.style.cursor = "pointer";
+        rightButton.style.userSelect = "none";
+        rightButton.onclick = function(e) {
+            e.stopPropagation();
+            showImage(currentIndex + 1);
+        };
+
+        // Полноразмерное изображение
+        const img = document.createElement("img");
+        img.style.maxWidth = "90%";
+        img.style.maxHeight = "90%";
+        img.style.borderRadius = "5px";
+
+        function showImage(idx) {
+            if (idx < 0) idx = imageUrls.length - 1;
+            if (idx >= imageUrls.length) idx = 0;
+            currentIndex = idx;
+            img.src = imageUrls[currentIndex];
+        }
+
+        showImage(currentIndex);
+
+        // Добавляем элементы в модальное окно
+        modal.appendChild(closeButton);
+        if (imageUrls.length > 1) {
+            modal.appendChild(leftButton);
+            modal.appendChild(rightButton);
+        }
+        modal.appendChild(img);
+
+        modal.onclick = function(e) {
+            if (e.target === modal) {
+                closeGlobalModal();
+            }
+        };
+
+        document.body.appendChild(modal);
+
+        // Обработка клавиатуры
+        document.addEventListener("keydown", function modalKeyHandler(e) {
+            if (document.getElementById("globalImageModal")) {
+                switch(e.key) {
+                    case "Escape":
+                        closeGlobalModal();
+                        break;
+                    case "ArrowLeft":
+                        if (imageUrls.length > 1) showImage(currentIndex - 1);
+                        break;
+                    case "ArrowRight":
+                        if (imageUrls.length > 1) showImage(currentIndex + 1);
+                        break;
+                }
+            } else {
+                document.removeEventListener("keydown", modalKeyHandler);
+            }
+        });
+    }
+
+    function closeGlobalModal() {
+        const modal = document.getElementById("globalImageModal");
+        if (modal) {
+            document.body.removeChild(modal);
+        }
+    }
+    </script>';
     }
 }
