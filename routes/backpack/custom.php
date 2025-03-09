@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\UserPhotosPageController;
 use Illuminate\Support\Facades\Route;
 
 // --------------------------
@@ -36,6 +37,19 @@ Route::group([
     Route::crud('mail-queue', 'MailQueueCrudController');
     Route::crud('mail-template', 'MailTemplateCrudController');
     Route::crud('city-analytics', 'CityAnalyticsCrudController');
+
+
+// Роуты для управления фотографиями пользователей
+    Route::prefix('users/{user}')->group(function () {
+        Route::get('photos', [UserPhotosPageController::class, 'index'])
+            ->name('admin.users.photos.index');
+        Route::post('photos', [UserPhotosPageController::class, 'store'])
+            ->name('admin.users.photos.store');
+        Route::patch('photos/set-main', [UserPhotosPageController::class, 'setMain'])
+            ->name('admin.users.photos.set-main');
+        Route::delete('photos/delete', [UserPhotosPageController::class, 'destroy'])
+            ->name('admin.users.photos.destroy');
+    });
 
 // Дополнительные маршруты
     Route::get('mail-template/{id}/preview', 'MailTemplateCrudController@preview')
