@@ -659,7 +659,7 @@ class ChatController extends Controller
                         'sender_id' => $message->sender_id,
                         'message' => $message->message,
                         'type' => $message->type,
-                        'created_at' => $message->created_at,
+                        'created_at' => $message->date,
                         'is_read' => $message->is_seen,
                         'gift' => $message->gift,
                         'contact_type' => $message->contact_type,
