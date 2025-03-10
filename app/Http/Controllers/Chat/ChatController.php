@@ -330,7 +330,22 @@ class ChatController extends Controller
                     ];
                 })
                 ->sortByDesc(function ($conversation) {
-                    return $conversation['is_pinned'] ? 1 : 0;
+                    // получаем timestamps для сортировки
+                    $timestamp = 0;
+                    if ($conversation['last_message'] && $conversation['last_message']['timestamp']) {
+                        try {
+                            $timestamp = \Carbon\Carbon::parse($conversation['last_message']['timestamp'])->timestamp;
+                        } catch (\Exception $e) {
+                            $timestamp = 0;
+                        }
+                    }
+
+                    // если закреп, добавим число
+                    if ($conversation['is_pinned']) {
+                        return $timestamp + 9999999999;
+                    }
+
+                    return $timestamp;
                 })
                 ->values()
                 ->toArray();
@@ -659,7 +674,7 @@ class ChatController extends Controller
                         'sender_id' => $message->sender_id,
                         'message' => $message->message,
                         'type' => $message->type,
-                        'created_at' => $message->created_at,
+                        'created_at' => $message->date,
                         'is_read' => $message->is_seen,
                         'gift' => $message->gift,
                         'contact_type' => $message->contact_type,
