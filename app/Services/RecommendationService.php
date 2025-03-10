@@ -183,9 +183,9 @@ class RecommendationService
     /**
      * @param  string  $userId
      * @param  array  $query
-     * @return string|array
+     * @return mixed
      */
-    public function getRecommendations(string $userId, array $query): string|array
+    public function getRecommendations(string $userId, array $query): mixed
     {
         $user = Secondaryuser::with(['userSettings', 'userPreferences'])
             ->select(['id', 'phone', 'lat', 'long'])
