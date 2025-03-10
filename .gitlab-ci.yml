@@ -1,0 +1,18 @@
+image: debian:bullseye
+
+before_script:
+  - apt-get update && apt-get install -y openssh-client php-cli
+
+stages:
+  - deploy
+
+deploy_to_production:
+  stage: deploy
+  script:
+    - mkdir -p ~/.ssh
+    - echo -e "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh-keyscan -H 176.118.167.210 >> ~/.ssh/known_hosts
+    - ssh root@176.118.167.210 "cd /var/www/admin.tinderone.ru && ./admin_panel_update.sh"
+  only:
+    - main
