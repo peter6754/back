@@ -232,6 +232,7 @@ class RecommendationService
                 'user_id' => $userId,
                 'error' => $e
             ]);
+            return [];
         }
     }
 
