@@ -181,11 +181,11 @@ class RecommendationService
     }
 
     /**
-     * @param $user
+     * @param  Secondaryuser  $user
      * @param  array  $query
      * @return mixed
      */
-    public function getRecommendations($user, array $query): mixed
+    public function getRecommendations(Secondaryuser $user, array $query): mixed
     {
         if ($user->userPreferences->isEmpty()) {
             return [
@@ -368,11 +368,11 @@ class RecommendationService
     }
 
     /**
-     * @param $user
+     * @param  Secondaryuser  $user
      * @param  array  $filters
      * @return array
      */
-    private function _getRecommendationsForCache($user, array $filters): array
+    private function _getRecommendationsForCache(Secondaryuser $user, array $filters): array
     {
         $preferences = $user->userPreferences->pluck('gender')->toArray();
         $isGlobalSearch = $user->userSettings->is_global_search;
@@ -446,11 +446,11 @@ class RecommendationService
     }
 
     /**
-     * @param $user
+     * @param  Secondaryuser  $user
      * @param $usersIds
      * @return array
      */
-    private function _getRecommendationsPage($user, $usersIds): array
+    private function _getRecommendationsPage(Secondaryuser $user, $usersIds): array
     {
         $recommendations = DB::select("
             SELECT
@@ -538,9 +538,9 @@ class RecommendationService
 
 
     /**
-     * @param  string  $user_id
-     * @param  bool  $is_match
-     * @param  bool  $superlike
+     * @param  string  $userId
+     * @param  bool  $isMatch
+     * @param  bool  $superLike
      * @return bool
      */
     public function handleLikeNotification(string $userId = "", bool $isMatch = false, bool $superLike = false): bool
