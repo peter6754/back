@@ -378,11 +378,10 @@ class RecommendationService
      */
     private function _getRecommendationsForCache( $user, array $filters): array
     {
-        $preferences = $user->preferences->pluck('gender')->toArray();
+        $preferences = $user->userPreferences->pluck('gender')->toArray();
         $isGlobalSearch = $user->userSettings->is_global_search;
         $searchRadius = $user->userSettings->search_radius;
         $ageRange = $user->userSettings->age_range;
-        $userId = $user->id;
 
         // Базовый запрос
         $query = DB::table('users as u')
