@@ -216,7 +216,7 @@ class RecommendationService
             })[0];
 
             if (empty($forPage)) {
-                $fromDb = $this->_getRecommendationsForCache($userId, $query);
+                $fromDb = $this->_getRecommendationsForCache($user, $query);
                 $forPage = array_splice($fromDb, 0, $this->recommendationsPageSize);
 
                 if (empty($forPage)) {
@@ -372,111 +372,24 @@ class RecommendationService
     }
 
     /**
-     * @param  string  $userId
+     * @param    $userId
      * @param  array  $filters
      * @return array
      */
-    private function _getRecommendationsForCache_old(string $userId, array $filters): array
+    private function _getRecommendationsForCache( $user, array $filters): array
     {
-        $user = Secondaryuser::with(['userSettings', 'preferences'])
-            ->select(['id', 'phone', 'lat', 'long'])
-            ->findOrFail($userId);
-
         $preferences = $user->preferences->pluck('gender')->toArray();
-        $ageRange = $user->userSettings->age_range;
-
-        $query = DB::select("
-            WITH
-            users_in_my_radius AS (
-                SELECT u.id
-                FROM users u
-                WHERE ST_Distance_Sphere(point(?, ?), point(u.long, u.lat)) / 1000 <= ?
-                    AND u.id != ?
-            ),
-            my_matches AS (
-                SELECT user_id FROM (
-                    SELECT user_id
-                    FROM user_reactions
-                    WHERE reactor_id = ?
-                    
-                    UNION ALL
-                    
-                    SELECT reactor_id as user_id
-                    FROM user_reactions
-                    WHERE user_id = ?
-                        AND type = 'dislike'
-                ) AS combined_results
-            ),
-            users_blocked_by_me AS (
-                SELECT phone
-                FROM blocked_contacts
-                WHERE user_id = ?
-            ),
-            users_who_blocked_me AS (
-                SELECT user_id
-                FROM blocked_contacts
-                WHERE phone = ?
-            )
-            SELECT DISTINCT u.id AS id
-            FROM users u
-            LEFT JOIN user_settings us ON us.user_id = u.id
-            WHERE u.id != ?
-                AND u.lat IS NOT NULL
-                AND u.long IS NOT NULL
-                AND (
-                    u.id IN (SELECT id FROM users_in_my_radius)
-                    OR ?
-                )
-                AND u.age BETWEEN ? AND ?
-                AND u.id NOT IN (SELECT user_id FROM my_matches)
-                AND u.gender IN(".(empty($preferences) ? 'NULL' : " '".implode("', '", $preferences)."' ").")
-                AND u.phone NOT IN (SELECT phone FROM users_blocked_by_me)
-                AND u.id NOT IN (SELECT user_id FROM users_who_blocked_me)
-                AND u.registration_date IS NOT NULL
-                AND u.mode = 'authenticated'
-            GROUP BY u.id
-            ORDER BY u.is_online DESC,
-                (
-                    SELECT MAX(last_activity)
-                    FROM user_activity
-                    WHERE user_id = u.id
-                ) DESC, u.id ASC
-            LIMIT ?
-        ", [
-            $user->long,
-            $user->lat,
-            $user->userSettings->search_radius,
-            $userId,
-            $userId,
-            $userId,
-            $userId,
-            $user->phone,
-            $userId,
-            $user->userSettings->is_global_search,
-            $ageRange[0],
-            $ageRange[1],
-            $this->recommendationsCacheSize
-        ]);
-
-        return array_map(fn($item) => $item->id, $query);
-    }
-    private function _getRecommendationsForCache(string $userId, array $filters): array
-    {
-        $user = Secondaryuser::with(['userSettings', 'preferences'])
-            ->select(['id', 'phone', 'lat', 'long'])
-            ->findOrFail($userId);
-
-        $preferences = $user->preferences->pluck('gender')->toArray();
-        $ageRange = $user->userSettings->age_range;
-        $searchRadius = $user->userSettings->search_radius;
         $isGlobalSearch = $user->userSettings->is_global_search;
+        $searchRadius = $user->userSettings->search_radius;
+        $ageRange = $user->userSettings->age_range;
+        $userId = $user->id;
 
         // Базовый запрос
         $query = DB::table('users as u')
             ->select('u.id')
             ->distinct()
             ->leftJoin('user_settings as us', 'us.user_id', '=', 'u.id')
-            ->where('u.id', '!=', $userId)
+            ->where('u.id', '!=', $user->id)
             ->whereNotNull('u.lat')
             ->whereNotNull('u.long')
             ->whereBetween('u.age', [$ageRange[0], $ageRange[1]])
@@ -493,7 +406,7 @@ class RecommendationService
         if ($isGlobalSearch) {
             $query->where(DB::raw('1'), '=', '1'); // OR ? заменено на всегда true
         } else {
-            $query->whereIn('u.id', function($subquery) use ($user, $searchRadius, $userId) {
+            $query->whereIn('u.id', function($subquery) use ($user, $searchRadius) {
                 $subquery->select('u2.id')
                     ->from('users as u2')
                     ->whereRaw('ST_Distance_Sphere(point(?, ?), point(u2.long, u2.lat)) / 1000 <= ?', [
@@ -501,28 +414,28 @@ class RecommendationService
                         $user->lat,
                         $searchRadius
                     ])
-                    ->where('u2.id', '!=', $userId);
+                    ->where('u2.id', '!=', $user->id);
             });
         }
 
         // Исключаем мэтчи (UNION ALL запрос)
-        $query->whereNotIn('u.id', function($subquery) use ($userId) {
+        $query->whereNotIn('u.id', function($subquery) use ($user) {
             $subquery->select('user_id')
                 ->from('user_reactions')
-                ->where('reactor_id', $userId)
+                ->where('reactor_id', $user->id)
                 ->unionAll(
                     DB::table('user_reactions')
                         ->select('reactor_id as user_id')
-                        ->where('user_id', $userId)
+                        ->where('user_id', $user->id)
                         ->where('type', 'dislike')
                 );
         });
 
         // Исключаем пользователей, которых я заблокировал
-        $query->whereNotIn('u.phone', function($subquery) use ($userId) {
+        $query->whereNotIn('u.phone', function($subquery) use ($user) {
             $subquery->select('phone')
                 ->from('blocked_contacts')
-                ->where('user_id', $userId);
+                ->where('user_id', $user->id);
         });
 
         // Исключаем пользователей, которые заблокировали меня
