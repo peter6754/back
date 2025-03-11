@@ -83,7 +83,7 @@ class PricesController extends Controller
     {
         try {
             $subscription_id = (int)preg_replace('/\D/', '', $subscription_id);
-            $gender = $request->customer['gender'];
+            $gender = $request->user()->gender;
 
             $subscription = Subscriptions::with([
                 'services:id,subscription_id,description,image',
@@ -176,8 +176,8 @@ class PricesController extends Controller
     public function getPackages(Request $request): JsonResponse
     {
         try {
-            $gender = $request->customer['gender'];
             $type = $request->input('type');
+            $gender = $request->user()->gender;
 
             $packages = ServicePackages::where('type', $type)
                 ->with(['price'])
@@ -348,7 +348,7 @@ class PricesController extends Controller
     {
         try {
             $category_id = (int)preg_replace('/\D/', '', $category_id);
-            $gender = $request->customer['gender'];
+            $gender = $request->user()->gender;
             $gifts = Gifts::with('price')
                 ->where('category_id', $category_id)
                 ->get();

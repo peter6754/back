@@ -228,7 +228,9 @@ class RecommendationService
                 }
             }
 
-            return $this->_getRecommendationsPage($user, $forPage);
+            return [
+                "items" => $this->_getRecommendationsPage($user, $forPage)
+            ];
         } catch (\Exception $e) {
             Log::channel('recommendations')->error('getRecommendations_v2 error: '.$e->getMessage(), [
                 'user_id' => $user->id,
@@ -449,46 +451,48 @@ class RecommendationService
      */
     private function _getRecommendationsPage(Secondaryuser $user, $usersIds): array
     {
-        $recommendations = DB::select("
-            SELECT
-                u.id,
-                u.gender,
-                u.name,
-                ui.bio,
-                u.is_online,
-                u.registration_date,
-                CAST(
-                    IF(has_user_subscription(u.id) AND NOT us.show_my_age, NULL, u.age)
-                    AS UNSIGNED
-                ) AS age,
-                CAST(
-                    IF(has_user_subscription(u.id) AND NOT us.show_distance_from_me, NULL,
-                        ROUND((SELECT count_distance(u.id, ?, ?)), 0)
-                    )
-                    AS UNSIGNED
-                ) AS distance,
-                CAST(
-                    EXISTS(SELECT 1 FROM verification_requests WHERE user_id = u.id AND status = 'approved' LIMIT 1)
-                    AS CHAR
-                ) AS is_verified
-            FROM users u
-            LEFT JOIN user_information ui ON ui.user_id = u.id
-            LEFT JOIN user_settings us ON us.user_id = u.id
-            WHERE u.id IN (".implode(',', array_fill(0, count($usersIds), '?')).")
-                AND u.mode = 'authenticated'
-            ORDER BY u.is_online DESC;
-        ", array_merge([
-            $user->lat,
-            $user->long
-        ], $usersIds));
+        $recommendations = DB::table('users as u')
+            ->select([
+                'u.id',
+                'u.gender',
+                'u.name',
+                'ui.bio',
+                'u.is_online',
+                'u.registration_date',
+                DB::raw("CAST(
+                IF(has_user_subscription(u.id) AND NOT us.show_my_age, NULL, u.age)
+                AS UNSIGNED
+            ) AS age"),
+                DB::raw("CAST(
+                IF(has_user_subscription(u.id) AND NOT us.show_distance_from_me, NULL,
+                    ROUND((SELECT count_distance(u.id, {$user->lat}, {$user->long})), 0)
+                )
+                AS UNSIGNED
+            ) AS distance"),
+                DB::raw("CAST(
+                EXISTS(
+                    SELECT 1 
+                    FROM verification_requests 
+                    WHERE user_id = u.id AND status = 'approved' 
+                    LIMIT 1
+                ) AS CHAR
+            ) AS is_verified"),
+                DB::raw("(
+                SELECT GROUP_CONCAT(image SEPARATOR ';')
+                FROM user_images
+                WHERE user_id = u.id
+                LIMIT 4
+            ) AS photos")
+            ])
+            ->leftJoin('user_information as ui', 'ui.user_id', '=', 'u.id')
+            ->leftJoin('user_settings as us', 'us.user_id', '=', 'u.id')
+            ->whereIn('u.id', $usersIds)
+            ->where('u.mode', 'authenticated')
+            ->orderBy('u.is_online', 'desc')
+            ->get();
 
-        $response = array_map(function ($r) {
-            $photos = DB::table('user_images')
-                ->where('user_id', $r->id)
-                ->take(4)
-                ->pluck('image')
-                ->toArray();
-
+        return $recommendations->map(function ($r) {
+            $photos = $r->photos ? explode(";", $r->photos) : [];
             return [
                 'id' => $r->id,
                 'name' => $r->name,
@@ -500,11 +504,7 @@ class RecommendationService
                 'age' => $r->age ? (int) $r->age : null,
                 'distance' => $r->distance !== null ? (int) $r->distance : null,
             ];
-        }, $recommendations);
-
-        return [
-            'items' => $response
-        ];
+        })->toArray();
     }
 
     /**
