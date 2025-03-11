@@ -192,7 +192,7 @@ class RecommendationService
             ->findOrFail($userId);
 
         if ($user->userPreferences->isEmpty()) {
-            return ['items' => []];
+            return "Измените настройки пользователя и повторите попытку";
         }
 
         // Configure cache params
