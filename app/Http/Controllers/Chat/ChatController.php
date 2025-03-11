@@ -288,6 +288,12 @@ class ChatController extends Controller
                         ->where('is_main', true)
                         ->first();
 
+                    // Если нет главного изображения, берем первое доступное
+                    if (!$mainImage) {
+                        $mainImage = UserImage::where('user_id', $otherUser->id)
+                            ->first();
+                    }
+
                     $avatarUrl = null;
                     if ($mainImage && $mainImage->image) {
                         [$volumeId, $fileId] = explode(',', $mainImage->image);
