@@ -376,7 +376,7 @@ class RecommendationService
      * @param  array  $filters
      * @return array
      */
-    private function _getRecommendationsForCache(string $userId, array $filters): array
+    private function _getRecommendationsForCache_old(string $userId, array $filters): array
     {
         $user = Secondaryuser::with(['userSettings', 'preferences'])
             ->select(['id', 'phone', 'lat', 'long'])
@@ -459,6 +459,82 @@ class RecommendationService
         ]);
 
         return array_map(fn($item) => $item->id, $query);
+    }
+    private function _getRecommendationsForCache(string $userId, array $filters): array
+    {
+        $user = Secondaryuser::with(['userSettings', 'preferences'])
+            ->select(['id', 'phone', 'lat', 'long'])
+            ->findOrFail($userId);
+
+        $preferences = $user->preferences->pluck('gender')->toArray();
+        $ageRange = $user->userSettings->age_range;
+        $searchRadius = $user->userSettings->search_radius;
+        $isGlobalSearch = $user->userSettings->is_global_search;
+
+        // Базовый запрос
+        $query = DB::table('users as u')
+            ->select('u.id')
+            ->distinct()
+            ->leftJoin('user_settings as us', 'us.user_id', '=', 'u.id')
+            ->where('u.id', '!=', $userId)
+            ->whereNotNull('u.lat')
+            ->whereNotNull('u.long')
+            ->whereBetween('u.age', [$ageRange[0], $ageRange[1]])
+            ->whereIn('u.gender', empty($preferences) ? [null] : $preferences)
+            ->whereNotNull('u.registration_date')
+            ->where('u.mode', 'authenticated')
+            ->groupBy('u.id')
+            ->orderBy('u.is_online', 'desc')
+            ->orderByDesc(DB::raw("(SELECT MAX(last_activity) FROM user_activity WHERE user_id = u.id)"))
+            ->orderBy('u.id', 'asc')
+            ->limit($this->recommendationsCacheSize);
+
+        // Условие радиуса поиска или глобального поиска
+        if ($isGlobalSearch) {
+            $query->where(DB::raw('1'), '=', '1'); // OR ? заменено на всегда true
+        } else {
+            $query->whereIn('u.id', function($subquery) use ($user, $searchRadius, $userId) {
+                $subquery->select('u2.id')
+                    ->from('users as u2')
+                    ->whereRaw('ST_Distance_Sphere(point(?, ?), point(u2.long, u2.lat)) / 1000 <= ?', [
+                        $user->long,
+                        $user->lat,
+                        $searchRadius
+                    ])
+                    ->where('u2.id', '!=', $userId);
+            });
+        }
+
+        // Исключаем мэтчи (UNION ALL запрос)
+        $query->whereNotIn('u.id', function($subquery) use ($userId) {
+            $subquery->select('user_id')
+                ->from('user_reactions')
+                ->where('reactor_id', $userId)
+                ->unionAll(
+                    DB::table('user_reactions')
+                        ->select('reactor_id as user_id')
+                        ->where('user_id', $userId)
+                        ->where('type', 'dislike')
+                );
+        });
+
+        // Исключаем пользователей, которых я заблокировал
+        $query->whereNotIn('u.phone', function($subquery) use ($userId) {
+            $subquery->select('phone')
+                ->from('blocked_contacts')
+                ->where('user_id', $userId);
+        });
+
+        // Исключаем пользователей, которые заблокировали меня
+        $query->whereNotIn('u.id', function($subquery) use ($user) {
+            $subquery->select('user_id')
+                ->from('blocked_contacts')
+                ->where('phone', $user->phone);
+        });
+
+        $results = $query->get();
+
+        return $results->pluck('id')->toArray();
     }
 
     /**
