@@ -400,7 +400,7 @@ class ChatController extends Controller
      *     @OA\Response(response=404, description="Conversation not found")
      * )
      */
-    public function getUnreadMessagesStatus(Request $request, int $chat_id): JsonResponse
+    public function getUnreadMessagesStatus(Request $request, string $chat_id): JsonResponse
     {
         try {
             $userId = $request->user()->id;
@@ -581,7 +581,7 @@ class ChatController extends Controller
      * Get messages from a specific conversation
      *
      * @OA\Get(
-     *     path="/api/conversations/messages/{chat_id}",
+     *     path="/api/conversations/{chat_id}/messages",
      *     tags={"Chat"},
      *     summary="Get messages from a specific conversation with pagination",
      *     security={{"bearerAuth":{}}},
@@ -646,7 +646,7 @@ class ChatController extends Controller
      *     @OA\Response(response=404, description="Conversation not found or access denied")
      * )
      */
-    public function getMessages(Request $request, int $chat_id): JsonResponse
+    public function getMessages(Request $request, string $chat_id): JsonResponse
     {
         try {
             $userId = $request->user()->id;
@@ -771,7 +771,7 @@ class ChatController extends Controller
      *     @OA\Response(response=422, description="Validation failed")
      * )
      */
-    public function uploadMedia(Request $request, int $chat_id): JsonResponse
+    public function uploadMedia(Request $request, string $chat_id): JsonResponse
     {
         try {
             $userId = $request->user()->id;
@@ -867,7 +867,7 @@ class ChatController extends Controller
      *     @OA\Response(response=404, description="Conversation not found or access denied")
      * )
      */
-    public function markMessagesAsRead(Request $request, int $chat_id): JsonResponse
+    public function markMessagesAsRead(Request $request, string $chat_id): JsonResponse
     {
         try {
             $userId = $request->user()->id;
@@ -1178,7 +1178,7 @@ class ChatController extends Controller
      *     @OA\Response(response=404, description="Conversation not found or access denied")
      * )
      */
-    public function getConversationOnlineStatus(Request $request, int $chat_id): JsonResponse
+    public function getConversationOnlineStatus(Request $request, string $chat_id): JsonResponse
     {
         try {
             $userId = $request->user()->id;

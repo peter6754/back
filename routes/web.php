@@ -88,7 +88,7 @@ Route::prefix('api/conversations')->middleware('auth')->group(function () {
     Route::get('/', [ChatController::class, 'getConversations']);
 
     // Получить сообщения в чате
-    Route::get('/messages/{chat_id}', [ChatController::class, 'getMessages']);
+    Route::get('/{chat_id}/messages', [ChatController::class, 'getMessages']);
 
     // Отправить сообщение в чат текст и файлы
     Route::post('/send-messages', [ChatController::class, 'sendMessage']);
