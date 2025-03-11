@@ -300,13 +300,16 @@ class RecommendationsController extends Controller
             $getResponse = $this->recommendations->getRecommendations($request->user()->id, $query);
 
             // Return string error
-            if (is_string($getResponse)) {
-                // ToDo: Временная затычка до следующего релиза от 04.09.2025
+            if (!empty($getResponse['message'])) {
                 if ($request->get('debug') == '1') {
+
+                    $errorCode = !empty($getResponse['code']) ? (9000 + $getResponse['code']) : 9404;
+                    $httpCode = $getResponse['code'] ?? 404;
+
                     return $this->errorResponse(
-                        $getResponse,
-                        9404,
-                        404
+                        $getResponse['message'],
+                        $errorCode,
+                        $httpCode
                     );
                 }
                 return $this->successResponse([

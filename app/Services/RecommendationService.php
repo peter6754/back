@@ -192,7 +192,10 @@ class RecommendationService
             ->findOrFail($userId);
 
         if ($user->userPreferences->isEmpty()) {
-            return "Измените настройки пользователя и повторите попытку";
+            return [
+                "message" => "Пожалуйста, укажите ваши предпочтения в настройках профиля.",
+                "code" => 400
+            ];
         }
 
         // Configure cache params
@@ -217,7 +220,10 @@ class RecommendationService
                 $forPage = array_splice($fromDb, 0, $this->recommendationsPageSize);
 
                 if (empty($forPage)) {
-                    return "Мы не нашли анкеты с данным критериями поиска";
+                    return [
+                        "message" => "К сожалению, мы не смогли найти для вас подходящих рекомендаций. Попробуйте изменить ваши настройки поиска.",
+                        "code" => 204
+                    ];
                 }
 
                 if (!empty($fromDb)) {
@@ -232,7 +238,10 @@ class RecommendationService
                 'user_id' => $userId,
                 'error' => $e
             ]);
-            return "Произошла ошибка при получении рекомендаций, попробуйте позже.";
+            return [
+                "message" => "Произошла ошибка при получении рекомендаций, попробуйте позже.",
+                "code" => 408
+            ];
         }
     }
 
