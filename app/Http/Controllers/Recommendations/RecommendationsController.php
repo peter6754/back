@@ -310,7 +310,7 @@ class RecommendationsController extends Controller
             // Get queries
             $query = RecommendationsDto::forRecommendations($request);
 
-            $getResponse = $this->recommendations->getRecommendations($request->user()->id, $query);
+            $getResponse = $this->recommendations->getRecommendations($request->user(), $query);
 
             // Return string error
             if (!empty($getResponse['message'])) {

@@ -181,16 +181,12 @@ class RecommendationService
     }
 
     /**
-     * @param  string  $userId
+     * @param $user
      * @param  array  $query
      * @return mixed
      */
-    public function getRecommendations(string $userId, array $query): mixed
+    public function getRecommendations($user, array $query): mixed
     {
-        $user = Secondaryuser::with(['userSettings', 'userPreferences'])
-            ->select(['id', 'phone', 'lat', 'long'])
-            ->findOrFail($userId);
-
         if ($user->userPreferences->isEmpty()) {
             return [
                 "message" => "Пожалуйста, укажите ваши предпочтения в настройках профиля.",
@@ -206,7 +202,7 @@ class RecommendationService
         $keyPart5 = isset($query['interest_id']) ? ':'.$query['interest_id'] : '';
 
         // Configure cache
-        $key = "recommendations:{$userId}:{$keyPart1}:{$keyPart2}:{$keyPart3}{$keyPart4}{$keyPart5}";
+        $key = "recommendations:{$user->id}:{$keyPart1}:{$keyPart2}:{$keyPart3}{$keyPart4}{$keyPart5}";
         $recommendationsCacheSize = $this->recommendationsPageSize;
 
         try {
@@ -232,10 +228,10 @@ class RecommendationService
                 }
             }
 
-            return $this->_getRecommendationsPage($userId, $forPage);
+            return $this->_getRecommendationsPage($user, $forPage);
         } catch (\Exception $e) {
             Log::channel('recommendations')->error('getRecommendations_v2 error: '.$e->getMessage(), [
-                'user_id' => $userId,
+                'user_id' => $user->id,
                 'error' => $e
             ]);
             return [
@@ -372,11 +368,11 @@ class RecommendationService
     }
 
     /**
-     * @param    $userId
+     * @param $user
      * @param  array  $filters
      * @return array
      */
-    private function _getRecommendationsForCache( $user, array $filters): array
+    private function _getRecommendationsForCache($user, array $filters): array
     {
         $preferences = $user->userPreferences->pluck('gender')->toArray();
         $isGlobalSearch = $user->userSettings->is_global_search;
@@ -405,7 +401,7 @@ class RecommendationService
         if ($isGlobalSearch) {
             $query->where(DB::raw('1'), '=', '1'); // OR ? заменено на всегда true
         } else {
-            $query->whereIn('u.id', function($subquery) use ($user, $searchRadius) {
+            $query->whereIn('u.id', function ($subquery) use ($user, $searchRadius) {
                 $subquery->select('u2.id')
                     ->from('users as u2')
                     ->whereRaw('ST_Distance_Sphere(point(?, ?), point(u2.long, u2.lat)) / 1000 <= ?', [
@@ -418,7 +414,7 @@ class RecommendationService
         }
 
         // Исключаем мэтчи (UNION ALL запрос)
-        $query->whereNotIn('u.id', function($subquery) use ($user) {
+        $query->whereNotIn('u.id', function ($subquery) use ($user) {
             $subquery->select('user_id')
                 ->from('user_reactions')
                 ->where('reactor_id', $user->id)
@@ -431,14 +427,14 @@ class RecommendationService
         });
 
         // Исключаем пользователей, которых я заблокировал
-        $query->whereNotIn('u.phone', function($subquery) use ($user) {
+        $query->whereNotIn('u.phone', function ($subquery) use ($user) {
             $subquery->select('phone')
                 ->from('blocked_contacts')
                 ->where('user_id', $user->id);
         });
 
         // Исключаем пользователей, которые заблокировали меня
-        $query->whereNotIn('u.id', function($subquery) use ($user) {
+        $query->whereNotIn('u.id', function ($subquery) use ($user) {
             $subquery->select('user_id')
                 ->from('blocked_contacts')
                 ->where('phone', $user->phone);
@@ -450,14 +446,12 @@ class RecommendationService
     }
 
     /**
-     * @param  string  $userId
+     * @param $user
      * @param $usersIds
      * @return array
      */
-    private function _getRecommendationsPage(string $userId, $usersIds): array
+    private function _getRecommendationsPage($user, $usersIds): array
     {
-        $user = Secondaryuser::select(['lat', 'long'])->findOrFail($userId);
-
         $recommendations = DB::select("
             SELECT
                 u.id,
