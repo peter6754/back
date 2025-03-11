@@ -288,6 +288,12 @@ class ChatController extends Controller
                         ->where('is_main', true)
                         ->first();
 
+                    // Если нет главного изображения, берем первое доступное
+                    if (!$mainImage) {
+                        $mainImage = UserImage::where('user_id', $otherUser->id)
+                            ->first();
+                    }
+
                     $avatarUrl = null;
                     if ($mainImage && $mainImage->image) {
                         [$volumeId, $fileId] = explode(',', $mainImage->image);
@@ -357,89 +363,29 @@ class ChatController extends Controller
         }
     }
 
-    /**
-     * Get unread messages status for specific chat
-     *
-     * @OA\Get(
-     *     path="/api/conversations/{chat_id}/unread-messages-status",
-     *     tags={"Chat"},
-     *     summary="Get unread messages count for specific chat",
-     *     security={{"bearerAuth":{}}},
-     *
-     *     @OA\Parameter(
-     *         name="chat_id",
-     *         in="path",
-     *         required=true,
-     *         description="Chat ID",
-     *
-     *         @OA\Schema(type="integer", example=1)
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=200,
-     *         description="Unread messages count",
-     *
-     *         @OA\JsonContent(
-     *
-     *             @OA\Property(property="meta", type="object",
-     *                 @OA\Property(property="status", type="integer", example=200)
-     *             ),
-     *             @OA\Property(property="data", type="object",
-     *                 @OA\Property(property="unread_count", type="integer", example=5)
-     *             )
-     *         )
-     *     ),
-     *
-     *     @OA\Response(response=401, description="Unauthorized"),
-     *     @OA\Response(response=404, description="Conversation not found")
-     * )
-     */
-    public function getUnreadMessagesStatus(Request $request, int $chat_id): JsonResponse
-    {
-        try {
-            $userId = $request->user()->id;
-
-            // Verify that the user has access to this conversation
-            $conversation = Conversation::where('id', $chat_id)
-                ->where(function ($query) use ($userId) {
-                    $query->where('user1_id', $userId)
-                        ->orWhere('user2_id', $userId);
-                })
-                ->first();
-
-            if (! $conversation) {
-                return $this->error('Conversation not found or access denied', 404);
-            }
-
-            $unreadCount = ChatMessage::where('conversation_id', $chat_id)
-                ->where('receiver_id', $userId)
-                ->where('is_seen', false)
-                ->count();
-
-            return $this->success(['unread_count' => $unreadCount]);
-
-        } catch (\Exception $e) {
-            return $this->error('Failed to fetch unread status', 500);
-        }
-    }
 
     /**
      * Create or get existing conversation with a user
      *
      * @OA\Post(
-     *     path="/api/conversations/{user_id}",
+     *     path="/api/conversations",
      *     tags={"Chat"},
      *     summary="Create or get existing conversation with a user",
      *     description="Creates a new conversation or returns existing one. Requires mutual likes between users.",
      *     security={{"bearerAuth":{}}},
      *
-     *     @OA\Parameter(
-     *         name="user_id",
-     *         in="path",
+     *     @OA\RequestBody(
      *         required=true,
-     *         description="Target user ID",
      *
-     *         @OA\Schema(type="string", example="user-uuid")
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(
+     *                 property="user_id",
+     *                 type="string",
+     *                 description="Target user ID",
+     *                 example="user-uuid"
+     *             )
+     *         )
      *     ),
      *
      *     @OA\Response(
@@ -463,15 +409,15 @@ class ChatController extends Controller
      *     @OA\Response(response=404, description="User not found")
      * )
      */
-    public function createConversation(Request $request, string $userId): JsonResponse
+    public function createConversation(Request $request): JsonResponse
     {
         try {
-            $currentUserId = $request->user()->id;
+            $validated = $request->validate([
+                'user_id' => 'required|string|exists:users,id',
+            ]);
 
-            // Check if user exists
-            if (! User::find($userId)) {
-                return $this->error('User not found', 404);
-            }
+            $currentUserId = $request->user()->id;
+            $userId = $validated['user_id'];
 
             // Check for mutual likes - conversation can only be created if both users liked each other
             if (! UserReaction::haveMutualLikes($currentUserId, $userId)) {
@@ -575,7 +521,7 @@ class ChatController extends Controller
      * Get messages from a specific conversation
      *
      * @OA\Get(
-     *     path="/api/conversations/messages/{chat_id}",
+     *     path="/api/conversations/{chat_id}/messages",
      *     tags={"Chat"},
      *     summary="Get messages from a specific conversation with pagination",
      *     security={{"bearerAuth":{}}},
@@ -640,7 +586,7 @@ class ChatController extends Controller
      *     @OA\Response(response=404, description="Conversation not found or access denied")
      * )
      */
-    public function getMessages(Request $request, int $chat_id): JsonResponse
+    public function getMessages(Request $request, string $chat_id): JsonResponse
     {
         try {
             $userId = $request->user()->id;
@@ -765,7 +711,7 @@ class ChatController extends Controller
      *     @OA\Response(response=422, description="Validation failed")
      * )
      */
-    public function uploadMedia(Request $request, int $chat_id): JsonResponse
+    public function uploadMedia(Request $request, string $chat_id): JsonResponse
     {
         try {
             $userId = $request->user()->id;
@@ -861,7 +807,7 @@ class ChatController extends Controller
      *     @OA\Response(response=404, description="Conversation not found or access denied")
      * )
      */
-    public function markMessagesAsRead(Request $request, int $chat_id): JsonResponse
+    public function markMessagesAsRead(Request $request, string $chat_id): JsonResponse
     {
         try {
             $userId = $request->user()->id;
@@ -1172,7 +1118,7 @@ class ChatController extends Controller
      *     @OA\Response(response=404, description="Conversation not found or access denied")
      * )
      */
-    public function getConversationOnlineStatus(Request $request, int $chat_id): JsonResponse
+    public function getConversationOnlineStatus(Request $request, string $chat_id): JsonResponse
     {
         try {
             $userId = $request->user()->id;
