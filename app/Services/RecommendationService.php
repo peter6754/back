@@ -232,7 +232,7 @@ class RecommendationService
                 'user_id' => $userId,
                 'error' => $e
             ]);
-            return [];
+            return "Произошла ошибка при получении рекомендаций, попробуйте позже.";
         }
     }
 
