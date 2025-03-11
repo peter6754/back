@@ -375,7 +375,6 @@ class RecommendationService
     private function _getRecommendationsForCache(Secondaryuser $user, array $filters): array
     {
         $preferences = $user->userPreferences->pluck('gender')->toArray();
-        $isGlobalSearch = $user->userSettings->is_global_search;
         $searchRadius = $user->userSettings->search_radius;
         $ageRange = $user->userSettings->age_range;
 
@@ -397,10 +396,8 @@ class RecommendationService
             ->orderBy('u.id', 'asc')
             ->limit($this->recommendationsCacheSize);
 
-        // Условие радиуса поиска или глобального поиска
-        if ($isGlobalSearch) {
-            $query->where(DB::raw('1'), '=', '1'); // OR ? заменено на всегда true
-        } else {
+        // Условие радиуса поиска
+        if (!$user->userSettings->is_global_search) {
             $query->whereIn('u.id', function ($subquery) use ($user, $searchRadius) {
                 $subquery->select('u2.id')
                     ->from('users as u2')
