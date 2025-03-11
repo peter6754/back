@@ -280,7 +280,20 @@ class RecommendationsController extends Controller
      *       @OA\Response(
      *           @OA\JsonContent(ref="#/components/schemas/SuccessResponse"),
      *           description="Successful operation",
-     *           response=201,
+     *           response=200,
+     *       ),
+     *
+     *       @OA\Response(
+     *             description="Нет настроек поиска",
+     *             response=400,
+     *       ),
+     *       @OA\Response(
+     *            description="Измените настройки поиска",
+     *            response=404,
+     *       ),
+     *       @OA\Response(
+     *             description="Ошибка на сервере, попробуйте позже",
+     *             response=408,
      *       ),
      *
      *       @OA\Response(
@@ -301,17 +314,17 @@ class RecommendationsController extends Controller
 
             // Return string error
             if (!empty($getResponse['message'])) {
-                if ($request->get('debug') == '1') {
 
+                if ($request->get('debug') == '1') {
                     $errorCode = !empty($getResponse['code']) ? (9000 + $getResponse['code']) : 9404;
                     $httpCode = $getResponse['code'] ?? 404;
-
                     return $this->errorResponse(
                         $getResponse['message'],
                         $errorCode,
                         $httpCode
                     );
                 }
+
                 return $this->successResponse([
                     'items' => []
                 ]);
