@@ -144,8 +144,8 @@ class ChatController extends Controller
                     $file->getClientOriginalName()
                 );
 
-                // Create SeaweedFS URL
-                $fileUrl = $this->seaweedFsService->createVolumeUrl($fid);
+                // Store only FID as file_url
+                $fileUrl = $fid;
                 $fileType = $file->getMimeType();
 
                 // Use FID as message content for media messages
@@ -743,8 +743,8 @@ class ChatController extends Controller
                 $file->getClientOriginalName()
             );
 
-            // CREATE SEAWEED URL
-            $fileUrl = $this->seaweedFsService->createVolumeUrl($fid);
+            // Store only FID as file_url
+            $fileUrl = $fid;
 
             // Determine receiver (the other user in conversation)
             $receiverId = $conversation->user1_id === $userId
