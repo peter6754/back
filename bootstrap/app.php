@@ -26,9 +26,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         // Устанавливаем middleware на админа
-//        $middleware->web(append: [
-//            DebugbarMiddleware::class,
-//        ]);
+        $middleware->web(append: [
+            DebugbarMiddleware::class,
+        ]);
 
         // Регистрируем AuthMiddleware
         $middleware->alias([
