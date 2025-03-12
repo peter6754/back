@@ -11,6 +11,7 @@ use App\Models\Secondaryuser as User;
 use App\Models\UserImage;
 use App\Models\UserReaction;
 use App\Services\ChatService;
+use App\Services\SeaweedFsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -18,7 +19,7 @@ class ChatController extends Controller
 {
     use ApiResponseTrait;
 
-    public function __construct(private ChatService $chatService) {}
+    public function __construct(private ChatService $chatService, private SeaweedFsService $seaweedFsService) {}
 
     /**
      * Send message to conversation
@@ -132,20 +133,23 @@ class ChatController extends Controller
             $messageContent = $validated['message'] ?? '';
             $fileUrl = null;
             $fileType = null;
-            $filePath = null;
 
             if ($validated['type'] === 'media' && $request->hasFile('file')) {
-                // Handle file upload
+                // Handle file upload to SeaweedFS
                 $file = $request->file('file');
-                $fileName = time().'_'.$file->getClientOriginalName();
 
-                // Store file
-                $filePath = $file->storeAs('chat_media', $fileName, 'public');
-                $fileUrl = asset('storage/'.$filePath);
+                // Upload to SeaweedFS and get FID
+                $fid = $this->seaweedFsService->uploadToStorage(
+                    file_get_contents($file->getRealPath()),
+                    $file->getClientOriginalName()
+                );
+
+                // Store only FID as file_url
+                $fileUrl = $fid;
                 $fileType = $file->getMimeType();
 
-                // Use file path as message content for media messages
-                $messageContent = $filePath;
+                // Use FID as message content for media messages
+                $messageContent = $fid;
             }
 
             // Handle all messages (text, contact, gift, media) via WebSocket
@@ -289,7 +293,7 @@ class ChatController extends Controller
                         ->first();
 
                     // Если нет главного изображения, берем первое доступное
-                    if (!$mainImage) {
+                    if (! $mainImage) {
                         $mainImage = UserImage::where('user_id', $otherUser->id)
                             ->first();
                     }
@@ -361,7 +365,6 @@ class ChatController extends Controller
             return $this->error('Failed to fetch conversations', 500);
         }
     }
-
 
     /**
      * Create or get existing conversation with a user
@@ -733,11 +736,15 @@ class ChatController extends Controller
             ]);
 
             $file = $request->file('file');
-            $fileName = time().'_'.$file->getClientOriginalName();
 
-            // Store file in public/storage/chat_media directory
-            $filePath = $file->storeAs('chat_media', $fileName, 'public');
-            $fileUrl = asset('storage/'.$filePath);
+            // Upload to SeaweedFS and get FID
+            $fid = $this->seaweedFsService->uploadToStorage(
+                file_get_contents($file->getRealPath()),
+                $file->getClientOriginalName()
+            );
+
+            // Store only FID as file_url
+            $fileUrl = $fid;
 
             // Determine receiver (the other user in conversation)
             $receiverId = $conversation->user1_id === $userId
@@ -749,7 +756,7 @@ class ChatController extends Controller
                 'conversation_id' => $chat_id,
                 'sender_id' => $userId,
                 'receiver_id' => $receiverId,
-                'message' => $filePath, // Store file path as message content
+                'message' => $fid, // Store FID as message content
                 'type' => 'media',
                 'is_seen' => false,
             ]);
@@ -763,7 +770,12 @@ class ChatController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return $this->error('Validation failed: '.implode(', ', $e->validator->errors()->all()), 422);
         } catch (\Exception $e) {
-            \Log::error('Failed to upload media: '.$e->getMessage());
+            // Log failed
+            \Log::error('Failed to upload media: '.$e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
 
             return $this->error('Failed to upload media', 500);
         }
