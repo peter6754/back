@@ -181,16 +181,12 @@ class RecommendationService
     }
 
     /**
-     * @param  string  $userId
+     * @param  Secondaryuser  $user
      * @param  array  $query
      * @return mixed
      */
-    public function getRecommendations(string $userId, array $query): mixed
+    public function getRecommendations(Secondaryuser $user, array $query): mixed
     {
-        $user = Secondaryuser::with(['userSettings', 'userPreferences'])
-            ->select(['id', 'phone', 'lat', 'long'])
-            ->findOrFail($userId);
-
         if ($user->userPreferences->isEmpty()) {
             return [
                 "message" => "Пожалуйста, укажите ваши предпочтения в настройках профиля.",
@@ -206,7 +202,7 @@ class RecommendationService
         $keyPart5 = isset($query['interest_id']) ? ':'.$query['interest_id'] : '';
 
         // Configure cache
-        $key = "recommendations:{$userId}:{$keyPart1}:{$keyPart2}:{$keyPart3}{$keyPart4}{$keyPart5}";
+        $key = "recommendations:{$user->id}:{$keyPart1}:{$keyPart2}:{$keyPart3}{$keyPart4}{$keyPart5}";
         $recommendationsCacheSize = $this->recommendationsPageSize;
 
         try {
@@ -216,7 +212,7 @@ class RecommendationService
             })[0];
 
             if (empty($forPage)) {
-                $fromDb = $this->_getRecommendationsForCache($userId, $query);
+                $fromDb = $this->_getRecommendationsForCache($user, $query);
                 $forPage = array_splice($fromDb, 0, $this->recommendationsPageSize);
 
                 if (empty($forPage)) {
@@ -232,10 +228,12 @@ class RecommendationService
                 }
             }
 
-            return $this->_getRecommendationsPage($userId, $forPage);
+            return [
+                "items" => $this->_getRecommendationsPage($user, $forPage)
+            ];
         } catch (\Exception $e) {
             Log::channel('recommendations')->error('getRecommendations_v2 error: '.$e->getMessage(), [
-                'user_id' => $userId,
+                'user_id' => $user->id,
                 'error' => $e
             ]);
             return [
@@ -372,144 +370,129 @@ class RecommendationService
     }
 
     /**
-     * @param  string  $userId
+     * @param  Secondaryuser  $user
      * @param  array  $filters
      * @return array
      */
-    private function _getRecommendationsForCache(string $userId, array $filters): array
+    private function _getRecommendationsForCache(Secondaryuser $user, array $filters): array
     {
-        $user = Secondaryuser::with(['userSettings', 'preferences'])
-            ->select(['id', 'phone', 'lat', 'long'])
-            ->findOrFail($userId);
-
-        $preferences = $user->preferences->pluck('gender')->toArray();
+        $preferences = $user->userPreferences->pluck('gender')->toArray();
+        $searchRadius = $user->userSettings->search_radius;
         $ageRange = $user->userSettings->age_range;
 
-        $query = DB::select("
-            WITH
-            users_in_my_radius AS (
-                SELECT u.id
-                FROM users u
-                WHERE ST_Distance_Sphere(point(?, ?), point(u.long, u.lat)) / 1000 <= ?
-                    AND u.id != ?
-            ),
-            my_matches AS (
-                SELECT user_id FROM (
-                    SELECT user_id
-                    FROM user_reactions
-                    WHERE reactor_id = ?
-                    
-                    UNION ALL
-                    
-                    SELECT reactor_id as user_id
-                    FROM user_reactions
-                    WHERE user_id = ?
-                        AND type = 'dislike'
-                ) AS combined_results
-            ),
-            users_blocked_by_me AS (
-                SELECT phone
-                FROM blocked_contacts
-                WHERE user_id = ?
-            ),
-            users_who_blocked_me AS (
-                SELECT user_id
-                FROM blocked_contacts
-                WHERE phone = ?
-            )
-            SELECT DISTINCT u.id AS id
-            FROM users u
-            LEFT JOIN user_settings us ON us.user_id = u.id
-            WHERE u.id != ?
-                AND u.lat IS NOT NULL
-                AND u.long IS NOT NULL
-                AND (
-                    u.id IN (SELECT id FROM users_in_my_radius)
-                    OR ?
-                )
-                AND u.age BETWEEN ? AND ?
-                AND u.id NOT IN (SELECT user_id FROM my_matches)
-                AND u.gender IN(".(empty($preferences) ? 'NULL' : " '".implode("', '", $preferences)."' ").")
-                AND u.phone NOT IN (SELECT phone FROM users_blocked_by_me)
-                AND u.id NOT IN (SELECT user_id FROM users_who_blocked_me)
-                AND u.registration_date IS NOT NULL
-                AND u.mode = 'authenticated'
-            GROUP BY u.id
-            ORDER BY u.is_online DESC,
-                (
-                    SELECT MAX(last_activity)
-                    FROM user_activity
-                    WHERE user_id = u.id
-                ) DESC, u.id ASC
-            LIMIT ?
-        ", [
-            $user->long,
-            $user->lat,
-            $user->userSettings->search_radius,
-            $userId,
-            $userId,
-            $userId,
-            $userId,
-            $user->phone,
-            $userId,
-            $user->userSettings->is_global_search,
-            $ageRange[0],
-            $ageRange[1],
-            $this->recommendationsCacheSize
-        ]);
+        // Базовый запрос
+        $query = DB::table('users as u')
+            ->select('u.id')
+            ->distinct()
+            ->leftJoin('user_settings as us', 'us.user_id', '=', 'u.id')
+            ->where('u.id', '!=', $user->id)
+            ->whereNotNull('u.lat')
+            ->whereNotNull('u.long')
+            ->whereBetween('u.age', [$ageRange[0], $ageRange[1]])
+            ->whereIn('u.gender', empty($preferences) ? [null] : $preferences)
+            ->whereNotNull('u.registration_date')
+            ->where('u.mode', 'authenticated')
+            ->groupBy('u.id')
+            ->orderBy('u.is_online', 'desc')
+            ->orderByDesc(DB::raw("(SELECT MAX(last_activity) FROM user_activity WHERE user_id = u.id)"))
+            ->orderBy('u.id', 'asc')
+            ->limit($this->recommendationsCacheSize);
 
-        return array_map(fn($item) => $item->id, $query);
+        // Условие радиуса поиска
+        if (!$user->userSettings->is_global_search) {
+            $query->whereIn('u.id', function ($subquery) use ($user, $searchRadius) {
+                $subquery->select('u2.id')
+                    ->from('users as u2')
+                    ->whereRaw('ST_Distance_Sphere(point(?, ?), point(u2.long, u2.lat)) / 1000 <= ?', [
+                        $user->long,
+                        $user->lat,
+                        $searchRadius
+                    ])
+                    ->where('u2.id', '!=', $user->id);
+            });
+        }
+
+        // Исключаем мэтчи (UNION ALL запрос)
+        $query->whereNotIn('u.id', function ($subquery) use ($user) {
+            $subquery->select('user_id')
+                ->from('user_reactions')
+                ->where('reactor_id', $user->id)
+                ->unionAll(
+                    DB::table('user_reactions')
+                        ->select('reactor_id as user_id')
+                        ->where('user_id', $user->id)
+                        ->where('type', 'dislike')
+                );
+        });
+
+        // Исключаем пользователей, которых я заблокировал
+        $query->whereNotIn('u.phone', function ($subquery) use ($user) {
+            $subquery->select('phone')
+                ->from('blocked_contacts')
+                ->where('user_id', $user->id);
+        });
+
+        // Исключаем пользователей, которые заблокировали меня
+        $query->whereNotIn('u.id', function ($subquery) use ($user) {
+            $subquery->select('user_id')
+                ->from('blocked_contacts')
+                ->where('phone', $user->phone);
+        });
+
+        $results = $query->get();
+
+        return $results->pluck('id')->toArray();
     }
 
     /**
-     * @param  string  $userId
+     * @param  Secondaryuser  $user
      * @param $usersIds
      * @return array
      */
-    private function _getRecommendationsPage(string $userId, $usersIds): array
+    private function _getRecommendationsPage(Secondaryuser $user, $usersIds): array
     {
-        $user = Secondaryuser::select(['lat', 'long'])->findOrFail($userId);
+        $recommendations = DB::table('users as u')
+            ->select([
+                'u.id',
+                'u.gender',
+                'u.name',
+                'ui.bio',
+                'u.is_online',
+                'u.registration_date',
+                DB::raw("CAST(
+                IF(has_user_subscription(u.id) AND NOT us.show_my_age, NULL, u.age)
+                AS UNSIGNED
+            ) AS age"),
+                DB::raw("CAST(
+                IF(has_user_subscription(u.id) AND NOT us.show_distance_from_me, NULL,
+                    ROUND((SELECT count_distance(u.id, {$user->lat}, {$user->long})), 0)
+                )
+                AS UNSIGNED
+            ) AS distance"),
+                DB::raw("CAST(
+                EXISTS(
+                    SELECT 1 
+                    FROM verification_requests 
+                    WHERE user_id = u.id AND status = 'approved' 
+                    LIMIT 1
+                ) AS CHAR
+            ) AS is_verified"),
+                DB::raw("(
+                SELECT GROUP_CONCAT(image SEPARATOR ';')
+                FROM user_images
+                WHERE user_id = u.id
+                LIMIT 4
+            ) AS photos")
+            ])
+            ->leftJoin('user_information as ui', 'ui.user_id', '=', 'u.id')
+            ->leftJoin('user_settings as us', 'us.user_id', '=', 'u.id')
+            ->whereIn('u.id', $usersIds)
+            ->where('u.mode', 'authenticated')
+            ->orderBy('u.is_online', 'desc')
+            ->get();
 
-        $recommendations = DB::select("
-            SELECT
-                u.id,
-                u.gender,
-                u.name,
-                ui.bio,
-                u.is_online,
-                u.registration_date,
-                CAST(
-                    IF(has_user_subscription(u.id) AND NOT us.show_my_age, NULL, u.age)
-                    AS UNSIGNED
-                ) AS age,
-                CAST(
-                    IF(has_user_subscription(u.id) AND NOT us.show_distance_from_me, NULL,
-                        ROUND((SELECT count_distance(u.id, ?, ?)), 0)
-                    )
-                    AS UNSIGNED
-                ) AS distance,
-                CAST(
-                    EXISTS(SELECT 1 FROM verification_requests WHERE user_id = u.id AND status = 'approved' LIMIT 1)
-                    AS CHAR
-                ) AS is_verified
-            FROM users u
-            LEFT JOIN user_information ui ON ui.user_id = u.id
-            LEFT JOIN user_settings us ON us.user_id = u.id
-            WHERE u.id IN (".implode(',', array_fill(0, count($usersIds), '?')).")
-                AND u.mode = 'authenticated'
-            ORDER BY u.is_online DESC;
-        ", array_merge([
-            $user->lat,
-            $user->long
-        ], $usersIds));
-
-        $response = array_map(function ($r) {
-            $photos = DB::table('user_images')
-                ->where('user_id', $r->id)
-                ->take(4)
-                ->pluck('image')
-                ->toArray();
-
+        return $recommendations->map(function ($r) {
+            $photos = $r->photos ? explode(";", $r->photos) : [];
             return [
                 'id' => $r->id,
                 'name' => $r->name,
@@ -521,11 +504,7 @@ class RecommendationService
                 'age' => $r->age ? (int) $r->age : null,
                 'distance' => $r->distance !== null ? (int) $r->distance : null,
             ];
-        }, $recommendations);
-
-        return [
-            'items' => $response
-        ];
+        })->toArray();
     }
 
     /**
@@ -556,9 +535,9 @@ class RecommendationService
 
 
     /**
-     * @param  string  $user_id
-     * @param  bool  $is_match
-     * @param  bool  $superlike
+     * @param  string  $userId
+     * @param  bool  $isMatch
+     * @param  bool  $superLike
      * @return bool
      */
     public function handleLikeNotification(string $userId = "", bool $isMatch = false, bool $superLike = false): bool
