@@ -296,8 +296,7 @@ class ChatController extends Controller
 
                     $avatarUrl = null;
                     if ($mainImage && $mainImage->image) {
-                        [$volumeId, $fileId] = explode(',', $mainImage->image);
-                        $avatarUrl = "http://api.tinderone.ru/files/{$volumeId},{$fileId}";
+                        $avatarUrl = $mainImage->image;
                     }
 
                     // Get last message
