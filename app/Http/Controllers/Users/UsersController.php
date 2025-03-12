@@ -724,7 +724,8 @@ class UsersController extends Controller
      *                     @OA\Property(property="age", type="integer", nullable=true),
      *                     @OA\Property(property="distance", type="integer", nullable=true),
      *                     @OA\Property(property="superliked_me", type="boolean"),
-     *                     @OA\Property(property="is_online", type="boolean")
+     *                     @OA\Property(property="is_online", type="boolean"),
+     *                     @OA\Property(property="like_date", type="string", format="date-time", description="When the user liked you")
      *                 )
      *             )
      *         )
