@@ -54,7 +54,7 @@ class AuthService
         $userPhone = $params['phone'];
 
         $code = (string) rand(1000, 9999);
-        $msgType = null;
+        $msgProvider = null;
 
         if (!(new PhoneNumber($userPhone))->isValid()) {
             throw new \Exception('Invalid phone number');
@@ -70,27 +70,32 @@ class AuthService
             // Отправка SMS зарегистрированному пользователю
             Log::channel("authservice")->info("[Login], send code {$code}, user: ".json_encode($user));
             if (!in_array($userPhone, $this->specialNumbers)) {
-                $this->greenSmsService->sendCode($userPhone, "Ваш код подтверждения: {$code}");
+                $getResponse = $this->greenSmsService->sendCode($userPhone, "Ваш код подтверждения: {$code}");
+                $msgProvider = $getResponse['provider'] ?? 'none';
             }
             $type = 'login';
         } else {
             // Отправка push-уведомления новому пользователю
             Log::channel("authservice")->info("[Register], send code {$code}, new user: ".$userPhone);
             if ($userToken === "huawei-device-token") {
-                $this->greenSmsService->sendCode($userPhone, "Ваш код подтверждения: {$code}", [
+                $getResponse = $this->greenSmsService->sendCode($userPhone, "Ваш код подтверждения: {$code}", [
                     'sms'
                 ]);
+                $msgProvider = $getResponse['provider'] ?? 'none';
             } else {
                 (new NotificationService())->sendPushNotification($userToken ?? "",
                     $code, "Ваш код подтверждения", [
                         'channel' => 'authservice',
-                    ]);
+                    ]
+                );
+                $msgProvider = "push";
             }
             $type = 'register';
         }
 
         return [
             'message' => 'Verification code was sent to your phone',
+            'provider' => $msgProvider,
             'type' => $type,
             'token' => app(JwtService::class)->encode([
                 'phone' => $userPhone,

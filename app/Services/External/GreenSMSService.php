@@ -49,23 +49,25 @@ class GreenSMSService
 
     /**
      * Отправка кода на указанный номер телефона через доступные каналы связи
-     * @param string $phone
-     * @param string $message
-     * @param array $exceptions
-     * @return bool
+     * @param  string  $phone
+     * @param  string  $message
+     * @param  array  $exceptions
+     * @return array
      */
-    public function sendCode(string $phone, string $message, array $exceptions = []): bool
+    public function sendCode(string $phone, string $message, array $exceptions = []): array
     {
         try {
             if (app()->environment('local')) {
-                return true;
+                return [
+                    'success' => true
+                ];
             }
 
             $normalizedPhone = preg_replace("/[^0-9]/", '', $phone);
             $channels = array_diff(self::$defaultChannelsPriority, $exceptions);
 
             // Получаем историю использованных каналов для этого номера
-            $usedChannels = Cache::get('greensms_used_channels:' . $normalizedPhone, []);
+            $usedChannels = Cache::get('greensms_used_channels:'.$normalizedPhone, []);
 
             // Сортируем каналы: сначала неиспользованные, потом использованные
             $sortedChannels = [];
@@ -113,7 +115,7 @@ class GreenSMSService
                         // Обновляем историю использованных каналов
                         if (!in_array($channel, $usedChannels)) {
                             $usedChannels[] = $channel;
-                            Cache::put('greensms_used_channels:' . $normalizedPhone, $usedChannels, 120);
+                            Cache::put('greensms_used_channels:'.$normalizedPhone, $usedChannels, 120);
                         }
 
                         Log::channel("authservice")->info("GreenSMSService: сообщение отправлено через {$channel}", [
@@ -122,7 +124,10 @@ class GreenSMSService
                             'channel' => $channel
                         ]);
 
-                        return true;
+                        return [
+                            'provider' => $channel,
+                            'success' => true
+                        ];
                     }
                 } catch (\Exception $e) {
                     Log::channel("authservice")->warning("GreenSMSService: не удалось отправить через {$channel}", [
@@ -133,15 +138,16 @@ class GreenSMSService
                     continue;
                 }
             }
-
-            return false;
         } catch (\Exception $e) {
             Log::channel("authservice")->error("GreenSMSService::sendCode(): {$e->getMessage()}", [
                 'phone' => $phone,
                 'error' => $e->getMessage()
             ]);
-            return false;
         }
+
+        return [
+            'success' => false
+        ];
     }
 
     /**
