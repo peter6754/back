@@ -232,7 +232,7 @@ class RecommendationService
                 "items" => $this->_getRecommendationsPage($user, $forPage)
             ];
         } catch (\Exception $e) {
-            Log::channel('recommendations')->error('getRecommendations_v2 error: '.$e->getMessage(), [
+            Log::channel('recommendations')->error(__METHOD__.' error: '.$e->getMessage(), [
                 'user_id' => $user->id,
                 'error' => $e
             ]);
