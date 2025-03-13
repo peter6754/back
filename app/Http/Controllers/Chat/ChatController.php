@@ -11,6 +11,7 @@ use App\Models\Secondaryuser as User;
 use App\Models\UserImage;
 use App\Models\UserReaction;
 use App\Services\ChatService;
+use App\Services\SeaweedFsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -18,7 +19,7 @@ class ChatController extends Controller
 {
     use ApiResponseTrait;
 
-    public function __construct(private ChatService $chatService) {}
+    public function __construct(private ChatService $chatService, private SeaweedFsService $seaweedFsService) {}
 
     /**
      * Send message to conversation
@@ -132,20 +133,23 @@ class ChatController extends Controller
             $messageContent = $validated['message'] ?? '';
             $fileUrl = null;
             $fileType = null;
-            $filePath = null;
 
             if ($validated['type'] === 'media' && $request->hasFile('file')) {
-                // Handle file upload
+                // Handle file upload to SeaweedFS
                 $file = $request->file('file');
-                $fileName = time().'_'.$file->getClientOriginalName();
 
-                // Store file
-                $filePath = $file->storeAs('chat_media', $fileName, 'public');
-                $fileUrl = asset('storage/'.$filePath);
+                // Upload to SeaweedFS and get FID
+                $fid = $this->seaweedFsService->uploadToStorage(
+                    file_get_contents($file->getRealPath()),
+                    $file->getClientOriginalName()
+                );
+
+                // Store only FID as file_url
+                $fileUrl = $fid;
                 $fileType = $file->getMimeType();
 
-                // Use file path as message content for media messages
-                $messageContent = $filePath;
+                // Use FID as message content for media messages
+                $messageContent = $fid;
             }
 
             // Handle all messages (text, contact, gift, media) via WebSocket
@@ -288,10 +292,15 @@ class ChatController extends Controller
                         ->where('is_main', true)
                         ->first();
 
+                    // Если нет главного изображения, берем первое доступное
+                    if (! $mainImage) {
+                        $mainImage = UserImage::where('user_id', $otherUser->id)
+                            ->first();
+                    }
+
                     $avatarUrl = null;
                     if ($mainImage && $mainImage->image) {
-                        [$volumeId, $fileId] = explode(',', $mainImage->image);
-                        $avatarUrl = "http://api.tinderone.ru/files/{$volumeId},{$fileId}";
+                        $avatarUrl = $mainImage->image;
                     }
 
                     // Get last message
@@ -330,7 +339,22 @@ class ChatController extends Controller
                     ];
                 })
                 ->sortByDesc(function ($conversation) {
-                    return $conversation['is_pinned'] ? 1 : 0;
+                    // получаем timestamps для сортировки
+                    $timestamp = 0;
+                    if ($conversation['last_message'] && $conversation['last_message']['timestamp']) {
+                        try {
+                            $timestamp = \Carbon\Carbon::parse($conversation['last_message']['timestamp'])->timestamp;
+                        } catch (\Exception $e) {
+                            $timestamp = 0;
+                        }
+                    }
+
+                    // если закреп, добавим число
+                    if ($conversation['is_pinned']) {
+                        return $timestamp + 9999999999;
+                    }
+
+                    return $timestamp;
                 })
                 ->values()
                 ->toArray();
@@ -343,88 +367,27 @@ class ChatController extends Controller
     }
 
     /**
-     * Get unread messages status for specific chat
-     *
-     * @OA\Get(
-     *     path="/api/conversations/{chat_id}/unread-messages-status",
-     *     tags={"Chat"},
-     *     summary="Get unread messages count for specific chat",
-     *     security={{"bearerAuth":{}}},
-     *
-     *     @OA\Parameter(
-     *         name="chat_id",
-     *         in="path",
-     *         required=true,
-     *         description="Chat ID",
-     *
-     *         @OA\Schema(type="integer", example=1)
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=200,
-     *         description="Unread messages count",
-     *
-     *         @OA\JsonContent(
-     *
-     *             @OA\Property(property="meta", type="object",
-     *                 @OA\Property(property="status", type="integer", example=200)
-     *             ),
-     *             @OA\Property(property="data", type="object",
-     *                 @OA\Property(property="unread_count", type="integer", example=5)
-     *             )
-     *         )
-     *     ),
-     *
-     *     @OA\Response(response=401, description="Unauthorized"),
-     *     @OA\Response(response=404, description="Conversation not found")
-     * )
-     */
-    public function getUnreadMessagesStatus(Request $request, int $chat_id): JsonResponse
-    {
-        try {
-            $userId = $request->user()->id;
-
-            // Verify that the user has access to this conversation
-            $conversation = Conversation::where('id', $chat_id)
-                ->where(function ($query) use ($userId) {
-                    $query->where('user1_id', $userId)
-                        ->orWhere('user2_id', $userId);
-                })
-                ->first();
-
-            if (! $conversation) {
-                return $this->error('Conversation not found or access denied', 404);
-            }
-
-            $unreadCount = ChatMessage::where('conversation_id', $chat_id)
-                ->where('receiver_id', $userId)
-                ->where('is_seen', false)
-                ->count();
-
-            return $this->success(['unread_count' => $unreadCount]);
-
-        } catch (\Exception $e) {
-            return $this->error('Failed to fetch unread status', 500);
-        }
-    }
-
-    /**
      * Create or get existing conversation with a user
      *
      * @OA\Post(
-     *     path="/api/conversations/{user_id}",
+     *     path="/api/conversations",
      *     tags={"Chat"},
      *     summary="Create or get existing conversation with a user",
      *     description="Creates a new conversation or returns existing one. Requires mutual likes between users.",
      *     security={{"bearerAuth":{}}},
      *
-     *     @OA\Parameter(
-     *         name="user_id",
-     *         in="path",
+     *     @OA\RequestBody(
      *         required=true,
-     *         description="Target user ID",
      *
-     *         @OA\Schema(type="string", example="user-uuid")
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(
+     *                 property="user_id",
+     *                 type="string",
+     *                 description="Target user ID",
+     *                 example="user-uuid"
+     *             )
+     *         )
      *     ),
      *
      *     @OA\Response(
@@ -448,15 +411,15 @@ class ChatController extends Controller
      *     @OA\Response(response=404, description="User not found")
      * )
      */
-    public function createConversation(Request $request, string $userId): JsonResponse
+    public function createConversation(Request $request): JsonResponse
     {
         try {
-            $currentUserId = $request->user()->id;
+            $validated = $request->validate([
+                'user_id' => 'required|string|exists:users,id',
+            ]);
 
-            // Check if user exists
-            if (! User::find($userId)) {
-                return $this->error('User not found', 404);
-            }
+            $currentUserId = $request->user()->id;
+            $userId = $validated['user_id'];
 
             // Check for mutual likes - conversation can only be created if both users liked each other
             if (! UserReaction::haveMutualLikes($currentUserId, $userId)) {
@@ -560,7 +523,7 @@ class ChatController extends Controller
      * Get messages from a specific conversation
      *
      * @OA\Get(
-     *     path="/api/conversations/messages/{chat_id}",
+     *     path="/api/conversations/{chat_id}/messages",
      *     tags={"Chat"},
      *     summary="Get messages from a specific conversation with pagination",
      *     security={{"bearerAuth":{}}},
@@ -625,7 +588,7 @@ class ChatController extends Controller
      *     @OA\Response(response=404, description="Conversation not found or access denied")
      * )
      */
-    public function getMessages(Request $request, int $chat_id): JsonResponse
+    public function getMessages(Request $request, string $chat_id): JsonResponse
     {
         try {
             $userId = $request->user()->id;
@@ -659,7 +622,7 @@ class ChatController extends Controller
                         'sender_id' => $message->sender_id,
                         'message' => $message->message,
                         'type' => $message->type,
-                        'created_at' => $message->created_at,
+                        'created_at' => $message->date,
                         'is_read' => $message->is_seen,
                         'gift' => $message->gift,
                         'contact_type' => $message->contact_type,
@@ -750,7 +713,7 @@ class ChatController extends Controller
      *     @OA\Response(response=422, description="Validation failed")
      * )
      */
-    public function uploadMedia(Request $request, int $chat_id): JsonResponse
+    public function uploadMedia(Request $request, string $chat_id): JsonResponse
     {
         try {
             $userId = $request->user()->id;
@@ -773,11 +736,15 @@ class ChatController extends Controller
             ]);
 
             $file = $request->file('file');
-            $fileName = time().'_'.$file->getClientOriginalName();
 
-            // Store file in public/storage/chat_media directory
-            $filePath = $file->storeAs('chat_media', $fileName, 'public');
-            $fileUrl = asset('storage/'.$filePath);
+            // Upload to SeaweedFS and get FID
+            $fid = $this->seaweedFsService->uploadToStorage(
+                file_get_contents($file->getRealPath()),
+                $file->getClientOriginalName()
+            );
+
+            // Store only FID as file_url
+            $fileUrl = $fid;
 
             // Determine receiver (the other user in conversation)
             $receiverId = $conversation->user1_id === $userId
@@ -789,7 +756,7 @@ class ChatController extends Controller
                 'conversation_id' => $chat_id,
                 'sender_id' => $userId,
                 'receiver_id' => $receiverId,
-                'message' => $filePath, // Store file path as message content
+                'message' => $fid, // Store FID as message content
                 'type' => 'media',
                 'is_seen' => false,
             ]);
@@ -803,7 +770,12 @@ class ChatController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return $this->error('Validation failed: '.implode(', ', $e->validator->errors()->all()), 422);
         } catch (\Exception $e) {
-            \Log::error('Failed to upload media: '.$e->getMessage());
+            // Log failed
+            \Log::error('Failed to upload media: '.$e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
 
             return $this->error('Failed to upload media', 500);
         }
@@ -846,7 +818,7 @@ class ChatController extends Controller
      *     @OA\Response(response=404, description="Conversation not found or access denied")
      * )
      */
-    public function markMessagesAsRead(Request $request, int $chat_id): JsonResponse
+    public function markMessagesAsRead(Request $request, string $chat_id): JsonResponse
     {
         try {
             $userId = $request->user()->id;
@@ -1157,7 +1129,7 @@ class ChatController extends Controller
      *     @OA\Response(response=404, description="Conversation not found or access denied")
      * )
      */
-    public function getConversationOnlineStatus(Request $request, int $chat_id): JsonResponse
+    public function getConversationOnlineStatus(Request $request, string $chat_id): JsonResponse
     {
         try {
             $userId = $request->user()->id;

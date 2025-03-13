@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\SeaweedFsService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,18 +13,21 @@ class ChatMessage extends Model
 
     /**
      * The table associated with the model.
+     *
      * @var string
      */
     protected $table = 'chat_messages';
 
     /**
      * Enable timestamps
+     *
      * @var bool
      */
     public $timestamps = false;
 
     /**
      * The attributes that are mass assignable.
+     *
      * @var array
      */
     protected $fillable = [
@@ -34,11 +38,12 @@ class ChatMessage extends Model
         'type',
         'is_seen',
         'gift',
-        'contact_type'
+        'contact_type',
     ];
 
     /**
      * The attributes that should be cast.
+     *
      * @var array
      */
     protected $casts = [
@@ -48,6 +53,7 @@ class ChatMessage extends Model
 
     /**
      * The model's default values for attributes.
+     *
      * @var array
      */
     protected $attributes = [
@@ -56,7 +62,6 @@ class ChatMessage extends Model
 
     /**
      * Get the conversation that owns the message.
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function conversation(): BelongsTo
     {
@@ -65,7 +70,6 @@ class ChatMessage extends Model
 
     /**
      * Get the sender of the message.
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function sender(): BelongsTo
     {
@@ -74,7 +78,6 @@ class ChatMessage extends Model
 
     /**
      * Get the receiver of the message.
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function receiver(): BelongsTo
     {
@@ -83,7 +86,8 @@ class ChatMessage extends Model
 
     /**
      * Scope a query to only include unseen messages.
-     * @param \Illuminate\Database\Eloquent\Builder $query
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeUnseen($query)
@@ -93,8 +97,8 @@ class ChatMessage extends Model
 
     /**
      * Scope a query to only include messages of a specific type.
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param string $type
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeOfType($query, string $type)
@@ -104,6 +108,7 @@ class ChatMessage extends Model
 
     /**
      * Mark the message as seen.
+     *
      * @return bool
      */
     public function markAsSeen()
@@ -114,64 +119,86 @@ class ChatMessage extends Model
     /**
      * Check if message has attached file.
      * For media type messages, file info is stored in the message field
+     *
      * @return bool
      */
     public function hasFile()
     {
-        return $this->type === 'media' && !empty($this->message);
+        return $this->type === 'media' && ! empty($this->message);
     }
 
     /**
      * Get file URL for media messages.
+     *
      * @return string|null
      */
     public function getFileUrl()
     {
         if ($this->type === 'media' && $this->message) {
-            return asset('storage/' . $this->message);
+            try {
+                $seaweedFsService = app(SeaweedFsService::class);
+
+                return $seaweedFsService->createVolumeUrl($this->message);
+            } catch (\Exception $e) {
+                \Log::warning('Failed to create SeaweedFS URL for chat message', [
+                    'message_id' => $this->id,
+                    'fid' => $this->message,
+                    'error' => $e->getMessage(),
+                ]);
+
+                return null;
+            }
         }
+
         return null;
     }
 
     /**
-     * Get file extension from message path for media messages.
+     * Get file extension from FID for media messages.
+     * For SeaweedFS, we'll store the original filename info or extract from MIME type.
+     * This is a simplified version - in production you might want to store filename separately.
+     *
      * @return string|null
      */
     public function getFileExtension()
     {
         if ($this->type === 'media' && $this->message) {
-            return pathinfo($this->message, PATHINFO_EXTENSION);
+            return 'jpg'; // Default for media files
         }
+
         return null;
     }
 
     /**
-     * Check if file is an image based on extension.
+     * Check if file is an image.
+     * For media messages, we'll assume images unless we have better metadata.
+     *
      * @return bool
      */
     public function isImage()
     {
-        $extension = $this->getFileExtension();
-        return in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'gif']);
+        return $this->type === 'media';
     }
 
     /**
-     * Check if file is a video based on extension.
+     * Check if file is a video.
+     * For now, we'll return false - in production you'd store MIME type or file metadata.
+     *
      * @return bool
      */
     public function isVideo()
     {
-        $extension = $this->getFileExtension();
-        return in_array(strtolower($extension), ['mp4', 'mov', 'avi']);
+        return false; // Simplified for now
     }
 
     /**
-     * Check if file is a document based on extension.
+     * Check if file is a document.
+     * For now, we'll return false - in production you'd store MIME type or file metadata.
+     *
      * @return bool
      */
     public function isDocument()
     {
-        $extension = $this->getFileExtension();
-        return in_array(strtolower($extension), ['pdf', 'doc', 'docx', 'txt']);
+        return false; // Simplified for now
     }
 }

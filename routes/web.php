@@ -88,7 +88,7 @@ Route::prefix('api/conversations')->middleware('auth')->group(function () {
     Route::get('/', [ChatController::class, 'getConversations']);
 
     // Получить сообщения в чате
-    Route::get('/messages/{chat_id}', [ChatController::class, 'getMessages']);
+    Route::get('/{chat_id}/messages', [ChatController::class, 'getMessages']);
 
     // Отправить сообщение в чат текст и файлы
     Route::post('/send-messages', [ChatController::class, 'sendMessage']);
@@ -99,10 +99,8 @@ Route::prefix('api/conversations')->middleware('auth')->group(function () {
     // Отметить все сообщения в чате как прочитанные
     Route::post('/read-messages/{chat_id}', [ChatController::class, 'markMessagesAsRead']);
 
-    // Получить непрочитанные сообщения в чате
-    Route::get('/{chat_id}/unread-messages-status', [ChatController::class, 'getUnreadMessagesStatus']);
     // Создать чат с пользователем
-    Route::post('/{user_id}', [ChatController::class, 'createConversation']);
+    Route::post('/', [ChatController::class, 'createConversation']);
 
     // Удалить чат с пользователем
     Route::delete('/{chat_id}', [ChatController::class, 'deleteConversation']);
@@ -152,7 +150,6 @@ Route::prefix('users')->middleware('auth')->group(function () {
 
     Route::get('packagesInfo', [UsersController::class, 'getUserPackages']);
 
-
     // update users coordinates
     Route::post('coordinates', [UsersController::class, 'updateCoordinates']);
 
@@ -188,9 +185,9 @@ Route::prefix('users')->middleware('auth')->group(function () {
 
         // Other
         Route::get('connected-accounts', [SettingsController::class, 'getConnectedAccounts']);
-        Route::get("blocked-contacts", [SettingsController::class, 'getBlockedContacts']);
-        Route::post("blocked-contacts", [SettingsController::class, 'createBlockedContact']);
-        Route::delete("blocked-contacts", [SettingsController::class, 'deleteBlockedContact']);
+        Route::get('blocked-contacts', [SettingsController::class, 'getBlockedContacts']);
+        Route::post('blocked-contacts', [SettingsController::class, 'createBlockedContact']);
+        Route::delete('blocked-contacts', [SettingsController::class, 'deleteBlockedContact']);
     });
 
     // Справочные данные
@@ -222,7 +219,7 @@ Route::prefix('users')->group(function () {
 
 // Image admin view and edit
 Route::get('admin/image-proxy/{imageId}', [
-    App\Http\Controllers\Admin\ImageProxyController::class, 'show'
+    App\Http\Controllers\Admin\ImageProxyController::class, 'show',
 ])->where('imageId', '.*')->middleware(['web']);
 
 // Default routes

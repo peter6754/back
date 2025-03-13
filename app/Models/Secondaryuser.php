@@ -257,7 +257,7 @@ class Secondaryuser extends Model
 
     /**
      * Scope a query to only include online users.
-     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeOnline($query)
@@ -267,7 +267,7 @@ class Secondaryuser extends Model
 
     /**
      * Scope a query to only include bots.
-     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeBots($query)
@@ -357,8 +357,8 @@ class Secondaryuser extends Model
     }
 
     /**
-     * @param string $provider
-     * @param string|null $email
+     * @param  string  $provider
+     * @param  string|null  $email
      * @return bool
      */
     public function hasConnectedAccount(string $provider, string $email = null): bool
@@ -374,7 +374,7 @@ class Secondaryuser extends Model
     }
 
     /**
-     * @param array $data
+     * @param  array  $data
      * @return ConnectedAccount
      */
     public function addConnectedAccount(array $data): ConnectedAccount

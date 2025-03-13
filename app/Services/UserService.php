@@ -99,53 +99,53 @@ class UserService
         $gender = $info['gender'] ?? null;
 
         $infoItems = [
-            ($userSettings['show_my_orientation'] ?? false) && !empty($info['sexual_orientation'])
+            ($userSettings['show_my_orientation'] ?? false) && ! empty($info['sexual_orientation'])
                 ? UserInformationTranslator::translate('orientations', $info['sexual_orientation'])
                 : null,
-            !empty($userInformation['zodiac_sign'])
+            ! empty($userInformation['zodiac_sign'])
                 ? UserInformationTranslator::translate('zodiac_signs', $userInformation['zodiac_sign'])
                 : null,
-            !empty($userInformation['alcohole'])
+            ! empty($userInformation['alcohole'])
                 ? UserInformationTranslator::translate('alcohol', $userInformation['alcohole'])
                 : null,
-            !empty($userInformation['smoking'])
+            ! empty($userInformation['smoking'])
                 ? UserInformationTranslator::translate('smoking', $userInformation['smoking'])
                 : null,
-            !empty($userInformation['education'])
+            ! empty($userInformation['education'])
                 ? UserInformationTranslator::translate('education', $userInformation['education'])
                 : null,
-            !empty($userInformation['family'])
+            ! empty($userInformation['family'])
                 ? UserInformationTranslator::translate('family', $userInformation['family'])
                 : null,
-            !empty($userInformation['communication'])
+            ! empty($userInformation['communication'])
                 ? UserInformationTranslator::translate('communication', $userInformation['communication'])
                 : null,
             ...array_map(function ($pet) {
-                return !empty($pet['pet'])
+                return ! empty($pet['pet'])
                     ? UserInformationTranslator::translate('pets', $pet['pet'])
                     : null;
             }, $info['pets'] ?? $info['user_pets'] ?? []),
-            !empty($userInformation['sport'])
+            ! empty($userInformation['sport'])
                 ? UserInformationTranslator::translate('sport', $userInformation['sport'])
                 : null,
-            !empty($userInformation['love_language'])
+            ! empty($userInformation['love_language'])
                 ? UserInformationTranslator::translate('love_language', $userInformation['love_language'])
                 : null,
-            !empty($userInformation['food'])
+            ! empty($userInformation['food'])
                 ? UserInformationTranslator::translate('food', $userInformation['food'])
                 : null,
-            !empty($userInformation['social_network'])
+            ! empty($userInformation['social_network'])
                 ? UserInformationTranslator::translate('social_network', $userInformation['social_network'])
                 : null,
-            !empty($userInformation['sleep'])
+            ! empty($userInformation['sleep'])
                 ? UserInformationTranslator::translate('sleep', $userInformation['sleep'])
                 : null,
-            !empty($userInformation['family_status'])
+            ! empty($userInformation['family_status'])
                 ? UserInformationTranslator::translate(
-                'family_statuses',
-                $userInformation['family_status'],
-                in_array($gender, $this->maleGenders) ? 'male' : 'female'
-            )
+                    'family_statuses',
+                    $userInformation['family_status'],
+                    in_array($gender, $this->maleGenders) ? 'male' : 'female'
+                )
                 : null,
             $info['final_preference']['preference'] ??
                 $info['user_relationship_preferences'][0]['preference']['preference'] ?? null,
@@ -159,7 +159,7 @@ class UserService
             'role' => $userInformation['role'] ?? null,
             'residence' => $info['city']['formatted_address'] ?? null,
             'company' => $userInformation['company'] ?? null,
-            'gender' => ($userSettings['show_my_gender'] ?? false) && !empty($info['gender'])
+            'gender' => ($userSettings['show_my_gender'] ?? false) && ! empty($info['gender'])
                 ? UserInformationTranslator::translate('genders', $info['gender'])
                 : null,
             'age' => $withQueryRaw['age'] ? (int) $withQueryRaw['age'] : null,
@@ -490,7 +490,7 @@ class UserService
                 WHERE ure.user_id != ? AND ure.type != 'dislike' AND ur.type != 'dislike'
             ),
             users_liked_me AS (
-                SELECT reactor_id FROM user_reactions
+                SELECT reactor_id, date FROM user_reactions
                 WHERE user_id = ? AND type IN ('like', 'superlike')
             ),
             users_superliked_me AS (
@@ -534,11 +534,13 @@ class UserService
                     ) AS CHAR
                 ) as distance,
                 CAST((u.id IN (SELECT * FROM users_superliked_me)) AS CHAR) as superliked_me,
-                CAST(IF(COALESCE(us.status_online, 1), u.is_online, 0) AS CHAR) as is_online
+                CAST(IF(COALESCE(us.status_online, 1), u.is_online, 0) AS CHAR) as is_online,
+                ulm.date as like_date
             FROM users u
             LEFT JOIN user_settings us ON us.user_id = u.id
             LEFT JOIN user_information ui ON ui.user_id = u.id
-            WHERE u.id IN (SELECT * FROM users_liked_me)
+            JOIN users_liked_me ulm ON u.id = ulm.reactor_id
+            WHERE u.id IN (SELECT reactor_id FROM users_liked_me)
                 AND u.id NOT IN (SELECT * FROM my_matches)
                 AND u.id NOT IN (SELECT * FROM my_dislikes)
                 AND IF(
@@ -553,6 +555,7 @@ class UserService
                        IF(? = 'by_verification_status', (SELECT status FROM verification_requests WHERE user_id = u.id AND status = 'approved') IS NOT NULL,
                           IF(? = 'by_information', ui.bio IS NOT NULL, 1)))
                 )
+            ORDER BY ulm.date DESC
         ", [
             // users_near CTE (3 параметра)
             $userLat, $userLong, $userLat,
@@ -589,6 +592,7 @@ class UserService
                 'distance' => $user->distance !== null ? (int) $user->distance : null,
                 'superliked_me' => (bool) (int) $user->superliked_me,
                 'is_online' => (bool) (int) $user->is_online,
+                'like_date' => $user->like_date,
             ];
         });
     }
@@ -602,7 +606,7 @@ class UserService
         $city = null;
         if ($filterCities) {
             $cities = json_decode($filterCities, true);
-            $city = is_array($cities) && !empty($cities) ? $cities[0] : null;
+            $city = is_array($cities) && ! empty($cities) ? $cities[0] : null;
         }
 
         return [
@@ -633,7 +637,7 @@ class UserService
         return DB::transaction(function () use ($user_id, $data) {
             // Обновляем основные настройки
             UserSettings::updateOrCreate([
-                'user_id' => $user_id
+                'user_id' => $user_id,
             ], [
                 'is_global_search' => $data['is_global_search'] ?? null,
                 'search_radius' => $data['search_radius'] ?? null,
@@ -648,7 +652,7 @@ class UserService
                 $preferences = array_map(function ($gender) use ($user_id) {
                     return [
                         'user_id' => $user_id,
-                        'gender' => $gender
+                        'gender' => $gender,
                     ];
                 }, $data['show_me']);
 
@@ -888,8 +892,8 @@ class UserService
     }
 
     /**
-     * @param string $userId
      * @return array|null[]
+     *
      * @throws Exception
      */
     public function getConnectedAccounts(string $userId): array
@@ -916,32 +920,27 @@ class UserService
                     'login_with_apple',
                     'login_with_google',
                     'login_with_facebook',
-                    'login_with_vk'
+                    'login_with_vk',
                 ])
                 ->first();
 
             return [
-                'google' => !$google ? null : ($settings->login_with_google ?? null),
-                'facebook' => !$facebook ? null : ($settings->login_with_facebook ?? null),
-                'apple' => !$apple ? null : ($settings->login_with_apple ?? null),
-                'vk' => !$vk ? null : ($settings->login_with_vk ?? null)
+                'google' => ! $google ? null : ($settings->login_with_google ?? null),
+                'facebook' => ! $facebook ? null : ($settings->login_with_facebook ?? null),
+                'apple' => ! $apple ? null : ($settings->login_with_apple ?? null),
+                'vk' => ! $vk ? null : ($settings->login_with_vk ?? null),
             ];
 
         } catch (Exception $e) {
-            Log::error('Error fetching connected accounts for user: ' . $userId, [
+            Log::error('Error fetching connected accounts for user: '.$userId, [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             throw new Exception('Failed to get user packages: '.$e->getMessage(), 500);
         }
     }
 
-    /**
-     * @param string $userId
-     * @param string|null $query
-     * @return array
-     */
     public function getBlockedContacts(string $userId, ?string $query = null): array
     {
         try {
@@ -951,6 +950,7 @@ class UserService
                     $queryBuilder->where('phone', 'like', "%{$query}%");
                 })
                 ->get();
+
             return $blockedContacts->toArray();
 
         } catch (Exception $e) {
@@ -958,7 +958,7 @@ class UserService
                 'user_id' => $userId,
                 'query' => $query,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return [];
@@ -966,9 +966,8 @@ class UserService
     }
 
     /**
-     * @param string $userId
-     * @param array $data
      * @return string[]
+     *
      * @throws \Throwable
      */
     public function createBlockedContact(string $userId, array $data): array
@@ -989,30 +988,29 @@ class UserService
                 'user_id' => $userId,
                 'phone' => $data['phone'],
                 'name' => $data['name'],
-                'date' => now()->toDateString()
+                'date' => now()->toDateString(),
             ]);
 
             DB::commit();
 
             return [
-                'message' => 'Data added successfully'
+                'message' => 'Data added successfully',
             ];
 
         } catch (Exception $e) {
             DB::rollBack();
             Log::error('Transaction failed for blocked contact', [
                 'user_id' => $userId,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
-            throw new Exception ($e->getMessage(), $e->getCode());
+            throw new Exception($e->getMessage(), $e->getCode());
         }
     }
 
     /**
-     * @param string $phone
-     * @param string $userId
      * @return string[]
+     *
      * @throws Exception
      */
     public function deleteBlockedContact(string $phone, string $userId): array
@@ -1023,24 +1021,24 @@ class UserService
                 ->where('phone', $phone)
                 ->first();
 
-            if (!$blockedContact) {
+            if (! $blockedContact) {
                 throw new Exception('Data not exist', 404);
             }
 
             $blockedContact->delete();
 
             return [
-                'message' => 'Data deleted successfully'
+                'message' => 'Data deleted successfully',
             ];
 
         } catch (Exception $e) {
             Log::error('Error deleting blocked contact', [
                 'user_id' => $userId,
                 'phone' => $phone,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
-            throw new Exception ($e->getMessage(), $e->getCode());
+            throw new Exception($e->getMessage(), $e->getCode());
         }
     }
 }

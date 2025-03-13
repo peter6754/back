@@ -66,6 +66,114 @@ class RecommendationsController extends Controller
 
     /**
      * @param  Request  $request
+     * @OA\Get(
+     *       path="/recommendations",
+     *       tags={"Recommendations"},
+     *       summary="Get recommendations profiles",
+     *       security={{"bearerAuth":{}}},
+     *
+     *       @OA\Parameter(
+     *          name="interest_id",
+     *          in="query",
+     *          description="Filter by interest ID",
+     *          required=false,
+     *          @OA\Schema(type="string", example="123")
+     *       ),
+     *
+     *       @OA\Parameter(
+     *          name="min_photo_count",
+     *          in="query",
+     *          description="Minimum number of photos required",
+     *          required=false,
+     *          @OA\Schema(type="string", example="3")
+     *       ),
+     *
+     *       @OA\Parameter(
+     *          name="is_verified",
+     *          in="query",
+     *          description="Filter verified profiles (true/false)",
+     *          required=false,
+     *          @OA\Schema(type="string", example="true")
+     *       ),
+     *
+     *       @OA\Parameter(
+     *          name="has_info",
+     *          in="query",
+     *          description="Filter profiles with complete info",
+     *          required=false,
+     *          @OA\Schema(type="string", example="false")
+     *       ),
+     *
+     *       @OA\Response(
+     *           @OA\JsonContent(ref="#/components/schemas/SuccessResponse"),
+     *           description="Successful operation",
+     *           response=200,
+     *       ),
+     *
+     *       @OA\Response(
+     *             description="Нет настроек поиска",
+     *             response=400,
+     *       ),
+     *       @OA\Response(
+     *            description="Измените настройки поиска",
+     *            response=404,
+     *       ),
+     *       @OA\Response(
+     *             description="Ошибка на сервере, попробуйте позже",
+     *             response=408,
+     *       ),
+     *
+     *       @OA\Response(
+     *           @OA\JsonContent(ref="#/components/schemas/Unauthorized"),
+     *           description="Unauthorized",
+     *           response=401
+     *       )
+     *   )
+     * @return JsonResponse
+     */
+    public function getRecommendations(Request $request): JsonResponse
+    {
+        try {
+            // Get queries
+            $query = RecommendationsDto::forRecommendations($request);
+
+            $getResponse = $this->recommendations->getRecommendations($request->user(), $query);
+
+            // Return string error
+            if (!empty($getResponse['message'])) {
+
+                if ($request->get('debug') == '1') {
+                    $errorCode = !empty($getResponse['code']) ? (9000 + $getResponse['code']) : 9404;
+                    $httpCode = $getResponse['code'] ?? 404;
+                    return $this->errorResponse(
+                        $getResponse['message'],
+                        $errorCode,
+                        $httpCode
+                    );
+                }
+
+                return $this->successResponse([
+                    'items' => []
+                ]);
+            }
+
+            // Return data
+            return $this->successResponse(
+                $getResponse
+            );
+        } catch (Exception $e) {
+            Log::channel('recommendations')->error(basename(__FILE__, ".php").' > '.__FUNCTION__.' error:', [
+                'user_id' => $request->user()->id ?? 'unknown',
+                'error' => $e->getMessage()
+            ]);
+            return $this->errorResponse(
+                "Internal error"
+            );
+        }
+    }
+
+    /**
+     * @param  Request  $request
      * @OA\Delete(
      *      path="/recommendations/match/{id}",
      *      tags={"Recommendations"},
@@ -178,7 +286,6 @@ class RecommendationsController extends Controller
      * @OA\Post(
      *      path="/recommendations/like",
      *      tags={"Recommendations"},
-     *      summary="Get recommendations profiles",
      *      security={{"bearerAuth":{}}},
      *
      *       @OA\RequestBody(
@@ -225,96 +332,6 @@ class RecommendationsController extends Controller
             // Return data
             return $this->successResponse(
                 $this->recommendations->like($request->user()->id, $query)
-            );
-        } catch (Exception $e) {
-            Log::channel('recommendations')->error(basename(__FILE__, ".php").' > '.__FUNCTION__.' error:', [
-                'user_id' => $request->user()->id ?? 'unknown',
-                'error' => $e->getMessage()
-            ]);
-            return $this->errorResponse(
-                "Internal error"
-            );
-        }
-    }
-
-    /**
-     * @param  Request  $request
-     * @OA\Get(
-     *       path="/recommendations",
-     *       tags={"Recommendations"},
-     *       summary="Get recommendations profiles",
-     *       security={{"bearerAuth":{}}},
-     *
-     *       @OA\Parameter(
-     *          name="interest_id",
-     *          in="query",
-     *          description="Filter by interest ID",
-     *          required=false,
-     *          @OA\Schema(type="string", example="123")
-     *       ),
-     *
-     *       @OA\Parameter(
-     *          name="min_photo_count",
-     *          in="query",
-     *          description="Minimum number of photos required",
-     *          required=false,
-     *          @OA\Schema(type="string", example="3")
-     *       ),
-     *
-     *       @OA\Parameter(
-     *          name="is_verified",
-     *          in="query",
-     *          description="Filter verified profiles (true/false)",
-     *          required=false,
-     *          @OA\Schema(type="string", example="true")
-     *       ),
-     *
-     *       @OA\Parameter(
-     *          name="has_info",
-     *          in="query",
-     *          description="Filter profiles with complete info",
-     *          required=false,
-     *          @OA\Schema(type="string", example="false")
-     *       ),
-     *
-     *       @OA\Response(
-     *           @OA\JsonContent(ref="#/components/schemas/SuccessResponse"),
-     *           description="Successful operation",
-     *           response=201,
-     *       ),
-     *
-     *       @OA\Response(
-     *           @OA\JsonContent(ref="#/components/schemas/Unauthorized"),
-     *           description="Unauthorized",
-     *           response=401
-     *       )
-     *   )
-     * @return JsonResponse
-     */
-    public function getRecommendations(Request $request): JsonResponse
-    {
-        try {
-            // Get queries
-            $query = RecommendationsDto::forRecommendations($request);
-
-            $getResponse = $this->recommendations->getRecommendations($request->user()->id, $query);
-
-            // Return string error
-            if (is_string($getResponse)) {
-                // ToDo: Временная затычка до следующего релиза от 04.09.2025
-                return $this->successResponse([
-                    'items' => []
-                ]);
-//                return $this->errorResponse(
-//                    $getResponse,
-//                    9404,
-//                    404
-//                );
-            }
-
-            // Return data
-            return $this->successResponse(
-                $getResponse
             );
         } catch (Exception $e) {
             Log::channel('recommendations')->error(basename(__FILE__, ".php").' > '.__FUNCTION__.' error:', [
