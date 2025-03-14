@@ -72,6 +72,9 @@ class AuthService
             if (!in_array($userPhone, $this->specialNumbers)) {
                 $getResponse = $this->greenSmsService->sendCode($userPhone, "Ваш код подтверждения: {$code}");
                 $msgProvider = $getResponse['provider'] ?? 'none';
+                if (empty($getResponse['success'])) {
+                    throw new \Exception('Failed to send SMS');
+                }
             }
             $type = 'login';
         } else {
@@ -83,12 +86,12 @@ class AuthService
 //                ]);
 //                $msgProvider = $getResponse['provider'] ?? 'none';
 //            } else {
-                (new NotificationService())->sendPushNotification($userToken ?? "",
-                    $code, "Ваш код подтверждения", [
-                        'channel' => 'authservice',
-                    ]
-                );
-                $msgProvider = "push";
+            (new NotificationService())->sendPushNotification($userToken ?? "",
+                $code, "Ваш код подтверждения", [
+                    'channel' => 'authservice',
+                ]
+            );
+            $msgProvider = "push";
 //            }
             $type = 'register';
         }
