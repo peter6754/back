@@ -100,55 +100,55 @@ class UserService
 
         $infoItems = [
             ($userSettings['show_my_orientation'] ?? false) && ! empty($info['sexual_orientation'])
-                ? UserInformationTranslator::translate('orientations', $info['sexual_orientation'])
-                : null,
+            ? UserInformationTranslator::translate('orientations', $info['sexual_orientation'])
+            : null,
             ! empty($userInformation['zodiac_sign'])
-                ? UserInformationTranslator::translate('zodiac_signs', $userInformation['zodiac_sign'])
-                : null,
+            ? UserInformationTranslator::translate('zodiac_signs', $userInformation['zodiac_sign'])
+            : null,
             ! empty($userInformation['alcohole'])
-                ? UserInformationTranslator::translate('alcohol', $userInformation['alcohole'])
-                : null,
+            ? UserInformationTranslator::translate('alcohol', $userInformation['alcohole'])
+            : null,
             ! empty($userInformation['smoking'])
-                ? UserInformationTranslator::translate('smoking', $userInformation['smoking'])
-                : null,
+            ? UserInformationTranslator::translate('smoking', $userInformation['smoking'])
+            : null,
             ! empty($userInformation['education'])
-                ? UserInformationTranslator::translate('education', $userInformation['education'])
-                : null,
+            ? UserInformationTranslator::translate('education', $userInformation['education'])
+            : null,
             ! empty($userInformation['family'])
-                ? UserInformationTranslator::translate('family', $userInformation['family'])
-                : null,
+            ? UserInformationTranslator::translate('family', $userInformation['family'])
+            : null,
             ! empty($userInformation['communication'])
-                ? UserInformationTranslator::translate('communication', $userInformation['communication'])
-                : null,
+            ? UserInformationTranslator::translate('communication', $userInformation['communication'])
+            : null,
             ...array_map(function ($pet) {
                 return ! empty($pet['pet'])
                     ? UserInformationTranslator::translate('pets', $pet['pet'])
                     : null;
             }, $info['pets'] ?? $info['user_pets'] ?? []),
             ! empty($userInformation['sport'])
-                ? UserInformationTranslator::translate('sport', $userInformation['sport'])
-                : null,
+            ? UserInformationTranslator::translate('sport', $userInformation['sport'])
+            : null,
             ! empty($userInformation['love_language'])
-                ? UserInformationTranslator::translate('love_language', $userInformation['love_language'])
-                : null,
+            ? UserInformationTranslator::translate('love_language', $userInformation['love_language'])
+            : null,
             ! empty($userInformation['food'])
-                ? UserInformationTranslator::translate('food', $userInformation['food'])
-                : null,
+            ? UserInformationTranslator::translate('food', $userInformation['food'])
+            : null,
             ! empty($userInformation['social_network'])
-                ? UserInformationTranslator::translate('social_network', $userInformation['social_network'])
-                : null,
+            ? UserInformationTranslator::translate('social_network', $userInformation['social_network'])
+            : null,
             ! empty($userInformation['sleep'])
-                ? UserInformationTranslator::translate('sleep', $userInformation['sleep'])
-                : null,
+            ? UserInformationTranslator::translate('sleep', $userInformation['sleep'])
+            : null,
             ! empty($userInformation['family_status'])
-                ? UserInformationTranslator::translate(
-                    'family_statuses',
-                    $userInformation['family_status'],
-                    in_array($gender, $this->maleGenders) ? 'male' : 'female'
-                )
-                : null,
+            ? UserInformationTranslator::translate(
+                'family_statuses',
+                $userInformation['family_status'],
+                in_array($gender, $this->maleGenders) ? 'male' : 'female'
+            )
+            : null,
             $info['final_preference']['preference'] ??
-                $info['user_relationship_preferences'][0]['preference']['preference'] ?? null,
+            $info['user_relationship_preferences'][0]['preference']['preference'] ?? null,
         ];
 
         return [
@@ -1040,5 +1040,185 @@ class UserService
 
             throw new Exception($e->getMessage(), $e->getCode());
         }
+    }
+
+    /**
+     * Get main user settings (original Node.js getSettings method)
+     */
+    public function getMainSettings(string $userId): array
+    {
+        // Original SQL from node js
+        $user = DB::selectOne('
+            SELECT 
+                u.phone,
+                u.email, 
+                u.username,
+                uc.formatted_address as residence
+            FROM users u
+            LEFT JOIN user_cities uc ON uc.user_id = u.id
+            WHERE u.id = ?
+        ', [$userId]);
+
+        if (! $user) {
+            throw new Exception('User not found', 404);
+        }
+
+        // Get user settings
+        $userSettings = DB::selectOne('
+            SELECT 
+                search_radius,
+                is_global_search,
+                recommendations,
+                visibility,
+                show_me_on_finder
+            FROM user_settings 
+            WHERE user_id = ?
+        ', [$userId]);
+
+        // Handle delete queue logic (original Node.js logic)
+        $timeLeftToDeleteAccount = -1;
+        $isTimeDelete = null;
+
+        $deleteQueue = DB::selectOne('
+            SELECT date, is_date_delete 
+            FROM in_queue_for_delete_user 
+            WHERE user_id = ?
+        ', [$userId]);
+
+        if ($deleteQueue) {
+            $queueDate = Carbon::parse($deleteQueue->date);
+            $timeLeftToDeleteAccount = $queueDate->timestamp * 1000 - now()->timestamp * 1000;
+            $isTimeDelete = (bool) $deleteQueue->is_date_delete;
+
+            if ($isTimeDelete === false && $timeLeftToDeleteAccount <= 0) {
+                $isTimeDelete = true;
+                $timeLeftToDeleteAccount = 3 * 24 * 60 * 60 * 1000; // 3 days in milliseconds
+
+                // Update delete queue
+                DB::update('
+                    UPDATE in_queue_for_delete_user 
+                    SET date = ?, is_date_delete = ? 
+                    WHERE user_id = ?
+                ', [
+                    now()->addMilliseconds($timeLeftToDeleteAccount)->toDateString(),
+                    $isTimeDelete,
+                    $userId,
+                ]);
+
+            } elseif ($isTimeDelete && $timeLeftToDeleteAccount <= 0) {
+                $isTimeDelete = null;
+                $timeLeftToDeleteAccount = -1;
+
+                // Delete from queue
+                DB::delete('DELETE FROM in_queue_for_delete_user WHERE user_id = ?', [$userId]);
+            }
+        }
+
+        // Combine results (original response format)
+        return [
+            'phone' => $user->phone,
+            'email' => $user->email,
+            'username' => $user->username,
+            'residence' => $user->residence,
+            'timeLeftToDeleteAccount' => $timeLeftToDeleteAccount,
+            'isTimeDelete' => $isTimeDelete,
+            'search_radius' => $userSettings->search_radius ?? 999,
+            'is_global_search' => (bool) ($userSettings->is_global_search ?? false),
+            'recommendations' => $userSettings->recommendations ?? 'optimal',
+            'visibility' => $userSettings->visibility ?? 'standard',
+            'show_me_on_finder' => (bool) ($userSettings->show_me_on_finder ?? true),
+        ];
+    }
+
+    /**
+     * Update main user settings (original Node.js updateSettings method)
+     */
+    public function updateMainSettings(string $userId, array $data): array
+    {
+        // Original subscription check logic from Node.js
+        if (isset($data['show_me_on_finder']) && $data['show_me_on_finder'] !== null) {
+            $hasSubscription = DB::selectOne('
+                SELECT COUNT(*) as count
+                FROM users u
+                LEFT JOIN transactions t ON t.user_id = u.id
+                LEFT JOIN bought_subscriptions bs ON bs.transaction_id = t.id
+                WHERE u.id = ? 
+                AND bs.due_date > NOW()
+                AND t.status = "succeeded"
+            ', [$userId]);
+
+            if (! $hasSubscription || $hasSubscription->count == 0) {
+                throw new Exception('Could not change show_me_on_finder without a subscription', 406);
+            }
+        }
+
+        // Original changeable settings from Node.js
+        $changeableSettings = [
+            'show_me_on_finder',
+            'is_global_search',
+            'username',
+            'search_radius',
+            'status_seen',
+            'status_online',
+            'email',
+            'status_recently_active',
+            'new_couples_push',
+            'new_messages_push',
+            'new_likes_push',
+            'new_super_likes_push',
+            'new_couples_email',
+            'new_messages_email',
+        ];
+
+        // Prepare data for update
+        $settingsData = [];
+        $userData = [];
+
+        foreach ($changeableSettings as $setting) {
+            if (array_key_exists($setting, $data) && $data[$setting] !== null) {
+                if ($setting === 'username') {
+                    $userData['username'] = $data[$setting];
+                } elseif ($setting === 'email') {
+                    // Check if email changed to reset verification
+                    $currentUser = DB::selectOne('SELECT email FROM users WHERE id = ?', [$userId]);
+                    if ($currentUser->email !== $data[$setting]) {
+                        $userData['email'] = $data[$setting];
+                        $settingsData['is_email_verified'] = false;
+                    }
+                } else {
+                    $settingsData[$setting] = $data[$setting];
+                }
+            }
+        }
+
+        // Update user data if needed
+        if (! empty($userData)) {
+            $updateFields = [];
+            $updateValues = [];
+            foreach ($userData as $field => $value) {
+                $updateFields[] = "{$field} = ?";
+                $updateValues[] = $value;
+            }
+            $updateValues[] = $userId;
+
+            DB::update('UPDATE users SET '.implode(', ', $updateFields).' WHERE id = ?', $updateValues);
+        }
+
+        // Update settings data
+        if (! empty($settingsData)) {
+            $updateFields = [];
+            $updateValues = [];
+            foreach ($settingsData as $field => $value) {
+                $updateFields[] = "{$field} = ?";
+                $updateValues[] = $value;
+            }
+            $updateValues[] = $userId;
+
+            DB::update('UPDATE user_settings SET '.implode(', ', $updateFields).' WHERE user_id = ?', $updateValues);
+        }
+
+        return [
+            'message' => 'Data updated successfully',
+        ];
     }
 }

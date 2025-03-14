@@ -24,6 +24,7 @@ class SettingsController extends Controller
     use ApiResponseTrait;
 
     private UserService $userService;
+
     private CitiesService $citiesService;
 
     public function __construct(UserService $userService, CitiesService $citiesService)
@@ -341,29 +342,32 @@ class SettingsController extends Controller
     }
 
     /**
-     * @param Request $request
      * @OA\Get(
      *     tags={"User Settings"},
      *     path="/users/settings/connected-accounts",
      *     summary="Get connected accounts",
      *     description="Get user's connected social accounts with settings",
      *     security={{"bearerAuth":{}}},
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="google", type="boolean", nullable=true),
      *             @OA\Property(property="facebook", type="boolean", nullable=true),
      *             @OA\Property(property="apple", type="boolean", nullable=true),
      *             @OA\Property(property="vk", type="boolean", nullable=true)
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=401,
      *         description="Unauthenticated"
      *     )
      * )
-     * @return JsonResponse
+     *
      * @throws Exception
      */
     public function getConnectedAccounts(Request $request): JsonResponse
@@ -383,26 +387,31 @@ class SettingsController extends Controller
     }
 
     /**
-     * @param Request $request
      * @OA\Get(
      *     tags={"User Settings"},
      *     path="/users/settings/blocked-contacts",
      *     summary="Get blocked contacts",
      *     description="Get user's blocked contacts with optional phone number search",
      *     security={{"bearerAuth":{}}},
+     *
      *     @OA\Parameter(
      *         name="query",
      *         in="query",
      *         description="Search query for phone number",
      *         required=false,
+     *
      *         @OA\Schema(type="string")
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
+     *
      *         @OA\JsonContent(
      *             type="array",
+     *
      *             @OA\Items(
+     *
      *                 @OA\Property(property="user_id", type="string", example="user-123"),
      *                 @OA\Property(property="phone", type="string", example="+1234567890"),
      *                 @OA\Property(property="name", type="string", example="John Doe"),
@@ -410,6 +419,7 @@ class SettingsController extends Controller
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=401,
      *         description="Unauthenticated"
@@ -417,13 +427,15 @@ class SettingsController extends Controller
      *     @OA\Response(
      *         response=500,
      *         description="Server error",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="error", type="string", example="Failed to retrieve blocked contacts"),
      *             @OA\Property(property="message", type="string", example="Error message details")
      *         )
      *     )
      * )
-     * @return JsonResponse
+     *
      * @throws Exception
      */
     public function getBlockedContacts(Request $request): JsonResponse
@@ -445,36 +457,45 @@ class SettingsController extends Controller
     }
 
     /**
-     * @param Request $request
      * @OA\Post(
      *     tags={"User Settings"},
      *     path="/users/settings/blocked-contacts",
      *     summary="Create blocked contact",
      *     description="Add a new phone number to blocked contacts",
      *     security={{"bearerAuth":{}}},
+     *
      *     @OA\RequestBody(
      *         required=true,
+     *
      *         @OA\JsonContent(
      *             required={"phone", "name"},
+     *
      *             @OA\Property(property="phone", type="string", example="+1234567890"),
      *             @OA\Property(property="name", type="string", example="John Doe")
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successfully created",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="message", type="string", example="Data added successfully")
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=406,
      *         description="Already exists",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="error", type="string", example="Blocked contact already exists"),
      *             @OA\Property(property="code", type="integer", example=4060)
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=401,
      *         description="Unauthenticated"
@@ -488,7 +509,7 @@ class SettingsController extends Controller
      *         description="Server error"
      *     )
      * )
-     * @return JsonResponse
+     *
      * @throws \Throwable
      */
     public function createBlockedContact(Request $request): JsonResponse
@@ -496,7 +517,7 @@ class SettingsController extends Controller
         try {
             $validated = $request->validate([
                 'phone' => 'required|string|max:20',
-                'name' => 'required|string|max:255'
+                'name' => 'required|string|max:255',
             ]);
 
             $user = $request->user();
@@ -509,42 +530,49 @@ class SettingsController extends Controller
 
             return $this->errorResponse(
                 $e->getMessage(),
-                (int)$e->getCode() ?: 500
+                (int) $e->getCode() ?: 500
             );
         }
     }
 
     /**
-     * @param Request $request
-     * @param string $phone
      * @OA\Delete(
      *     tags={"User Settings"},
      *     path="/users/settings/blocked-contacts/{phone}",
      *     summary="Delete blocked contact",
      *     description="Delete a blocked contact by phone number",
      *     security={{"bearerAuth":{}}},
+     *
      *     @OA\Parameter(
      *         name="phone",
      *         in="path",
      *         description="Phone number to delete",
      *         required=true,
+     *
      *         @OA\Schema(type="string")
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Successfully deleted",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="message", type="string", example="Data deleted successfully")
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=404,
      *         description="Not found",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="error", type="string", example="Data doesn't exist"),
      *             @OA\Property(property="code", type="integer", example=404)
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=401,
      *         description="Unauthenticated"
@@ -554,7 +582,7 @@ class SettingsController extends Controller
      *         description="Server error"
      *     )
      * )
-     * @return JsonResponse
+     *
      * @throws Exception
      */
     public function deleteBlockedContact(Request $request, string $phone): JsonResponse
@@ -572,9 +600,155 @@ class SettingsController extends Controller
 
             return $this->errorResponse(
                 $e->getMessage(),
-                (int)$e->getCode() ?: 500
+                (int) $e->getCode() ?: 500
             );
         }
     }
 
+    /**
+     * @OA\Get(
+     *     tags={"User Settings"},
+     *     path="/users/settings",
+     *     summary="Get user settings",
+     *     description="Get user's main settings including profile data and delete queue status",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(property="phone", type="string", nullable=true, example="+1234567890"),
+     *             @OA\Property(property="email", type="string", nullable=true, example="user@example.com"),
+     *             @OA\Property(property="username", type="string", nullable=true, example="john_doe"),
+     *             @OA\Property(property="residence", type="string", nullable=true, example="New York, USA"),
+     *             @OA\Property(property="timeLeftToDeleteAccount", type="integer", example=-1),
+     *             @OA\Property(property="isTimeDelete", type="boolean", nullable=true, example=null),
+     *             @OA\Property(property="search_radius", type="integer", example=50),
+     *             @OA\Property(property="is_global_search", type="boolean", example=false),
+     *             @OA\Property(property="recommendations", type="string", example="optimal"),
+     *             @OA\Property(property="visibility", type="string", example="standard"),
+     *             @OA\Property(property="show_me_on_finder", type="boolean", example=true)
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error"
+     *     )
+     * )
+     */
+    public function getSettings(Request $request): JsonResponse
+    {
+        try {
+            $userId = $request->user()->id;
+
+            $result = $this->userService->getMainSettings($userId);
+
+            return $this->successResponse($result);
+
+        } catch (Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage(),
+                (int) $e->getCode() ?: 500
+            );
+        }
+    }
+
+    /**
+     * @OA\Put(
+     *     tags={"User Settings"},
+     *     path="/users/settings",
+     *     summary="Update user settings",
+     *     description="Update user's main settings",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\RequestBody(
+     *         required=false,
+     *
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(property="email", type="string", format="email", example="user@example.com"),
+     *             @OA\Property(property="username", type="string", example="john_doe"),
+     *             @OA\Property(property="search_radius", type="integer", minimum=1, maximum=1000, example=50),
+     *             @OA\Property(property="is_global_search", type="boolean", example=false),
+     *             @OA\Property(property="status_seen", type="boolean", example=true),
+     *             @OA\Property(property="status_online", type="boolean", example=true),
+     *             @OA\Property(property="status_recently_active", type="boolean", example=true),
+     *             @OA\Property(property="new_couples_push", type="boolean", example=true),
+     *             @OA\Property(property="new_messages_push", type="boolean", example=true),
+     *             @OA\Property(property="new_likes_push", type="boolean", example=true),
+     *             @OA\Property(property="new_super_likes_push", type="boolean", example=true),
+     *             @OA\Property(property="new_couples_email", type="boolean", example=true),
+     *             @OA\Property(property="new_messages_email", type="boolean", example=true),
+     *             @OA\Property(property="show_me_on_finder", type="boolean", example=true)
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(property="message", type="string", example="Data updated successfully")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     ),
+     *     @OA\Response(
+     *         response=406,
+     *         description="Not acceptable - subscription required for some settings"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error"
+     *     )
+     * )
+     */
+    public function updateSettings(Request $request): JsonResponse
+    {
+        try {
+            $userId = $request->user()->id;
+
+            $validated = $request->validate([
+                'email' => 'string|email|nullable',
+                'username' => 'string|nullable',
+                'search_radius' => 'integer|min:1|max:1000|nullable',
+                'is_global_search' => 'boolean|nullable',
+                'status_seen' => 'boolean|nullable',
+                'status_online' => 'boolean|nullable',
+                'status_recently_active' => 'boolean|nullable',
+                'new_couples_push' => 'boolean|nullable',
+                'new_messages_push' => 'boolean|nullable',
+                'new_likes_push' => 'boolean|nullable',
+                'new_super_likes_push' => 'boolean|nullable',
+                'new_couples_email' => 'boolean|nullable',
+                'new_messages_email' => 'boolean|nullable',
+                'show_me_on_finder' => 'boolean|nullable',
+            ]);
+
+            $result = $this->userService->updateMainSettings($userId, $validated);
+
+            return $this->successResponse($result);
+
+        } catch (Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage(),
+                (int) $e->getCode() ?: 500
+            );
+        }
+    }
 }

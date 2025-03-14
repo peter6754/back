@@ -2,18 +2,18 @@
 
 namespace App\Http\Middleware;
 
+use Barryvdh\Debugbar\Facades\Debugbar;
 use Closure;
 use Illuminate\Http\Request;
-use Barryvdh\Debugbar\Facades\Debugbar;
 
 class DebugbarMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
-//        // Включаем Debugbar только для администраторов Backpack
+        // Включаем Debugbar только для администраторов Backpack
         if (backpack_auth()->check()) {
             config('app.debug', true);
-            Debugbar::enable();
+            // Debugbar::enable();
         }
 
         return $next($request);
