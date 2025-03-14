@@ -40,8 +40,8 @@ class GreenSMSService
      */
     public function sendCode(string $phone, string $message, array $exceptions = []): array
     {
+        $phone = preg_replace("/[^,.0-9]/", '', $phone);
         try {
-            $phone = preg_replace("/[^,.0-9]/", '', $phone);
             if (app()->environment('local')) {
                 return [
                     'success' => true
@@ -49,7 +49,7 @@ class GreenSMSService
             }
 
             if (Cache::has('sms_code_'.$phone)) {
-                throw new \Exception('SMS code already sent to '.$phone);
+                throw new \Exception('SMS code already sent');
             }
 
             // Send message
@@ -71,7 +71,7 @@ class GreenSMSService
                 'provider' => 'sms',
             ];
         } catch (\Exception $e) {
-            Log::error("GreenSMSService::sendSMS(): {$e->getMessage()}", [
+            Log::error("GreenSMSService::sendCode({$phone}, {$message}): {$e->getMessage()}", [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
