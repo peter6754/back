@@ -332,6 +332,7 @@ class ChatController extends Controller
                             'user_id' => $lastMessage->sender_id,
                             'username' => $lastMessage->sender->name ?? null,
                             'text' => $lastMessage->message,
+                            'type' => $lastMessage->type === 'media' ? 'media' : 'text',
                             'timestamp' => $lastMessage->date ? $lastMessage->date->utc()->toISOString() : now()->utc()->toISOString(),
                         ] : null,
                         'is_pinned' => $isPinned,
@@ -1362,4 +1363,5 @@ class ChatController extends Controller
             return $this->error('Failed to send social contact', 500);
         }
     }
+
 }
