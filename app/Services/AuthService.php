@@ -73,7 +73,7 @@ class AuthService
                 $getResponse = $this->greenSmsService->sendCode($userPhone, "Ваш код подтверждения: {$code}");
                 $msgProvider = $getResponse['provider'] ?? 'none';
                 if (empty($getResponse['success'])) {
-                    throw new \Exception('Failed to send SMS');
+                    throw new \Exception($getResponse['message'] ?? 'Failed to send SMS');
                 }
             }
             $type = 'login';

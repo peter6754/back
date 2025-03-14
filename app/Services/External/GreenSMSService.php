@@ -77,11 +77,11 @@ class GreenSMSService
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
+            return [
+                'message' => $e->getMessage(),
+                'success' => false
+            ];
         }
-
-        return [
-            'success' => false
-        ];
     }
 
     /**
