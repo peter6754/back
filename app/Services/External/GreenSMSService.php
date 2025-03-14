@@ -9,22 +9,6 @@ use GreenSMS\GreenSMS;
 class GreenSMSService
 {
     /**
-     * Список каналов по умолчанию в порядке приоритета
-     * @var array|string[]
-     */
-    static array $defaultChannelsPriority = [
-        'telegram',
-        'whatsapp',
-        'sms'
-    ];
-
-    /**
-     * Канал по умолчанию, если все уже использованы
-     * @var string
-     */
-    static string $defaultChannel = 'sms';
-
-    /**
      * @var GreenSMS|null
      */
     protected ?GreenSMS $client = null;
@@ -70,6 +54,7 @@ class GreenSMSService
                 'to' => $phone
             ]);
 
+            // Return status
             return [
                 'success' => (!empty($response->request_id)),
                 'provider' => 'sms',
