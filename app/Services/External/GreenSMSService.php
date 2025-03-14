@@ -89,6 +89,11 @@ class GreenSMSService
                 }
             }
 
+            // ToDo: отключаем telegram и whatsapp из-за проблем с доставкой
+            $sortedChannels = [
+                'sms'
+            ];
+
             // Пробуем отправить сообщение через каждый канал в порядке приоритета
             foreach ($sortedChannels as $channel) {
                 try {
@@ -115,7 +120,7 @@ class GreenSMSService
                         // Обновляем историю использованных каналов
                         if (!in_array($channel, $usedChannels)) {
                             $usedChannels[] = $channel;
-                            Cache::put('greensms_used_channels:'.$normalizedPhone, $usedChannels, 120);
+                            Cache::put('greensms_used_channels:'.$normalizedPhone, $usedChannels, 1200);
                         }
 
                         Log::channel("authservice")->info("GreenSMSService: сообщение отправлено через {$channel}", [
