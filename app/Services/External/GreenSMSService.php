@@ -48,9 +48,9 @@ class GreenSMSService
                 ];
             }
 
-            if (Cache::has('sms_code_'.$phone)) {
-                throw new \Exception('SMS code already sent');
-            }
+//            if (Cache::has('sms_code_'.$phone)) {
+//                throw new \Exception('SMS code already sent');
+//            }
 
             // Send message
             $response = $this->client->sms->send([
@@ -58,12 +58,11 @@ class GreenSMSService
                 'to' => $phone
             ]);
 
-
-            Cache::put(
-                'sms_code_'.$phone,
-                $message,
-                now()->addMinutes(5)
-            );
+//            Cache::put(
+//                'sms_code_'.$phone,
+//                $message,
+//                now()->addMinutes(5)
+//            );
 
             // Return status
             return [
