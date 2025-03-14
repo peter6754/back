@@ -3,7 +3,6 @@
 namespace App\Services\External;
 
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
 use GreenSMS\GreenSMS;
 
 class GreenSMSService
@@ -38,7 +37,7 @@ class GreenSMSService
      * @param  array  $exceptions
      * @return array
      */
-    public function sendSMS(string $phone, string $message, array $exceptions = []): array
+    public function sendCode(string $phone, string $message, array $exceptions = []): array
     {
         try {
             $phone = preg_replace("/[^,.0-9]/", '', $phone);
@@ -78,7 +77,7 @@ class GreenSMSService
      * @return float
      * @throws \Exception
      */
-    public function getBalance()
+    public function getBalance(): float
     {
         $response = $this->client->account->balance();
         return $response->balance;
