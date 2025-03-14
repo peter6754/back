@@ -49,7 +49,7 @@ class GreenSMSService
             }
 
             if (Cache::has('sms_code_'.$phone)) {
-                throw new \Exception('SMS code already sent to this number');
+                throw new \Exception('SMS code already sent to '.$phone);
             }
 
             // Send message
