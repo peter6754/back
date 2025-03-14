@@ -25,17 +25,7 @@ class SetMainPhotoRequest extends FormRequest
             'fid' => [
                 'required',
                 'string',
-                'regex:/^\d+,[a-zA-Z0-9]+$/', // Валидируем формат FID SeaweedFS
-                function ($attribute, $value, $fail) {
-
-                    $exists = UserImage::where('user_id', auth()->id())
-                        ->where('image', $value)
-                        ->exists();
-
-                    if (!$exists) {
-                        $fail('Указанное фото не найдено среди ваших изображений.');
-                    }
-                },
+                'regex:/^\d+,[a-fA-F0-9]{8,32}$/',
             ],
         ];
     }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\UserPhotosRequest;
 use App\Http\Requests\SetMainPhotoRequest;
 use App\Http\Traits\ApiResponseTrait;
+use App\Models\UserImage;
 use App\Services\UserPhotoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -333,7 +334,16 @@ class UserPhotosController extends Controller
         try {
             /** @var \App\Models\Secondaryuser $user */
             $user = $request->user();
+
             $fid = $request->validated()['fid'];
+
+            $userImage = UserImage::where('user_id', $user->id)
+                ->where('image', $fid)
+                ->first();
+
+            if (!$userImage) {
+                return $this->errorResponse('Фото не найдено', 404);
+            }
 
             $success = $this->userPhotoService->setMainPhoto($user, $fid);
 

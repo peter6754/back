@@ -13,7 +13,7 @@ class DebugbarMiddleware
         // Включаем Debugbar только для администраторов Backpack
         if (backpack_auth()->check()) {
             config('app.debug', true);
-            // Debugbar::enable();
+            Debugbar::enable();
         }
 
         return $next($request);

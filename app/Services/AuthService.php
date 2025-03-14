@@ -72,24 +72,27 @@ class AuthService
             if (!in_array($userPhone, $this->specialNumbers)) {
                 $getResponse = $this->greenSmsService->sendCode($userPhone, "Ваш код подтверждения: {$code}");
                 $msgProvider = $getResponse['provider'] ?? 'none';
+//                if (empty($getResponse['success'])) {
+//                    throw new \Exception($getResponse['message'] ?? 'Failed to send SMS');
+//                }
             }
             $type = 'login';
         } else {
             // Отправка push-уведомления новому пользователю
             Log::channel("authservice")->info("[Register], send code {$code}, new user: ".$userPhone);
-            if ($userToken === "huawei-device-token") {
-                $getResponse = $this->greenSmsService->sendCode($userPhone, "Ваш код подтверждения: {$code}", [
-                    'sms'
-                ]);
-                $msgProvider = $getResponse['provider'] ?? 'none';
-            } else {
-                (new NotificationService())->sendPushNotification($userToken ?? "",
-                    $code, "Ваш код подтверждения", [
-                        'channel' => 'authservice',
-                    ]
-                );
-                $msgProvider = "push";
-            }
+//            if ($userToken === "huawei-device-token") {
+//                $getResponse = $this->greenSmsService->sendCode($userPhone, "Ваш код подтверждения: {$code}", [
+//                    'sms'
+//                ]);
+//                $msgProvider = $getResponse['provider'] ?? 'none';
+//            } else {
+            (new NotificationService())->sendPushNotification($userToken ?? "",
+                $code, "Ваш код подтверждения", [
+                    'channel' => 'authservice',
+                ]
+            );
+            $msgProvider = "push";
+//            }
             $type = 'register';
         }
 
