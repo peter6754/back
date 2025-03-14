@@ -2,6 +2,7 @@
 
 namespace App\Services\External;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use GreenSMS\GreenSMS;
 
@@ -47,11 +48,22 @@ class GreenSMSService
                 ];
             }
 
+            if (Cache::has('sms_code_'.$phone)) {
+                throw new \Exception('SMS code already sent to this number');
+            }
+
             // Send message
             $response = $this->client->sms->send([
                 'txt' => $message,
                 'to' => $phone
             ]);
+
+
+            Cache::put(
+                'sms_code_'.$phone,
+                $message,
+                now()->addMinutes(5)
+            );
 
             // Return status
             return [
