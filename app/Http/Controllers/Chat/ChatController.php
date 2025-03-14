@@ -332,7 +332,7 @@ class ChatController extends Controller
                             'user_id' => $lastMessage->sender_id,
                             'username' => $lastMessage->sender->name ?? null,
                             'text' => $lastMessage->message,
-                            'timestamp' => $lastMessage->date ? $lastMessage->date->toISOString() : now()->toISOString(),
+                            'timestamp' => $lastMessage->date ? $lastMessage->date->utc()->toISOString() : now()->utc()->toISOString(),
                         ] : null,
                         'is_pinned' => $isPinned,
                         'unread_count' => $unreadCount,
@@ -622,7 +622,7 @@ class ChatController extends Controller
                         'sender_id' => $message->sender_id,
                         'message' => $message->message,
                         'type' => $message->type,
-                        'created_at' => $message->date,
+                        'created_at' => $message->date ? $message->date->utc()->toISOString() : now()->utc()->toISOString(),
                         'is_read' => $message->is_seen,
                         'gift' => $message->gift,
                         'contact_type' => $message->contact_type,
@@ -759,6 +759,7 @@ class ChatController extends Controller
                 'message' => $fid, // Store FID as message content
                 'type' => 'media',
                 'is_seen' => false,
+                'date' => now()->utc(),
             ]);
 
             return $this->success([
