@@ -55,7 +55,7 @@ trait ApiResponseTrait
                 'status' => $httpCode
             ],
             'data' => $data
-        ], $httpCode, [], JSON_UNESCAPED_UNICODE)->setCallback(
+        ], $httpCode, ['Content-Type' => 'application/json; charset=UTF-8'], JSON_UNESCAPED_UNICODE)->setCallback(
             $jsonCallback
         );
     }
@@ -82,7 +82,7 @@ trait ApiResponseTrait
                 'status' => $httpCode,
             ],
             'data' => null
-        ], $httpCode, [], JSON_UNESCAPED_UNICODE);
+        ], $httpCode, ['Content-Type' => 'application/json; charset=UTF-8'], JSON_UNESCAPED_UNICODE);
     }
 
     /**
