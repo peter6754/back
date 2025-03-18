@@ -7,6 +7,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use App\Http\Middleware\LogProxyRequests;
 use App\Http\Middleware\AuthMiddleware;
 use Illuminate\Foundation\Application;
+use Sentry\Laravel\Integration;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -51,10 +52,6 @@ return Application::configure(basePath: dirname(__DIR__))
             ->everyFiveMinutes();
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        $exceptions->reportable(function (Throwable $e) {
-            if (app()->bound('sentry')) {
-                app('sentry')->captureException($e);
-            }
-        });
+        Integration::handles($exceptions);
     })
     ->create();
