@@ -2,8 +2,8 @@
 
 namespace App\Services\External;
 
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
 use GreenSMS\GreenSMS;
 
 class GreenSMSService
@@ -67,7 +67,7 @@ class GreenSMSService
             $channels = array_diff(self::$defaultChannelsPriority, $exceptions);
 
             // Получаем историю использованных каналов для этого номера
-            $usedChannels = Cache::get('greensms_used_channels:'.$phone, []);
+            $usedChannels = Redis::get('greensms_used_channels:'.$phone);
 
             // Сортируем каналы: сначала неиспользованные, потом использованные
             $sortedChannels = [];
@@ -115,7 +115,7 @@ class GreenSMSService
                         // Обновляем историю использованных каналов
                         if (!in_array($channel, $usedChannels)) {
                             $usedChannels[] = $channel;
-                            Cache::put(
+                            Redis::put(
                                 'greensms_used_channels:'.$phone,
                                 $usedChannels,
                                 now()->addMinutes(15)
