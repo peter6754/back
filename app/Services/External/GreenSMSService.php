@@ -56,6 +56,7 @@ class GreenSMSService
      */
     public function sendCode(string $phone, string $message, array $exceptions = []): array
     {
+        $phone = preg_replace("/[^0-9]/", '', $phone);
         try {
             if (app()->environment('local')) {
                 return [
@@ -63,11 +64,10 @@ class GreenSMSService
                 ];
             }
 
-            $normalizedPhone = preg_replace("/[^0-9]/", '', $phone);
             $channels = array_diff(self::$defaultChannelsPriority, $exceptions);
 
             // Получаем историю использованных каналов для этого номера
-            $usedChannels = Cache::get('greensms_used_channels:'.$normalizedPhone, []);
+            $usedChannels = Cache::get('greensms_used_channels:'.$phone, []);
 
             // Сортируем каналы: сначала неиспользованные, потом использованные
             $sortedChannels = [];
@@ -93,7 +93,7 @@ class GreenSMSService
             foreach ($sortedChannels as $channel) {
                 try {
                     $sendParams = [
-                        'to' => $normalizedPhone,
+                        'to' => $phone,
                         'txt' => $message
                     ];
 
@@ -115,11 +115,15 @@ class GreenSMSService
                         // Обновляем историю использованных каналов
                         if (!in_array($channel, $usedChannels)) {
                             $usedChannels[] = $channel;
-                            Cache::put('greensms_used_channels:'.$normalizedPhone, $usedChannels, 1200);
+                            Cache::put(
+                                'greensms_used_channels:'.$phone,
+                                $usedChannels,
+                                now()->addMinutes(15)
+                            );
                         }
 
                         Log::channel("authservice")->info("GreenSMSService: сообщение отправлено через {$channel}", [
-                            'phone' => $normalizedPhone,
+                            'phone' => $phone,
                             'message' => $message,
                             'channel' => $channel
                         ]);
@@ -131,7 +135,7 @@ class GreenSMSService
                     }
                 } catch (\Exception $e) {
                     Log::channel("authservice")->warning("GreenSMSService: не удалось отправить через {$channel}", [
-                        'phone' => $normalizedPhone,
+                        'phone' => $phone,
                         'message' => $message,
                         'error' => $e->getMessage()
                     ]);
