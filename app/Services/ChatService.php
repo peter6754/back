@@ -28,9 +28,8 @@ class ChatService
     }
 
     /**
-     * @param  array  $payload
-     * @param  bool  $isFirst
      * @return void
+     *
      * @throws Exception
      */
     public function sendGift(array $payload, bool $isFirst = false)
@@ -46,9 +45,9 @@ class ChatService
             ->first();
         $gift = Gifts::findOrFail($payload['gift_id']);
 
-        if (!$conversation) {
+        if (! $conversation) {
             // Check for mutual likes before creating conversation
-            if (!UserReaction::haveMutualLikes($payload['sender_id'], $payload['user_id'])) {
+            if (! UserReaction::haveMutualLikes($payload['sender_id'], $payload['user_id'])) {
                 throw new Exception('Conversation can only be created after mutual likes');
             }
 
@@ -92,7 +91,7 @@ class ChatService
                 })
                 ->first();
 
-            if (!$conversation) {
+            if (! $conversation) {
                 return [
                     'error' => [
                         'message' => 'Conversation not found or access denied',
@@ -111,7 +110,7 @@ class ChatService
 
             $senderInfo = User::find($senderId, ['name', 'age']);
 
-            if (!$senderInfo) {
+            if (! $senderInfo) {
                 return [
                     'error' => [
                         'message' => 'Sender not found',
@@ -129,6 +128,7 @@ class ChatService
                 'type' => $type,
                 'gift' => $gift,
                 'contact_type' => $contactType,
+                'date' => now()->utc(),
             ]);
 
             // Broadcast events via WebSocket

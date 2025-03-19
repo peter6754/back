@@ -2,8 +2,8 @@
 
 namespace App\Services\External;
 
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use GreenSMS\GreenSMS;
 
 class GreenSMSService
@@ -14,7 +14,7 @@ class GreenSMSService
      */
     static array $defaultChannelsPriority = [
         'telegram',
-        'whatsapp',
+//        'whatsapp',
         'sms'
     ];
 
@@ -56,6 +56,7 @@ class GreenSMSService
      */
     public function sendCode(string $phone, string $message, array $exceptions = []): array
     {
+        $phone = preg_replace("/[^0-9]/", '', $phone);
         try {
             if (app()->environment('local')) {
                 return [
@@ -63,11 +64,10 @@ class GreenSMSService
                 ];
             }
 
-            $normalizedPhone = preg_replace("/[^0-9]/", '', $phone);
             $channels = array_diff(self::$defaultChannelsPriority, $exceptions);
 
             // Получаем историю использованных каналов для этого номера
-            $usedChannels = Cache::get('greensms_used_channels:'.$normalizedPhone, []);
+            $usedChannels = Cache::get('greensms_used_channels:'.$phone, []);
 
             // Сортируем каналы: сначала неиспользованные, потом использованные
             $sortedChannels = [];
@@ -93,7 +93,7 @@ class GreenSMSService
             foreach ($sortedChannels as $channel) {
                 try {
                     $sendParams = [
-                        'to' => $normalizedPhone,
+                        'to' => $phone,
                         'txt' => $message
                     ];
 
@@ -101,12 +101,12 @@ class GreenSMSService
                         case 'telegram':
                             $sendParams['txt'] = preg_replace("/[^0-9]/", '', $sendParams['txt']);
                             break;
-                        case 'whatsapp':
-                            $sendParams['from'] = 'GREENSMS';
-                            break;
-                        case 'sms':
-                            $sendParams['from'] = 'TinderOne';
-                            break;
+//                        case 'whatsapp':
+//                            $sendParams['from'] = 'GREENSMS';
+//                            break;
+//                        case 'sms':
+//                            $sendParams['from'] = 'TinderOne';
+//                            break;
                     }
 
                     $response = $this->client->{$channel}->send($sendParams);
@@ -115,11 +115,15 @@ class GreenSMSService
                         // Обновляем историю использованных каналов
                         if (!in_array($channel, $usedChannels)) {
                             $usedChannels[] = $channel;
-                            Cache::put('greensms_used_channels:'.$normalizedPhone, $usedChannels, 120);
+                            Cache::put(
+                                'greensms_used_channels:'.$phone,
+                                $usedChannels,
+                                now()->addMinutes(15)
+                            );
                         }
 
                         Log::channel("authservice")->info("GreenSMSService: сообщение отправлено через {$channel}", [
-                            'phone' => $normalizedPhone,
+                            'phone' => $phone,
                             'message' => $message,
                             'channel' => $channel
                         ]);
@@ -131,23 +135,29 @@ class GreenSMSService
                     }
                 } catch (\Exception $e) {
                     Log::channel("authservice")->warning("GreenSMSService: не удалось отправить через {$channel}", [
-                        'phone' => $normalizedPhone,
+                        'phone' => $phone,
                         'message' => $message,
                         'error' => $e->getMessage()
                     ]);
                     continue;
                 }
+                return [
+                    'success' => (!empty($response->request_id)),
+                    'provider' => null,
+                ];
             }
         } catch (\Exception $e) {
-            Log::channel("authservice")->error("GreenSMSService::sendCode(): {$e->getMessage()}", [
-                'phone' => $phone,
-                'error' => $e->getMessage()
+            Log::error("GreenSMSService::sendCode({$phone}, {$message}): {$e->getMessage()}", [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
             ]);
+            return [
+                'message' => $e->getMessage(),
+                'success' => false
+            ];
         }
-
-        return [
-            'success' => false
-        ];
     }
 
     /**

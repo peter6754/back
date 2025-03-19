@@ -39,6 +39,7 @@ class ChatMessage extends Model
         'is_seen',
         'gift',
         'contact_type',
+        'date',
     ];
 
     /**
