@@ -374,42 +374,36 @@ class ChatController extends Controller
                 ->values()
                 ->toArray();
 
-            // Get users with mutual likes(matches)
-            $mutualMatchIds = \DB::table('user_reactions as ur1')
+            // Get matched users with their avatars
+            $matches = \DB::table('user_reactions as ur1')
                 ->join('user_reactions as ur2', function ($join) {
                     $join->on('ur1.reactor_id', '=', 'ur2.user_id')
                         ->on('ur1.user_id', '=', 'ur2.reactor_id');
                 })
+                ->join('users as u', 'ur1.user_id', '=', 'u.id')
+                ->leftJoin('user_images as ui', function ($join) {
+                    $join->on('u.id', '=', 'ui.user_id')
+                        ->where('ui.is_main', '=', true);
+                })
+                ->leftJoin('user_images as ui2', function ($join) {
+                    $join->on('u.id', '=', 'ui2.user_id')
+                        ->whereNull('ui.id');
+                })
                 ->where('ur1.reactor_id', $userId)
                 ->whereIn('ur1.type', ['like', 'superlike'])
                 ->whereIn('ur2.type', ['like', 'superlike'])
-                ->pluck('ur1.user_id')
-                ->unique();
-
-            // Get matched users with their avatars
-            $matches = User::whereIn('id', $mutualMatchIds)
-                ->select('id', 'name')
+                ->select(
+                    'u.id',
+                    'u.name',
+                    \DB::raw('COALESCE(ui.image, ui2.image) as avatar_url')
+                )
+                ->distinct()
                 ->get()
                 ->map(function ($user) {
-                    // Get avatar for match user
-                    $mainImage = UserImage::where('user_id', $user->id)
-                        ->where('is_main', true)
-                        ->first();
-
-                    if (! $mainImage) {
-                        $mainImage = UserImage::where('user_id', $user->id)
-                            ->first();
-                    }
-
-                    $avatarUrl = null;
-                    if ($mainImage && $mainImage->image) {
-                        $avatarUrl = $mainImage->image;
-                    }
-
                     return [
                         'id' => $user->id,
                         'name' => $user->name,
-                        'avatar_url' => $avatarUrl,
+                        'avatar_url' => $user->avatar_url,
                     ];
                 })->toArray();
 
