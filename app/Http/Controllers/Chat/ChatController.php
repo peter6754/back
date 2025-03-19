@@ -222,43 +222,57 @@ class ChatController extends Controller
     }
 
     /**
-     * Get all conversations for the current user
+     * Get all conversations for the current user with mutual matches
      *
      * @OA\Get(
      *     path="/api/conversations",
      *     tags={"Chat"},
-     *     summary="Get all conversations for the current user",
+     *     summary="Get all conversations for the current user with mutual matches",
+     *     description="Returns list of conversations and users with mutual likes (matches)",
      *     security={{"bearerAuth":{}}},
      *
      *     @OA\Response(
      *         response=200,
-     *         description="List of conversations",
+     *         description="List of conversations and matched users",
      *
      *         @OA\JsonContent(
      *
      *             @OA\Property(property="meta", type="object",
      *                 @OA\Property(property="status", type="integer", example=200)
      *             ),
-     *             @OA\Property(property="data", type="array",
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="conversations", type="array", description="List of existing conversations",
      *
-     *                 @OA\Items(
+     *                     @OA\Items(
      *
-     *                     @OA\Property(property="chat_id", type="integer", example=1),
-     *                     @OA\Property(property="user", type="object",
-     *                         @OA\Property(property="id", type="string", example="user-uuid"),
-     *                         @OA\Property(property="name", type="string", example="John Doe"),
-     *                         @OA\Property(property="avatar_url", type="string", nullable=true),
-     *                         @OA\Property(property="online", type="boolean", example=true)
-     *                     ),
-     *                     @OA\Property(property="last_message", type="object", nullable=true,
-     *                         @OA\Property(property="user_id", type="string", example="sender-uuid"),
-     *                         @OA\Property(property="username", type="string", example="John Doe"),
-     *                         @OA\Property(property="text", type="string", example="Hello!"),
-     *                         @OA\Property(property="timestamp", type="string", format="date-time")
-     *                     ),
-     *                     @OA\Property(property="is_pinned", type="boolean", example=false),
-     *                     @OA\Property(property="unread_count", type="integer", example=2)
-     *                 )
+     *                         @OA\Property(property="chat_id", type="integer", example=1, description="Conversation ID"),
+     *                         @OA\Property(property="user", type="object", description="Other participant in conversation",
+     *                             @OA\Property(property="id", type="string", example="user-uuid", description="User ID"),
+     *                             @OA\Property(property="name", type="string", example="John Doe", description="User name"),
+     *                             @OA\Property(property="avatar_url", type="string", nullable=true, example="http://example.com/avatar.jpg", description="User avatar URL"),
+     *                             @OA\Property(property="online", type="boolean", example=true, description="User online status")
+     *                         ),
+     *                         @OA\Property(property="last_message", type="object", nullable=true, description="Last message in conversation",
+     *                             @OA\Property(property="user_id", type="string", example="sender-uuid", description="Message sender ID"),
+     *                             @OA\Property(property="username", type="string", example="John Doe", description="Message sender name"),
+     *                             @OA\Property(property="text", type="string", example="Hello!", description="Message text"),
+     *                             @OA\Property(property="type", type="string", example="text", enum={"text", "media"}, description="Message type"),
+     *                             @OA\Property(property="timestamp", type="string", format="date-time", description="Message timestamp")
+     *                         ),
+     *                         @OA\Property(property="is_pinned", type="boolean", example=false, description="Whether conversation is pinned by current user"),
+     *                         @OA\Property(property="unread_count", type="integer", example=2, description="Number of unread messages")
+     *                     )
+     *                 ),
+     *                 @OA\Property(property="match", type="array", description="List of users with mutual likes (matches)",
+     *
+     *                     @OA\Items(
+     *
+     *                         @OA\Property(property="id", type="string", example="match-user-uuid", description="Matched user ID"),
+     *                         @OA\Property(property="name", type="string", example="Jane Smith", description="Matched user name"),
+     *                         @OA\Property(property="avatar_url", type="string", nullable=true, example="http://example.com/match-avatar.jpg", description="Matched user avatar URL")
+     *                     )
+     *                 ),
+     *                 @OA\Property(property="match_count", type="integer", example=5, description="Total number of mutual matches")
      *             )
      *         )
      *     ),
@@ -360,7 +374,46 @@ class ChatController extends Controller
                 ->values()
                 ->toArray();
 
-            return $this->success($conversations);
+            // Get matched users with their avatars
+            $matches = \DB::table('user_reactions as ur1')
+                ->join('user_reactions as ur2', function ($join) {
+                    $join->on('ur1.reactor_id', '=', 'ur2.user_id')
+                        ->on('ur1.user_id', '=', 'ur2.reactor_id');
+                })
+                ->join('users as u', 'ur1.user_id', '=', 'u.id')
+                ->leftJoin('user_images as ui', function ($join) {
+                    $join->on('u.id', '=', 'ui.user_id')
+                        ->where('ui.is_main', '=', true);
+                })
+                ->leftJoin('user_images as ui2', function ($join) {
+                    $join->on('u.id', '=', 'ui2.user_id')
+                        ->whereNull('ui.id');
+                })
+                ->where('ur1.reactor_id', $userId)
+                ->whereIn('ur1.type', ['like', 'superlike'])
+                ->whereIn('ur2.type', ['like', 'superlike'])
+                ->select(
+                    'u.id',
+                    'u.name',
+                    \DB::raw('COALESCE(ui.image, ui2.image) as avatar_url')
+                )
+                ->distinct()
+                ->get()
+                ->map(function ($user) {
+                    return [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'avatar_url' => $user->avatar_url,
+                    ];
+                })->toArray();
+
+            $response = [
+                'conversations' => $conversations,
+                'match' => $matches,
+                'match_count' => count($matches),
+            ];
+
+            return $this->success($response);
 
         } catch (\Exception $e) {
             return $this->error('Failed to fetch conversations', 500);
@@ -1363,5 +1416,4 @@ class ChatController extends Controller
             return $this->error('Failed to send social contact', 500);
         }
     }
-
 }
