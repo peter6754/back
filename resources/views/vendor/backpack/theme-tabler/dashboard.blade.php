@@ -1,7 +1,7 @@
 @extends(backpack_view('blank'))
 
 @php
-    use Backpack\CRUD\app\Library\Widget;
+    use App\Http\Controllers\Admin\SecondaryuserCrudController;use Backpack\CRUD\app\Library\Widget;
     use App\Models\Secondaryuser;
     use App\Models\UserActivity;
     use Carbon\Carbon;
@@ -51,7 +51,7 @@
         $smsBalance = (new \App\Services\External\GreenSMSService)->getBalance();
     }
     $smsBalance = "<br>$smsBalance<br>";
-
+    $usersByStore = SecondaryuserCrudController::getNewUsersByStore();
 
     Widget::add()
     ->to('after_content')
@@ -111,6 +111,28 @@
         ->progressClass('progressbar')
         ->value("<br>{$stats['total']}<br>")
         ->description('всего пользователей'),
+
+         Widget::make()
+        ->type('progress')
+        ->class('card mb-3')
+        ->statusBorder('start')
+        ->accentColor('warning')
+        ->progressClass('progressbar')
+        ->value("Google Play: {$usersByStore['yesterday']['Google']}<br>
+                 RuStore: {$usersByStore['yesterday']['RuStore']}<br>
+                 Другие: {$usersByStore['yesterday']['Другие']}")
+        ->description("Вчера: {$usersByStore['yesterday_total']} новых пользователей"),
+
+         Widget::make()
+        ->type('progress')
+        ->class('card mb-3')
+        ->statusBorder('start')
+        ->accentColor('success')
+        ->progressClass('progressbar')
+        ->value("Google Play: {$usersByStore['today']['Google']}<br>
+                 RuStore: {$usersByStore['today']['RuStore']}<br>
+                 Другие: {$usersByStore['today']['Другие']}")
+        ->description("Сегодня: {$usersByStore['today_total']} новых пользователей")
     ]);
 @endphp
 

@@ -6,6 +6,7 @@ use App\Http\Requests\SecondaryuserRequest;
 use App\Models\UserInformation;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
+use Carbon\Carbon;
 use DB;
 
 /**
@@ -607,5 +608,60 @@ class SecondaryuserCrudController extends CrudController
         }
     }
     </script>';
+    }
+
+    /**
+     * Получить количество новых пользователей по сторам за вчера и сегодня
+     *
+     * @return array
+     */
+    public static function getNewUsersByStore()
+    {
+        $yesterdayStart = Carbon::now('Europe/Moscow')->subDay()->startOfDay()->setTimezone('UTC');
+        $todayStart = Carbon::now('Europe/Moscow')->startOfDay()->setTimezone('UTC');
+        $todayEnd = Carbon::now('Europe/Moscow')->endOfDay()->setTimezone('UTC');
+
+        $yesterday = self::countByPeriodAndStore($yesterdayStart, $todayStart);
+
+        $today = self::countByPeriodAndStore($todayStart, $todayEnd);
+
+        return [
+            'yesterday' => $yesterday,
+            'today' => $today,
+            'yesterday_total' => array_sum($yesterday),
+            'today_total' => array_sum($today)
+        ];
+    }
+
+    /**
+     * Подсчет пользователей по периоду и сторам
+     *
+     * @param Carbon $startDate
+     * @param Carbon $endDate
+     * @return array
+     */
+    private static function countByPeriodAndStore($startDate, $endDate)
+    {
+        $result = DB::table('users as u')
+            ->leftJoin('user_device_tokens as udt', 'u.id', '=', 'udt.user_id')
+            ->where('u.registration_date', '>=', $startDate)
+            ->where('u.registration_date', '<=', $endDate)
+            ->selectRaw("
+            CASE
+                WHEN udt.application LIKE '%market: google-play%' THEN 'Google'
+                WHEN udt.application LIKE '%market: ru-store%' THEN 'RuStore'
+                ELSE 'Другие'
+            END as store,
+            COUNT(DISTINCT u.id) as count
+        ")
+            ->groupBy('store')
+            ->pluck('count', 'store')
+            ->toArray();
+
+        return array_merge([
+            'Google' => 0,
+            'RuStore' => 0,
+            'Другие' => 0
+        ], $result);
     }
 }
