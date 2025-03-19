@@ -375,37 +375,63 @@ class ChatController extends Controller
                 ->toArray();
 
             // Get matched users with their avatars
-            $matches = \DB::table('user_reactions as ur1')
+            $matchedUserIds = \DB::table('user_reactions as ur1')
                 ->join('user_reactions as ur2', function ($join) {
                     $join->on('ur1.reactor_id', '=', 'ur2.user_id')
                         ->on('ur1.user_id', '=', 'ur2.reactor_id');
                 })
-                ->join('users as u', 'ur1.user_id', '=', 'u.id')
-                ->leftJoin('user_images as ui', function ($join) {
-                    $join->on('u.id', '=', 'ui.user_id')
-                        ->where('ui.is_main', '=', true);
-                })
-                ->leftJoin('user_images as ui2', function ($join) {
-                    $join->on('u.id', '=', 'ui2.user_id')
-                        ->whereNull('ui.id');
-                })
                 ->where('ur1.reactor_id', $userId)
                 ->whereIn('ur1.type', ['like', 'superlike'])
                 ->whereIn('ur2.type', ['like', 'superlike'])
-                ->select(
-                    'u.id',
-                    'u.name',
-                    \DB::raw('COALESCE(ui.image, ui2.image) as avatar_url')
-                )
-                ->distinct()
-                ->get()
-                ->map(function ($user) {
+                ->pluck('ur1.user_id');
+
+            $matches = [];
+            if ($matchedUserIds->isNotEmpty()) {
+                // Get users data first
+                $users = \DB::table('users')
+                    ->whereIn('id', $matchedUserIds)
+                    ->select('id', 'name')
+                    ->get()
+                    ->keyBy('id');
+
+                // Get main images for these users
+                $mainImages = \DB::table('user_images')
+                    ->whereIn('user_id', $matchedUserIds)
+                    ->where('is_main', true)
+                    ->select('user_id', 'image')
+                    ->get()
+                    ->keyBy('user_id');
+
+                // Get first available images for users without main image
+                $usersWithoutMain = $matchedUserIds->diff($mainImages->keys());
+                $fallbackImages = collect();
+                if ($usersWithoutMain->isNotEmpty()) {
+                    $fallbackImages = \DB::table('user_images')
+                        ->whereIn('user_id', $usersWithoutMain)
+                        ->select('user_id', 'image')
+                        ->orderBy('id', 'asc')
+                        ->get()
+                        ->groupBy('user_id')
+                        ->map(function ($images) {
+                            return $images->first();
+                        });
+                }
+
+                $matches = $users->map(function ($user) use ($mainImages, $fallbackImages) {
+                    $avatar = null;
+                    if (isset($mainImages[$user->id])) {
+                        $avatar = $mainImages[$user->id]->image;
+                    } elseif ($fallbackImages->has($user->id)) {
+                        $avatar = $fallbackImages[$user->id]->image;
+                    }
+
                     return [
                         'id' => $user->id,
                         'name' => $user->name,
-                        'avatar_url' => $user->avatar_url,
+                        'avatar_url' => $avatar,
                     ];
-                })->toArray();
+                })->values()->toArray();
+            }
 
             $response = [
                 'conversations' => $conversations,
