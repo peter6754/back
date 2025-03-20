@@ -263,13 +263,14 @@ class ChatController extends Controller
      *                         @OA\Property(property="unread_count", type="integer", example=2, description="Number of unread messages")
      *                     )
      *                 ),
-     *                 @OA\Property(property="match", type="array", description="List of users with mutual likes (matches)",
+     *                 @OA\Property(property="match", type="array", description="List of users with mutual likes (matches), sorted by match time (newest first)",
      *
      *                     @OA\Items(
      *
      *                         @OA\Property(property="id", type="string", example="match-user-uuid", description="Matched user ID"),
      *                         @OA\Property(property="name", type="string", example="Jane Smith", description="Matched user name"),
-     *                         @OA\Property(property="avatar_url", type="string", nullable=true, example="http://example.com/match-avatar.jpg", description="Matched user avatar URL")
+     *                         @OA\Property(property="avatar_url", type="string", nullable=true, example="http://example.com/match-avatar.jpg", description="Matched user avatar URL"),
+     *                         @OA\Property(property="match_time", type="string", format="date-time", example="2025-01-08T10:30:00.000Z", description="When the match was created (ISO 8601 UTC)")
      *                     )
      *                 ),
      *                 @OA\Property(property="match_count", type="integer", example=5, description="Total number of mutual matches")
@@ -374,8 +375,8 @@ class ChatController extends Controller
                 ->values()
                 ->toArray();
 
-            // Get matched users with their avatars
-            $matchedUserIds = \DB::table('user_reactions as ur1')
+            // Get matched users with their avatars and match timestamps
+            $matchedUsersWithTimestamp = \DB::table('user_reactions as ur1')
                 ->join('user_reactions as ur2', function ($join) {
                     $join->on('ur1.reactor_id', '=', 'ur2.user_id')
                         ->on('ur1.user_id', '=', 'ur2.reactor_id');
@@ -383,10 +384,17 @@ class ChatController extends Controller
                 ->where('ur1.reactor_id', $userId)
                 ->whereIn('ur1.type', ['like', 'superlike'])
                 ->whereIn('ur2.type', ['like', 'superlike'])
-                ->pluck('ur1.user_id');
+                ->select(
+                    'ur1.user_id',
+                    \DB::raw('GREATEST(ur1.date, ur2.date) as match_time')
+                )
+                ->orderBy('match_time', 'desc') // Latest matches first
+                ->get();
 
             $matches = [];
-            if ($matchedUserIds->isNotEmpty()) {
+            if ($matchedUsersWithTimestamp->isNotEmpty()) {
+                $matchedUserIds = $matchedUsersWithTimestamp->pluck('user_id');
+
                 // Get users data first
                 $users = \DB::table('users')
                     ->whereIn('id', $matchedUserIds)
@@ -417,7 +425,9 @@ class ChatController extends Controller
                         });
                 }
 
-                $matches = $users->map(function ($user) use ($mainImages, $fallbackImages) {
+                // Build matches array maintaining the time-based order
+                $matches = $matchedUsersWithTimestamp->map(function ($match) use ($users, $mainImages, $fallbackImages) {
+                    $user = $users[$match->user_id];
                     $avatar = null;
                     if (isset($mainImages[$user->id])) {
                         $avatar = $mainImages[$user->id]->image;
@@ -429,8 +439,9 @@ class ChatController extends Controller
                         'id' => $user->id,
                         'name' => $user->name,
                         'avatar_url' => $avatar,
+                        'match_time' => \Carbon\Carbon::parse($match->match_time)->utc()->toISOString(),
                     ];
-                })->values()->toArray();
+                })->toArray();
             }
 
             $response = [
