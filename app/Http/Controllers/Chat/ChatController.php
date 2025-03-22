@@ -263,13 +263,14 @@ class ChatController extends Controller
      *                         @OA\Property(property="unread_count", type="integer", example=2, description="Number of unread messages")
      *                     )
      *                 ),
-     *                 @OA\Property(property="match", type="array", description="List of users with mutual likes (matches)",
+     *                 @OA\Property(property="match", type="array", description="List of users with mutual likes (matches), sorted by match time (newest first)",
      *
      *                     @OA\Items(
      *
      *                         @OA\Property(property="id", type="string", example="match-user-uuid", description="Matched user ID"),
      *                         @OA\Property(property="name", type="string", example="Jane Smith", description="Matched user name"),
-     *                         @OA\Property(property="avatar_url", type="string", nullable=true, example="http://example.com/match-avatar.jpg", description="Matched user avatar URL")
+     *                         @OA\Property(property="avatar_url", type="string", nullable=true, example="http://example.com/match-avatar.jpg", description="Matched user avatar URL"),
+     *                         @OA\Property(property="match_time", type="string", format="date-time", example="2025-01-08T10:30:00.000Z", description="When the match was created (ISO 8601 UTC)")
      *                     )
      *                 ),
      *                 @OA\Property(property="match_count", type="integer", example=5, description="Total number of mutual matches")
@@ -374,38 +375,74 @@ class ChatController extends Controller
                 ->values()
                 ->toArray();
 
-            // Get matched users with their avatars
-            $matches = \DB::table('user_reactions as ur1')
+            // Get matched users with their avatars and match timestamps
+            $matchedUsersWithTimestamp = \DB::table('user_reactions as ur1')
                 ->join('user_reactions as ur2', function ($join) {
                     $join->on('ur1.reactor_id', '=', 'ur2.user_id')
                         ->on('ur1.user_id', '=', 'ur2.reactor_id');
-                })
-                ->join('users as u', 'ur1.user_id', '=', 'u.id')
-                ->leftJoin('user_images as ui', function ($join) {
-                    $join->on('u.id', '=', 'ui.user_id')
-                        ->where('ui.is_main', '=', true);
-                })
-                ->leftJoin('user_images as ui2', function ($join) {
-                    $join->on('u.id', '=', 'ui2.user_id')
-                        ->whereNull('ui.id');
                 })
                 ->where('ur1.reactor_id', $userId)
                 ->whereIn('ur1.type', ['like', 'superlike'])
                 ->whereIn('ur2.type', ['like', 'superlike'])
                 ->select(
-                    'u.id',
-                    'u.name',
-                    \DB::raw('COALESCE(ui.image, ui2.image) as avatar_url')
+                    'ur1.user_id',
+                    \DB::raw('GREATEST(ur1.date, ur2.date) as match_time')
                 )
-                ->distinct()
-                ->get()
-                ->map(function ($user) {
+                ->orderBy('match_time', 'desc') // Latest matches first
+                ->get();
+
+            $matches = [];
+            if ($matchedUsersWithTimestamp->isNotEmpty()) {
+                $matchedUserIds = $matchedUsersWithTimestamp->pluck('user_id');
+
+                // Get users data first
+                $users = \DB::table('users')
+                    ->whereIn('id', $matchedUserIds)
+                    ->select('id', 'name')
+                    ->get()
+                    ->keyBy('id');
+
+                // Get main images for these users
+                $mainImages = \DB::table('user_images')
+                    ->whereIn('user_id', $matchedUserIds)
+                    ->where('is_main', true)
+                    ->select('user_id', 'image')
+                    ->get()
+                    ->keyBy('user_id');
+
+                // Get first available images for users without main image
+                $usersWithoutMain = $matchedUserIds->diff($mainImages->keys());
+                $fallbackImages = collect();
+                if ($usersWithoutMain->isNotEmpty()) {
+                    $fallbackImages = \DB::table('user_images')
+                        ->whereIn('user_id', $usersWithoutMain)
+                        ->select('user_id', 'image')
+                        ->orderBy('id', 'asc')
+                        ->get()
+                        ->groupBy('user_id')
+                        ->map(function ($images) {
+                            return $images->first();
+                        });
+                }
+
+                // Build matches array maintaining the time-based order
+                $matches = $matchedUsersWithTimestamp->map(function ($match) use ($users, $mainImages, $fallbackImages) {
+                    $user = $users[$match->user_id];
+                    $avatar = null;
+                    if (isset($mainImages[$user->id])) {
+                        $avatar = $mainImages[$user->id]->image;
+                    } elseif ($fallbackImages->has($user->id)) {
+                        $avatar = $fallbackImages[$user->id]->image;
+                    }
+
                     return [
                         'id' => $user->id,
                         'name' => $user->name,
-                        'avatar_url' => $user->avatar_url,
+                        'avatar_url' => $avatar,
+                        'match_time' => \Carbon\Carbon::parse($match->match_time)->utc()->toISOString(),
                     ];
                 })->toArray();
+            }
 
             $response = [
                 'conversations' => $conversations,
