@@ -14,6 +14,7 @@ deploy:
     - chmod 600 ~/.ssh/id_rsa
     - ssh-keyscan -H 185.207.64.193 >> ~/.ssh/known_hosts
     - ssh root@185.207.64.193 "cd /var/www/api.tinderone.app && chmod +x ./deploy.sh && ./deploy.sh"
-
+  tags:
+    - tinderone-build
   only:
     - main
