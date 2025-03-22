@@ -12,7 +12,7 @@ use App\Models\UserInformation;
  * @package App\Http\Controllers\Admin
  * @property-read \Backpack\CRUD\app\Library\CrudPanel\CrudPanel $crud
  */
- 
+
 
 class SecondaryuserCrudController extends CrudController
 {
@@ -34,7 +34,7 @@ class SecondaryuserCrudController extends CrudController
         CRUD::setEntityNameStrings('Пользователь', 'Пользователи');
 
         // Для отображения в таблице (списке)
-//        CRUD::column('id')->label('ID');
+        CRUD::column('id')->label('ID');
         CRUD::column('name')->label('Имя');
         CRUD::column('age')->label('Возраст');
         $this->crud->addColumn([
@@ -137,6 +137,29 @@ class SecondaryuserCrudController extends CrudController
                     return $entry->gender === 'male' ? 'text-primary' : 'text-danger';
                 },
             ]);
+
+        CRUD::addColumn([
+            'name' => 'verification_status',
+            'label' => 'Верификация',
+            'type' => 'custom_html',
+            'escaped' => false,
+            'value' => function($entry) {
+                $verification = $entry->verificationRequest;
+                if ($verification) {
+                    switch ($verification->status) {
+                        case 'initial':
+                            return '<span style="color: orange;">На проверке</span>';
+                        case 'approved':
+                            return '<span style="color: green;">Одобрено</span>';
+                        case 'rejected':
+                            return '<span style="color: red;">Отклонено</span>';
+                        default:
+                            return ucfirst($verification->status);
+                    }
+                }
+                return 'Нет заявки';
+            },
+        ]);
 
         $this->crud->addColumn([
             'name' => 'userInformation.bio',
@@ -290,7 +313,7 @@ class SecondaryuserCrudController extends CrudController
          * - CRUD::column('price')->type('number');
          */
         CRUD::addButton('line', 'grant_subscription', 'view', 'crud::buttons.grant_subscription');
-        CRUD::column('id')->label('ID')->visibleInTable(false);
+        CRUD::column('id')->label('ID')->visibleInTable(false)->visibleInShow(true);
         CRUD::column('name')->label('Имя');
         CRUD::column('username')->label('Логин');
         CRUD::column('phone')->label('Телефон');
