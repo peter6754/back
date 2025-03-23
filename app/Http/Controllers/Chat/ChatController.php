@@ -444,7 +444,7 @@ class ChatController extends Controller
                         'avatar_url' => $avatar,
                         'match_time' => \Carbon\Carbon::parse($match->match_time)->utc()->toISOString(),
                     ];
-                })->filter()->toArray();
+                })->filter()->values()->toArray();
             }
 
             $response = [
