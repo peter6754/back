@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Users;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ApiResponseTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -16,6 +16,7 @@ use Illuminate\Validation\ValidationException;
  */
 class FeedbackController extends Controller
 {
+    use ApiResponseTrait;
     /**
      * @OA\Get(
      *     path="/users/feedbacks",
@@ -32,10 +33,20 @@ class FeedbackController extends Controller
      *         response=200,
      *         description="Success",
      *         @OA\JsonContent(
-     *             @OA\Property(property="items", type="array", @OA\Items(
-     *                 @OA\Property(property="feedback", type="string"),
-     *                 @OA\Property(property="sender_id", type="string")
-     *             ))
+     *             @OA\Property(
+     *                 property="meta",
+     *                 type="object",
+     *                 @OA\Property(property="error", type="null"),
+     *                 @OA\Property(property="status", type="integer", example=200)
+     *             ),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="items", type="array", @OA\Items(
+     *                     @OA\Property(property="feedback", type="string"),
+     *                     @OA\Property(property="sender_id", type="string")
+     *                 ))
+     *             )
      *         )
      *     )
      * )
@@ -53,7 +64,7 @@ class FeedbackController extends Controller
             ORDER BY date DESC
         ', [$request->user_id]);
 
-        return response()->json([
+        return $this->success([
             'items' => $feedbacks
         ]);
     }
@@ -75,7 +86,49 @@ class FeedbackController extends Controller
      *         response=200,
      *         description="Success",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string")
+     *             @OA\Property(
+     *                 property="meta",
+     *                 type="object",
+     *                 @OA\Property(property="error", type="null"),
+     *                 @OA\Property(property="status", type="integer", example=200)
+     *             ),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="message", type="string", example="Feedback sent successfully")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Forbidden - Users haven't chatted",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="meta",
+     *                 type="object",
+     *                 @OA\Property(property="error", type="object",
+     *                     @OA\Property(property="code", type="integer", example=4031),
+     *                     @OA\Property(property="message", type="string", example="You didn't chat with this user")
+     *                 ),
+     *                 @OA\Property(property="status", type="integer", example=403)
+     *             ),
+     *             @OA\Property(property="data", type="null")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=406,
+     *         description="Already reviewed",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="meta",
+     *                 type="object",
+     *                 @OA\Property(property="error", type="object",
+     *                     @OA\Property(property="code", type="integer", example=4065),
+     *                     @OA\Property(property="message", type="string", example="You have already left a review for this user")
+     *                 ),
+     *                 @OA\Property(property="status", type="integer", example=406)
+     *             ),
+     *             @OA\Property(property="data", type="null")
      *         )
      *     )
      * )
@@ -99,10 +152,7 @@ class FeedbackController extends Controller
             ', [$sender_id, $user_id]);
 
             if (empty($message)) {
-                return response()->json([
-                    'message' => "You didn't chat with this user",
-                    'code' => 4031
-                ], 403);
+                return $this->errorResponse("You didn't chat with this user", 4031, 403);
             }
 
             // Get device tokens for push notifications
@@ -120,15 +170,12 @@ class FeedbackController extends Controller
             // Note: Push notification would be sent here in production
             // Original code: this.expoService.sendPushNotification(...)
 
-            return response()->json([
+            return $this->success([
                 'message' => 'Feedback sent successfully'
             ]);
 
         } catch (\Exception $err) {
-            return response()->json([
-                'message' => "You have already left a review for this user",
-                'code' => 4065
-            ], 406);
+            return $this->errorResponse("You have already left a review for this user", 4065, 406);
         }
     }
 
@@ -154,7 +201,33 @@ class FeedbackController extends Controller
      *         response=200,
      *         description="Success",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string")
+     *             @OA\Property(
+     *                 property="meta",
+     *                 type="object",
+     *                 @OA\Property(property="error", type="null"),
+     *                 @OA\Property(property="status", type="integer", example=200)
+     *             ),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="message", type="string", example="Feedback changed successfully")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Feedback not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="meta",
+     *                 type="object",
+     *                 @OA\Property(property="error", type="object",
+     *                     @OA\Property(property="code", type="integer", example=9999),
+     *                     @OA\Property(property="message", type="string", example="Feedback not found")
+     *                 ),
+     *                 @OA\Property(property="status", type="integer", example=404)
+     *             ),
+     *             @OA\Property(property="data", type="null")
      *         )
      *     )
      * )
@@ -165,7 +238,7 @@ class FeedbackController extends Controller
             'feedback' => 'string'
         ]);
 
-        $sender_id = Auth::id();
+        $sender_id = $request->user()->id;
         $receiver_id = $user_id;
 
         try {
@@ -175,30 +248,26 @@ class FeedbackController extends Controller
                 WHERE user_id = ?
             ', [$receiver_id]);
 
-            // Update feedback
+            // Update feedback forcedly
             $affected = DB::update('
                 UPDATE user_feedbacks
-                SET feedback = ?
+                SET feedback = ?, date = NOW()
                 WHERE user_id = ? AND sender_id = ?
             ', [$request->feedback, $receiver_id, $sender_id]);
 
             if ($affected === 0) {
-                return response()->json([
-                    'message' => 'Feedback not found'
-                ], 404);
+                return $this->errorResponse('Feedback not found', 0, 404);
             }
 
             // Note: Push notification would be sent here in production
             // Original code: this.expoService.sendPushNotification(...)
 
-            return response()->json([
+            return $this->success([
                 'message' => 'Feedback changed successfully'
             ]);
 
         } catch (\Exception $err) {
-            return response()->json([
-                'message' => 'Item not found'
-            ], 404);
+            return $this->errorResponse('Item not found', 0, 404);
         }
     }
 
@@ -218,14 +287,56 @@ class FeedbackController extends Controller
      *         response=200,
      *         description="Success",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string")
+     *             @OA\Property(
+     *                 property="meta",
+     *                 type="object",
+     *                 @OA\Property(property="error", type="null"),
+     *                 @OA\Property(property="status", type="integer", example=200)
+     *             ),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="message", type="string", example="Feedback deleted successfully")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="No premium subscription",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="meta",
+     *                 type="object",
+     *                 @OA\Property(property="error", type="object",
+     *                     @OA\Property(property="code", type="integer", example=9999),
+     *                     @OA\Property(property="message", type="string", example="You don't have Tinderone Premium subscription or item was not found")
+     *                 ),
+     *                 @OA\Property(property="status", type="integer", example=403)
+     *             ),
+     *             @OA\Property(property="data", type="null")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Feedback not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="meta",
+     *                 type="object",
+     *                 @OA\Property(property="error", type="object",
+     *                     @OA\Property(property="code", type="integer", example=9999),
+     *                     @OA\Property(property="message", type="string", example="Feedback not found")
+     *                 ),
+     *                 @OA\Property(property="status", type="integer", example=404)
+     *             ),
+     *             @OA\Property(property="data", type="null")
      *         )
      *     )
      * )
      */
-    public function deleteFeedback($sender_id)
+    public function deleteFeedback(Request $request, $sender_id)
     {
-        $receiver_id = Auth::id();
+        $receiver_id = $request->user()->id;
 
         try {
             // Check for premium subscription (using original complex query structure)
@@ -243,9 +354,7 @@ class FeedbackController extends Controller
             ', [$receiver_id, $receiver_id]);
 
             if (empty($subscription)) {
-                return response()->json([
-                    'message' => "You don't have Tinderone Premium subscription or item was not found"
-                ], 403);
+                return $this->errorResponse("You don't have Tinderone Premium subscription or item was not found", 0, 403);
             }
 
             // Delete feedback
@@ -255,19 +364,15 @@ class FeedbackController extends Controller
             ', [$receiver_id, $sender_id]);
 
             if ($affected === 0) {
-                return response()->json([
-                    'message' => "Feedback not found"
-                ], 404);
+                return $this->errorResponse("Feedback not found", 0, 404);
             }
 
-            return response()->json([
+            return $this->success([
                 'message' => 'Feedback deleted successfully'
             ]);
 
         } catch (\Exception $err) {
-            return response()->json([
-                'message' => "You don't have Tinderone Premium subscription or item was not found"
-            ], 403);
+            return $this->errorResponse("You don't have Tinderone Premium subscription or item was not found", 0, 403);
         }
     }
 }
