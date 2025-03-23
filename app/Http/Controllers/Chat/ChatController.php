@@ -427,6 +427,9 @@ class ChatController extends Controller
 
                 // Build matches array maintaining the time-based order
                 $matches = $matchedUsersWithTimestamp->map(function ($match) use ($users, $mainImages, $fallbackImages) {
+                    if (empty($user->id)) {
+                        return null;
+                    }
                     $user = $users[$match->user_id];
                     $avatar = null;
                     if (isset($mainImages[$user->id])) {
@@ -453,6 +456,7 @@ class ChatController extends Controller
             return $this->success($response);
 
         } catch (\Exception $e) {
+            \Log::error('Failed to fetch conversations: '.$e->getMessage());
             return $this->error('Failed to fetch conversations', 500);
         }
     }
