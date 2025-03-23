@@ -46,10 +46,10 @@
     $yesterdayOnlineTotal = UserActivity::getYesterdayTotalOnline();
     $stats = Secondaryuser::getGenderStats();
 
-    $smsBalance = "0.00";
+    $smsBalance = '0.00';
     if (app()->environment('production')) {
         $smsBalance = (new \App\Services\External\GreenSMSService)->getBalance();
-        $smsBalance = number_format($balance, 2, '.', '');
+        $smsBalance = number_format($smsBalance, 2, '.', '');
     }
     $smsBalance = "<br>$smsBalance<br>";
     $usersByStore = SecondaryuserCrudController::getNewUsersByStore();
