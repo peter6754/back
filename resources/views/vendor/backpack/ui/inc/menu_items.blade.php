@@ -5,3 +5,5 @@
 <x-backpack::menu-item title="Администраторы" icon="la la-question" :link="backpack_url('user')" />
 
 <x-backpack::menu-item title="Подписки" icon="la la-question" :link="backpack_url('bought-subscriptions')" />
+
+<x-backpack::menu-item title="Запросы верификации" icon="la la-question" :link="backpack_url('verification-requests')" />
