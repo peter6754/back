@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Users;
 
 use App\Http\Controllers\Controller;
 use App\Http\Traits\ApiResponseTrait;
+use App\Services\FeedbackService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -17,6 +17,13 @@ use Illuminate\Validation\ValidationException;
 class FeedbackController extends Controller
 {
     use ApiResponseTrait;
+
+    protected FeedbackService $feedbackService;
+
+    public function __construct(FeedbackService $feedbackService)
+    {
+        $this->feedbackService = $feedbackService;
+    }
     /**
      * @OA\Get(
      *     path="/users/feedbacks",
@@ -57,12 +64,7 @@ class FeedbackController extends Controller
             'user_id' => 'required|string'
         ]);
 
-        $feedbacks = DB::select('
-            SELECT feedback, sender_id
-            FROM user_feedbacks
-            WHERE user_id = ?
-            ORDER BY date DESC
-        ', [$request->user_id]);
+        $feedbacks = $this->feedbackService->getFeedbacksByUserId($request->user_id);
 
         return $this->success([
             'items' => $feedbacks
@@ -144,28 +146,13 @@ class FeedbackController extends Controller
         $user_id = $request->user_id;
 
         try {
-            // Check if users have chatted (validation query from original)
-            $message = DB::select('
-                SELECT ch.id FROM chat_messages c
-                LEFT JOIN chat_messages ch ON ch.receiver_id = c.sender_id AND ch.sender_id = c.receiver_id
-                WHERE c.sender_id = ? AND c.receiver_id = ?
-            ', [$sender_id, $user_id]);
-
-            if (empty($message)) {
+            if (!$this->feedbackService->hasUsersChatted($sender_id, $user_id)) {
                 return $this->errorResponse("You didn't chat with this user", 4031, 403);
             }
 
-            // Get device tokens for push notifications
-            $tokens = DB::select('
-                SELECT token FROM user_device_tokens
-                WHERE user_id = ?
-            ', [$user_id]);
+            $tokens = $this->feedbackService->getUserDeviceTokens($user_id);
 
-            // Insert feedback
-            DB::insert('
-                INSERT INTO user_feedbacks (user_id, feedback, date, sender_id)
-                VALUES (?, ?, NOW(), ?)
-            ', [$user_id, $request->feedback, $sender_id]);
+            $this->feedbackService->createFeedback($user_id, $request->feedback, $sender_id);
 
             // Note: Push notification would be sent here in production
             // Original code: this.expoService.sendPushNotification(...)
@@ -242,18 +229,9 @@ class FeedbackController extends Controller
         $receiver_id = $user_id;
 
         try {
-            // Get device tokens for push notifications
-            $tokens = DB::select('
-                SELECT token FROM user_device_tokens
-                WHERE user_id = ?
-            ', [$receiver_id]);
+            $tokens = $this->feedbackService->getUserDeviceTokens($receiver_id);
 
-            // Update feedback forcedly
-            $affected = DB::update('
-                UPDATE user_feedbacks
-                SET feedback = ?, date = NOW()
-                WHERE user_id = ? AND sender_id = ?
-            ', [$request->feedback, $receiver_id, $sender_id]);
+            $affected = $this->feedbackService->updateFeedback($receiver_id, $sender_id, $request->feedback);
 
             if ($affected === 0) {
                 return $this->errorResponse('Feedback not found', 0, 404);
@@ -339,29 +317,11 @@ class FeedbackController extends Controller
         $receiver_id = $request->user()->id;
 
         try {
-            // Check for premium subscription (using original complex query structure)
-            $subscription = DB::select('
-                SELECT t.id
-                FROM transactions t
-                JOIN bought_subscriptions bs ON bs.id = (
-                    SELECT subscription_id FROM transactions
-                    WHERE user_id = ? AND subscription_id IS NOT NULL
-                    ORDER BY created_at DESC LIMIT 1
-                )
-                JOIN subscription_packages sp ON sp.id = bs.package_id
-                JOIN subscriptions s ON s.id = sp.subscription_id
-                WHERE s.id = 3 AND bs.due_date > NOW() AND t.user_id = ?
-            ', [$receiver_id, $receiver_id]);
-
-            if (empty($subscription)) {
+            if (!$this->feedbackService->hasPremiumSubscription($receiver_id)) {
                 return $this->errorResponse("You don't have Tinderone Premium subscription or item was not found", 0, 403);
             }
 
-            // Delete feedback
-            $affected = DB::delete('
-                DELETE FROM user_feedbacks
-                WHERE user_id = ? AND sender_id = ?
-            ', [$receiver_id, $sender_id]);
+            $affected = $this->feedbackService->deleteFeedback($receiver_id, $sender_id);
 
             if ($affected === 0) {
                 return $this->errorResponse("Feedback not found", 0, 404);
