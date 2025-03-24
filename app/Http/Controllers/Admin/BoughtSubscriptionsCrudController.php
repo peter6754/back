@@ -9,6 +9,7 @@ use App\Models\SubscriptionPackages;
 use App\Models\Transactions;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
+use Backpack\CRUD\app\Library\Widget;
 use Illuminate\Support\Str;
 
 /**
@@ -50,6 +51,78 @@ class BoughtSubscriptionsCrudController extends CrudController
          * Columns can be defined using the fluent syntax:
          * - CRUD::column('price')->type('number');
          */
+        $genders = ['m_f', 'm_m', 'f_f'];
+        $todayMenSum = Transactions::getTodayTransactionsSumForMen();
+        $todayWomenSum = Transactions::getTodayTransactionsSumForWomen();
+        $yesterdayMenSum = Transactions::getYesterdayTransactionsSumForMen();
+        $yesterdayWomenSum = Transactions::getYesterdayTransactionsSumForWomen();
+        $todayOtherSum = Transactions::getTodayTransactionsSumForGenders($genders);
+        $yesterdayOtherSum = Transactions::getYesterdayTransactionsSumForGenders($genders);
+
+        Widget::add()->to('before_content')->type('div')->class('row')->content([
+
+            //widget made using fluent syntax
+            Widget::make()
+                ->type('progress')
+                ->class('card mb-3')
+                ->statusBorder('start')
+                ->accentColor('green')
+                ->ribbon(['top', 'la-ruble-sign'])
+                ->progressClass('progressbar')
+                ->value($todayMenSum)
+                ->description('Сегодня подписок мужчин на сумму'),
+
+            Widget::make()
+                ->type('progress')
+                ->class('card mb-3')
+                ->statusBorder('start')
+                ->accentColor('green')
+                ->ribbon(['top', 'la-ruble-sign'])
+                ->progressClass('progressbar')
+                ->value($todayWomenSum)
+                ->description('Сегодня подписок женщин на сумму'),
+
+            Widget::make()
+                ->type('progress')
+                ->class('card mb-3')
+                ->statusBorder('start')
+                ->accentColor('green')
+                ->ribbon(['top', 'la-ruble-sign'])
+                ->progressClass('progressbar')
+                ->value($yesterdayMenSum)
+                ->description('Вчера подписок мужчин на сумму'),
+
+            Widget::make()
+                ->type('progress')
+                ->class('card mb-3')
+                ->statusBorder('start')
+                ->accentColor('green')
+                ->ribbon(['top', 'la-ruble-sign'])
+                ->progressClass('progressbar')
+                ->value($yesterdayWomenSum)
+                ->description('Вчера подписок женщин на сумму'),
+
+            Widget::make()
+                ->type('progress')
+                ->class('card mb-3')
+                ->statusBorder('start')
+                ->accentColor('green')
+                ->ribbon(['top', 'la-ruble-sign'])
+                ->progressClass('progressbar')
+                ->value($todayOtherSum)
+                ->description('Сегодня подписок остальных на сумму'),
+
+            Widget::make()
+                ->type('progress')
+                ->class('card mb-3')
+                ->statusBorder('start')
+                ->accentColor('green')
+                ->ribbon(['top', 'la-ruble-sign'])
+                ->progressClass('progressbar')
+                ->value($yesterdayOtherSum)
+                ->description('Вчера подписок остальных на сумму')
+        ]);
+
     }
 
     /**

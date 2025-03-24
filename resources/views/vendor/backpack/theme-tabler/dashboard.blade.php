@@ -1,7 +1,7 @@
 @extends(backpack_view('blank'))
 
 @php
-    use Backpack\CRUD\app\Library\Widget;
+    use App\Models\UserActivity;use Backpack\CRUD\app\Library\Widget;
     use App\Models\Secondaryuser;
     use App\Models\DeletedUser;
     use Carbon\Carbon;
@@ -66,6 +66,10 @@
     ->count();
         $deletedUsersOneDayPercentage = $totalUsers > 0 ? (100 * $deletedUsersOneDay / $totalUsers) : 0;
         $deletedUsersTotal = Secondaryuser::where('mode', 'deleted')->count();
+
+        $todayOnlineMan = UserActivity::getTodayOnlineMen();
+        $todayOnlineWomen = UserActivity::getTodayOnlineWomen();
+        $todayOnlineTotal = UserActivity::getTodayOnlineTotal();
 
 
         Widget::add()
@@ -187,7 +191,37 @@
             ->ribbon(['top', 'la-user'])
             ->progressClass('progressbar')
             ->value($deletedUsersTotal)
-            ->description('всего пользователей удалено')
+            ->description('всего пользователей удалено'),
+
+            Widget::make()
+            ->type('progress')
+            ->class('card mb-3')
+            ->statusBorder('start')
+            ->accentColor('green')
+            ->ribbon(['top', 'la-user'])
+            ->progressClass('progressbar')
+            ->value($todayOnlineMan)
+            ->description('всего было онлайн за сегодня мужчин'),
+
+            Widget::make()
+            ->type('progress')
+            ->class('card mb-3')
+            ->statusBorder('start')
+            ->accentColor('green')
+            ->ribbon(['top', 'la-user'])
+            ->progressClass('progressbar')
+            ->value($todayOnlineWomen)
+            ->description('всего было онлайн за сегодня женщин'),
+
+            Widget::make()
+            ->type('progress')
+            ->class('card mb-3')
+            ->statusBorder('start')
+            ->accentColor('green')
+            ->ribbon(['top', 'la-user'])
+            ->progressClass('progressbar')
+            ->value($todayOnlineTotal)
+            ->description('всего было онлайн за сегодня'),
             ]);
 
 
