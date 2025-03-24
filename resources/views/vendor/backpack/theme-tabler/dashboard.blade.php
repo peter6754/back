@@ -117,23 +117,24 @@
         ->type('progress')
         ->class('card mb-3')
         ->statusBorder('start')
-        ->accentColor('warning')
-        ->progressClass('progressbar')
-        ->value("Google Play: {$usersByStore['yesterday']['Google']}<br>
-                 RuStore: {$usersByStore['yesterday']['RuStore']}<br>
-                 Другие: {$usersByStore['yesterday']['Другие']}")
-        ->description("Вчера: {$usersByStore['yesterday_total']} новых пользователей"),
-
-         Widget::make()
-        ->type('progress')
-        ->class('card mb-3')
-        ->statusBorder('start')
         ->accentColor('success')
         ->progressClass('progressbar')
         ->value("Google Play: {$usersByStore['today']['Google']}<br>
                  RuStore: {$usersByStore['today']['RuStore']}<br>
                  Другие: {$usersByStore['today']['Другие']}")
-        ->description("Сегодня: {$usersByStore['today_total']} новых пользователей")
+        ->description("Сегодня: {$usersByStore['today_total']} новых пользователей"),
+
+         Widget::make()
+        ->type('progress')
+        ->class('card mb-3')
+        ->statusBorder('start')
+        ->accentColor('warning')
+        ->progressClass('progressbar')
+        ->value("Google Play: {$usersByStore['yesterday']['Google']}<br>
+                 RuStore: {$usersByStore['yesterday']['RuStore']}<br>
+                 Другие: {$usersByStore['yesterday']['Другие']}")
+        ->description("Вчера: {$usersByStore['yesterday_total']} новых пользователей")
+
     ]);
 @endphp
 

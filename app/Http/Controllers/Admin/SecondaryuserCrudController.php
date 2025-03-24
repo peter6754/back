@@ -40,7 +40,17 @@ class SecondaryuserCrudController extends CrudController
         // Для отображения в таблице (списке)
         CRUD::column('id')->label('ID');
         CRUD::column('name')->label('Имя');
-        CRUD::column('age')->label('Возраст');
+
+        CRUD::column('gender')
+            ->label('Пол')
+            ->type('select_from_array')
+            ->options(['male' => 'М', 'female' => 'Ж', 'm_f' => 'М+Ж', 'm_m' => 'М+М', 'f_f' => 'Ж+Ж'])
+            ->wrapper([
+                'class' => function ($crud, $column, $entry, $related_key) {
+                    return $entry->gender === 'male' ? 'text-primary' : 'text-danger';
+                },
+            ]);
+
         $this->crud->addColumn([
             'name' => 'photos_management',
             'label' => 'Фотографии',
@@ -97,15 +107,7 @@ class SecondaryuserCrudController extends CrudController
             },
         ]);
 
-        CRUD::column('gender')
-            ->label('Пол')
-            ->type('select_from_array')
-            ->options(['male' => 'М', 'female' => 'Ж', 'm_f' => 'М+Ж', 'm_m' => 'М+М', 'f_f' => 'Ж+Ж'])
-            ->wrapper([
-                'class' => function ($crud, $column, $entry, $related_key) {
-                    return $entry->gender === 'male' ? 'text-primary' : 'text-danger';
-                },
-            ]);
+        CRUD::column('age')->label('Возраст');
 
         CRUD::addColumn([
             'name' => 'verification_status',
