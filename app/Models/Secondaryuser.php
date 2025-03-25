@@ -66,6 +66,18 @@ class Secondaryuser extends Model
         return $this->hasOne(UserInformation::class, 'user_id', 'id');
     }
 
+    public static function getGenderStats(): array
+    {
+        return [
+            'male' => self::where('gender', 'male')->count(),
+            'female' => self::where('gender', 'female')->count(),
+            'm_f' => self::where('gender', 'm_f')->count(),
+            'm_m' => self::where('gender', 'm_m')->count(),
+            'f_f' => self::where('gender', 'f_f')->count(),
+            'total' => self::count(),
+        ];
+    }
+
     public function activeSubscription()
     {
         return $this->hasOneThrough(

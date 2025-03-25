@@ -1,7 +1,9 @@
 @extends(backpack_view('blank'))
 
 @php
-    use App\Models\UserActivity;use Backpack\CRUD\app\Library\Widget;
+    use App\Models\DeletedUserHimself;
+    use App\Models\UserActivity;
+    use Backpack\CRUD\app\Library\Widget;
     use App\Models\Secondaryuser;
     use App\Models\DeletedUser;
     use Carbon\Carbon;
@@ -47,16 +49,10 @@
 
         $totalNewUsersOneDay = Secondaryuser::where('registration_date', '>=', $startOfDayMoscow)
     ->count();
-        $totalOneDayPercentage = $totalNewUsersOneDay > 0 ? (100 * $totalNewUsersOneDay / 1000) : 0;
-        $maleOneDayPercentage = $totalNewUsersOneDay > 0 ? (100 * $newUsersMaleOneDay / $totalNewUsersOneDay) : 0;
-        $femaleOneDayPercentage = $totalNewUsersOneDay > 0 ? (100 * $newUsersFemaleOneDay / $totalNewUsersOneDay) : 0;
 
         $totalNewUsers = Secondaryuser::where('registration_date', '>=', $yesterdayStart)
     ->where('registration_date', '<', $todayStart)
     ->count();
-        $totalPercentage = $totalNewUsers > 0 ? (100 * $totalNewUsers / 1000) : 0;
-        $malePercentage = $totalNewUsers > 0 ? (100 * $newUsersMale / $totalNewUsers) : 0;
-        $femalePercentage = $totalNewUsers > 0 ? (100 * $newUsersFemale / $totalNewUsers) : 0;
 
         $onlineUsers = Secondaryuser::where('is_online', 1)->count();
         $totalUsers = Secondaryuser::count();
@@ -65,7 +61,7 @@
         $deletedUsersOneDay = DeletedUser::where('date', '>=', Carbon::now()->subDay())
     ->count();
         $deletedUsersOneDayPercentage = $totalUsers > 0 ? (100 * $deletedUsersOneDay / $totalUsers) : 0;
-        $deletedUsersTotal = Secondaryuser::where('mode', 'deleted')->count();
+        $deletedUsersTotal = DeletedUserHimself::countDeletedUsers();
 
         $todayOnlineMan = UserActivity::getTodayOnlineMen();
         $todayOnlineWomen = UserActivity::getTodayOnlineWomen();
@@ -73,6 +69,12 @@
         $yesterdayOnlineMen = UserActivity::getYesterdayOnlineMen();
         $yesterdayOnlineWomen = UserActivity::getYesterdayOnlineWomen();
         $yesterdayOnlineTotal = UserActivity::getYesterdayTotalOnline();
+        $stats = Secondaryuser::getGenderStats();
+        $valueText = "Мужчины: {$stats['male']}<br>";
+        $valueText .= "Женщины: {$stats['female']}<br>";
+        $valueText .= "М+Ж: {$stats['m_f']}<br>";
+        $valueText .= "М+М: {$stats['m_m']}<br>";
+        $valueText .= "Ж+Ж: {$stats['f_f']}";
 
 
         Widget::add()
@@ -87,10 +89,8 @@
             ->accentColor('primary')
             ->ribbon(['top', 'la-user'])
             ->progressClass('progressbar')
-            ->value($totalNewUsers)
-            ->description('Новых пользователей вчера.')
-            ->progress($totalPercentage)
-            ->hint(5000 - $totalNewUsers .' до следующего этапа.'),
+            ->value("Вчера: $totalNewUsers<br>Сегодня: $totalNewUsersOneDay")
+            ->description('Всего новых пользователей'),
 
             Widget::make()
             ->type('progress')
@@ -99,24 +99,50 @@
             ->accentColor('blue')
             ->ribbon(['top', 'la-male'])
             ->progressClass('progressbar')
-            ->value($newUsersMale)
-            ->description('Мужчин вчера.')
-            ->progress($malePercentage)
-            ->hint($totalNewUsers > 0 ? 'Из общего числа пользователей.' : 'Нет новых пользователей.'),
+            ->value("Вчера: $newUsersMale<br>Сегодня: $newUsersMaleOneDay")
+            ->description('Новых пользователей мужчин'),
 
-        Widget::make()
+            Widget::make()
             ->type('progress')
             ->class('card mb-3')
             ->statusBorder('start')
             ->accentColor('pink')
             ->ribbon(['top', 'la-female'])
             ->progressClass('progressbar')
-            ->value($newUsersFemale)
-            ->description('Женщин вчера.')
-            ->progress($femalePercentage)
-            ->hint($totalNewUsers > 0 ? 'Из общего числа пользователей.' : 'Нет новых пользователей.'),
+            ->value("Вчера: $newUsersFemale<br>Сегодня: $newUsersFemaleOneDay")
+            ->description('Новых пользователей женщин'),
 
-        Widget::make()
+            Widget::make()
+            ->type('progress')
+            ->class('card mb-3')
+            ->statusBorder('start')
+            ->accentColor('green')
+            ->ribbon(['top', 'la-user'])
+            ->progressClass('progressbar')
+            ->value("Вчера: $yesterdayOnlineMen<br>Сегодня: $todayOnlineMan")
+            ->description('всего было онлайн мужчин'),
+
+            Widget::make()
+            ->type('progress')
+            ->class('card mb-3')
+            ->statusBorder('start')
+            ->accentColor('green')
+            ->ribbon(['top', 'la-user'])
+            ->progressClass('progressbar')
+            ->value("Вчера: $yesterdayOnlineWomen<br>Сегодня: $todayOnlineWomen")
+            ->description('всего было онлайн женщин'),
+
+            Widget::make()
+            ->type('progress')
+            ->class('card mb-3')
+            ->statusBorder('start')
+            ->accentColor('green')
+            ->ribbon(['top', 'la-user'])
+            ->progressClass('progressbar')
+            ->value("Вчера: $yesterdayOnlineTotal<br>Сегодня: $todayOnlineTotal")
+            ->description('всего было онлайн'),
+
+             Widget::make()
             ->type('progress')
             ->class('card mb-3')
             ->statusBorder('start')
@@ -124,67 +150,7 @@
             ->ribbon(['top', 'la-globe'])
             ->progressClass('progressbar')
             ->value($onlineUsers)
-            ->description('Пользователи онлайн сейчас.')
-            ->progress($onlinePercentage)
-            ->hint($totalUsers > 0 ? 'Из общего числа пользователей.' : 'Нет пользователей.'),
-
-            Widget::make()
-            ->type('progress')
-            ->class('card mb-3')
-            ->statusBorder('start')
-            ->accentColor('primary')
-            ->ribbon(['top', 'la-user'])
-            ->progressClass('progressbar')
-            ->value($totalNewUsersOneDay)
-            ->description('Новых пользователей сегодня.')
-            ->progress($totalOneDayPercentage)
-            ->hint(5000 - $totalNewUsersOneDay .' до следующего этапа.'),
-
-            Widget::make()
-            ->type('progress')
-            ->class('card mb-3')
-            ->statusBorder('start')
-            ->accentColor('blue')
-            ->ribbon(['top', 'la-male'])
-            ->progressClass('progressbar')
-            ->value($newUsersMaleOneDay)
-            ->description('Мужчин сегодня.')
-            ->progress($maleOneDayPercentage)
-            ->hint($totalNewUsersOneDay > 0 ? 'Из общего числа пользователей.' : 'Нет новых пользователей.'),
-
-        Widget::make()
-            ->type('progress')
-            ->class('card mb-3')
-            ->statusBorder('start')
-            ->accentColor('pink')
-            ->ribbon(['top', 'la-female'])
-            ->progressClass('progressbar')
-            ->value($newUsersFemaleOneDay)
-            ->description('Женщин сегодня.')
-            ->progress($femaleOneDayPercentage)
-            ->hint($totalNewUsersOneDay > 0 ? 'Из общего числа пользователей.' : 'Нет новых пользователей.'),
-
-            Widget::make()
-            ->type('progress')
-            ->class('card mb-3')
-            ->statusBorder('start')
-            ->accentColor('red')
-            ->ribbon(['top', 'la-globe'])
-            ->progressClass('progressbar')
-            ->value($deletedUsersOneDay)
-            ->description('Пользователи удалено за день.')
-            ->progress($deletedUsersOneDayPercentage)
-            ->hint($totalUsers > 0 ? 'Из общего числа пользователей.' : 'Нет пользователей.'),
-
-            Widget::make()
-            ->type('progress')
-            ->class('card mb-3')
-            ->statusBorder('start')
-            ->accentColor('green')
-            ->ribbon(['top', 'la-user'])
-            ->progressClass('progressbar')
-            ->value($totalUsers)
-            ->description('всего пользователей'),
+            ->description('Пользователи онлайн сейчас.'),
 
              Widget::make()
             ->type('progress')
@@ -203,58 +169,9 @@
             ->accentColor('green')
             ->ribbon(['top', 'la-user'])
             ->progressClass('progressbar')
-            ->value($todayOnlineMan)
-            ->description('всего было онлайн за сегодня мужчин'),
+            ->value($valueText)
+            ->description('всего пользователей'),
 
-            Widget::make()
-            ->type('progress')
-            ->class('card mb-3')
-            ->statusBorder('start')
-            ->accentColor('green')
-            ->ribbon(['top', 'la-user'])
-            ->progressClass('progressbar')
-            ->value($todayOnlineWomen)
-            ->description('всего было онлайн за сегодня женщин'),
-
-            Widget::make()
-            ->type('progress')
-            ->class('card mb-3')
-            ->statusBorder('start')
-            ->accentColor('green')
-            ->ribbon(['top', 'la-user'])
-            ->progressClass('progressbar')
-            ->value($todayOnlineTotal)
-            ->description('всего было онлайн за сегодня'),
-
-            Widget::make()
-            ->type('progress')
-            ->class('card mb-3')
-            ->statusBorder('start')
-            ->accentColor('green')
-            ->ribbon(['top', 'la-user'])
-            ->progressClass('progressbar')
-            ->value($yesterdayOnlineMen)
-            ->description('всего было онлайн вчера оналайн мужчин'),
-
-            Widget::make()
-            ->type('progress')
-            ->class('card mb-3')
-            ->statusBorder('start')
-            ->accentColor('green')
-            ->ribbon(['top', 'la-user'])
-            ->progressClass('progressbar')
-            ->value($yesterdayOnlineWomen)
-            ->description('всего было вчера онлайн женщин'),
-
-            Widget::make()
-            ->type('progress')
-            ->class('card mb-3')
-            ->statusBorder('start')
-            ->accentColor('green')
-            ->ribbon(['top', 'la-user'])
-            ->progressClass('progressbar')
-            ->value($yesterdayOnlineTotal)
-            ->description('всего было вчера онлайн'),
             ]);
 
 
