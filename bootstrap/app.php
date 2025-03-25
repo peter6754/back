@@ -47,9 +47,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('telescope:prune --hours=72')
             ->everySixHours();
 
-        // Обработка очереди писем каждые 5 минут
+        // Обработка очереди писем каждые 2 минуты
         $schedule->command('mail:process-queue')
-            ->everyFiveMinutes();
+            ->everyTwoMinutes();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         Integration::handles($exceptions);
