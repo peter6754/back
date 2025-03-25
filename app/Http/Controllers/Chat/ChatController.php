@@ -289,22 +289,78 @@ class ChatController extends Controller
         try {
             $userId = $request->user()->id;
 
-            // const [conversations, last_matches, new_likes, last_reaction_user_image] = await Promise.all([
-            // Первый SQL запрос - точная копия из Node.js
+            // First get conversations with basic info
             $conversations = \DB::select("
-                SELECT u.name, IF(c.user1_id = ?, c.is_pinned_by_user1, c.is_pinned_by_user2) is_pinned,
-                ur.superboom, c.id, IF(us.status_online, u.is_online, '0') is_online, u.id user_id,
-                (SELECT image FROM user_images WHERE user_id = u.id LIMIT 1) user_image,
-                CAST((SELECT COUNT(*) FROM chat_messages WHERE receiver_id = ? AND is_seen = false AND conversation_id = c.id) AS CHAR) unread_messages_count
+                SELECT
+                    c.id,
+                    u.id as user_id,
+                    u.name,
+                    IF(c.user1_id = ?, c.is_pinned_by_user1, c.is_pinned_by_user2) as is_pinned,
+                    ur.superboom,
+                    IF(us.status_online, u.is_online, '0') as is_online,
+                    (SELECT image FROM user_images WHERE user_id = u.id LIMIT 1) as user_image,
+                    CAST((SELECT COUNT(*) FROM chat_messages WHERE receiver_id = ? AND is_seen = false AND conversation_id = c.id) AS CHAR) as unread_messages_count
                 FROM conversations c
                 LEFT JOIN users u ON IF(c.user1_id = ?, c.user2_id, IF(c.user2_id = ?, c.user1_id, null)) = u.id
                 LEFT JOIN user_reactions ur ON ur.user_id = ? AND ur.reactor_id = u.id
                 LEFT JOIN user_settings us ON us.user_id = u.id
                 WHERE u.id IS NOT NULL
-                ORDER BY is_pinned DESC, (SELECT date FROM chat_messages WHERE conversation_id = c.id ORDER BY date DESC LIMIT 1) DESC
             ", [$userId, $userId, $userId, $userId, $userId]);
 
-            // Второй SQL запрос - точная копия из Node.js
+            // Get conversation IDs for last messages query
+            $conversationIds = collect($conversations)->pluck('id')->toArray();
+
+            if (empty($conversationIds)) {
+                return $this->success([
+                    'conversations' => [],
+                    'match' => [],
+                    'match_count' => 0
+                ]);
+            }
+
+            // Optimized query to get last messages using window function (MySQL 8.0+)
+            $placeholders = str_repeat('?,', count($conversationIds) - 1) . '?';
+            try {
+                $lastMessages = \DB::select("
+                    SELECT
+                        conversation_id,
+                        receiver_id,
+                        message,
+                        date,
+                        type
+                    FROM (
+                        SELECT
+                            conversation_id,
+                            receiver_id,
+                            message,
+                            date,
+                            type,
+                            ROW_NUMBER() OVER (PARTITION BY conversation_id ORDER BY date DESC) as rn
+                        FROM chat_messages
+                        WHERE conversation_id IN ({$placeholders})
+                    ) ranked_messages
+                    WHERE rn = 1
+                ", $conversationIds);
+            } catch (\Exception $e) {
+                // Fallback for MySQL < 8.0 without window functions
+                \Log::info('Window function not supported, using fallback query');
+                $lastMessages = \DB::select("
+                    SELECT cm1.conversation_id, cm1.receiver_id, cm1.message, cm1.date, cm1.type
+                    FROM chat_messages cm1
+                    WHERE cm1.conversation_id IN ({$placeholders})
+                    AND cm1.date = (
+                        SELECT MAX(cm2.date)
+                        FROM chat_messages cm2
+                        WHERE cm2.conversation_id = cm1.conversation_id
+                    )
+                    GROUP BY cm1.conversation_id
+                ", $conversationIds);
+            }
+
+            // Create a lookup array for last messages
+            $lastMessageLookup = collect($lastMessages)->keyBy('conversation_id');
+
+            // Second query for matches - kept as is since it's already optimized
             $lastMatches = \DB::select("
                 SELECT ure.user_id, IF(us.status_online, u.is_online, '0') is_online, u.name,
                 CAST((SELECT id FROM conversations WHERE (user1_id = u.id AND user2_id = ?) OR (user1_id = ? AND user2_id = u.id)) AS CHAR) conversation_id,
@@ -323,42 +379,23 @@ class ChatController extends Controller
                 ORDER BY IF(ure.date > ur.date, ure.date, ur.date) DESC
             ", [$userId, $userId, $userId, $userId, $userId, $userId, $userId]);
 
-            // this.userService.getUsersNewLikesCount(user_id, false) - эмуляция
-            $newLikes = \DB::selectOne("SELECT COUNT(*) as count FROM user_reactions WHERE reactor_id = ? AND type IN ('like', 'superlike')", [$userId]);
 
-            // this.userService.getLastReactorPhotos(user_id, 1) - эмуляция
-            $lastReactionUserImage = \DB::select("
-                SELECT ui.image
-                FROM user_reactions ur
-                LEFT JOIN user_images ui ON ui.user_id = ur.user_id
-                WHERE ur.reactor_id = ? AND ur.type IN ('like', 'superlike')
-                ORDER BY ur.date DESC
-                LIMIT 1
-            ", [$userId]);
-
-            // return { items: (await Promise.all(conversations.map(async c => ({ ... })))).filter(c => c.last_message != null) }
-            $items = [];
-            foreach ($conversations as $c) {
-                // last_message: await this.dbService.chatMessage.findFirst({ ... })
-                $lastMessage = \DB::selectOne("
-                    SELECT receiver_id, message, date, type
-                    FROM chat_messages
-                    WHERE conversation_id = ?
-                    ORDER BY date DESC
-                    LIMIT 1
-                ", [$c->id]);
-
-                // .filter(c => c.last_message != null)
-                if ($lastMessage !== null) {
-                    $items[] = [
+            // Process conversations with last messages lookup
+            $items = collect($conversations)
+                ->filter(function ($c) use ($lastMessageLookup) {
+                    return $lastMessageLookup->has($c->id);
+                })
+                ->map(function ($c) use ($lastMessageLookup) {
+                    $lastMessage = $lastMessageLookup->get($c->id);
+                    return [
                         'id' => $c->id,
                         'user_id' => $c->user_id,
                         'name' => $c->name,
                         'is_pinned' => (bool) $c->is_pinned,
                         'superboom' => (bool) $c->superboom,
                         'user_image' => $c->user_image,
-                        'is_online' => (bool) $c->is_online, // Boolean(+c.is_online)
-                        'unread_messages_count' => (int) $c->unread_messages_count, // +c.unread_messages_count
+                        'is_online' => (bool) $c->is_online,
+                        'unread_messages_count' => (int) $c->unread_messages_count,
                         'last_message' => [
                             'receiver_id' => $lastMessage->receiver_id,
                             'message' => $lastMessage->message,
@@ -366,21 +403,25 @@ class ChatController extends Controller
                             'type' => $lastMessage->type
                         ]
                     ];
-                }
-            }
+                })
+                ->sortBy(function ($item) {
+                    return [$item['is_pinned'] ? 0 : 1, $item['last_message']['date']];
+                })
+                ->reverse()
+                ->values()
+                ->toArray();
 
-            // last_matches: last_matches.map(m => ({ ...m, is_online: Boolean(+m.is_online), conversation_id: +m.conversation_id || null }))
+            // Process matches - kept as is
             $matches = collect($lastMatches)->map(function ($m) {
                 return [
                     'user_id' => $m->user_id,
-                    'is_online' => (bool) $m->is_online, // Boolean(+m.is_online)
+                    'is_online' => (bool) $m->is_online,
                     'name' => $m->name,
-                    'conversation_id' => $m->conversation_id ? (int) $m->conversation_id : null, // +m.conversation_id || null
+                    'conversation_id' => $m->conversation_id ? (int) $m->conversation_id : null,
                     'user_image' => $m->user_image
                 ];
             })->toArray();
 
-            // Структура ответа в новом формате
             return $this->success([
                 'conversations' => $items,
                 'match' => $matches,
