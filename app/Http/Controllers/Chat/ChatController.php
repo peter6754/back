@@ -19,7 +19,9 @@ class ChatController extends Controller
 {
     use ApiResponseTrait;
 
-    public function __construct(private ChatService $chatService, private SeaweedFsService $seaweedFsService) {}
+    public function __construct(private ChatService $chatService, private SeaweedFsService $seaweedFsService)
+    {
+    }
 
     /**
      * Send message to conversation
@@ -287,176 +289,106 @@ class ChatController extends Controller
         try {
             $userId = $request->user()->id;
 
-            $conversations = Conversation::where(function ($query) use ($userId) {
-                $query->where('user1_id', $userId)
-                    ->orWhere('user2_id', $userId);
-            })
-                ->with([
-                    'user1:id,name,is_online',
-                    'user2:id,name,is_online',
-                ])
-                ->get()
-                ->map(function ($conversation) use ($userId) {
-                    // Determine the other user
-                    $otherUser = $conversation->user1_id === $userId
-                        ? $conversation->user2
-                        : $conversation->user1;
+            // const [conversations, last_matches, new_likes, last_reaction_user_image] = await Promise.all([
+            // Первый SQL запрос - точная копия из Node.js
+            $conversations = \DB::select("
+                SELECT u.name, IF(c.user1_id = ?, c.is_pinned_by_user1, c.is_pinned_by_user2) is_pinned,
+                ur.superboom, c.id, IF(us.status_online, u.is_online, '0') is_online, u.id user_id,
+                (SELECT image FROM user_images WHERE user_id = u.id LIMIT 1) user_image,
+                CAST((SELECT COUNT(*) FROM chat_messages WHERE receiver_id = ? AND is_seen = false AND conversation_id = c.id) AS CHAR) unread_messages_count
+                FROM conversations c
+                LEFT JOIN users u ON IF(c.user1_id = ?, c.user2_id, IF(c.user2_id = ?, c.user1_id, null)) = u.id
+                LEFT JOIN user_reactions ur ON ur.user_id = ? AND ur.reactor_id = u.id
+                LEFT JOIN user_settings us ON us.user_id = u.id
+                WHERE u.id IS NOT NULL
+                ORDER BY is_pinned DESC, (SELECT date FROM chat_messages WHERE conversation_id = c.id ORDER BY date DESC LIMIT 1) DESC
+            ", [$userId, $userId, $userId, $userId, $userId]);
 
-                    // находим аватар
-                    $mainImage = UserImage::where('user_id', $otherUser->id)
-                        ->where('is_main', true)
-                        ->first();
+            // Второй SQL запрос - точная копия из Node.js
+            $lastMatches = \DB::select("
+                SELECT ure.user_id, IF(us.status_online, u.is_online, '0') is_online, u.name,
+                CAST((SELECT id FROM conversations WHERE (user1_id = u.id AND user2_id = ?) OR (user1_id = ? AND user2_id = u.id)) AS CHAR) conversation_id,
+                (SELECT image FROM user_images WHERE user_id = u.id LIMIT 1) user_image
+                FROM user_reactions ure
+                LEFT JOIN user_reactions ur ON ur.reactor_id = ure.user_id AND ur.user_id = ? AND ure.reactor_id = ?
+                LEFT JOIN users u ON u.id = ure.user_id
+                LEFT JOIN user_settings us ON us.user_id = u.id
+                WHERE ure.user_id != ? AND ure.type != 'dislike' AND ur.type != 'dislike'
+                AND (
+                  SELECT id FROM chat_messages
+                  WHERE (sender_id = ? AND receiver_id = ure.user_id) OR
+                  (sender_id = ure.user_id AND receiver_id = ?)
+                  LIMIT 1
+                ) IS NULL
+                ORDER BY IF(ure.date > ur.date, ure.date, ur.date) DESC
+            ", [$userId, $userId, $userId, $userId, $userId, $userId, $userId]);
 
-                    // Если нет главного изображения, берем первое доступное
-                    if (! $mainImage) {
-                        $mainImage = UserImage::where('user_id', $otherUser->id)
-                            ->first();
-                    }
+            // this.userService.getUsersNewLikesCount(user_id, false) - эмуляция
+            $newLikes = \DB::selectOne("SELECT COUNT(*) as count FROM user_reactions WHERE reactor_id = ? AND type IN ('like', 'superlike')", [$userId]);
 
-                    $avatarUrl = null;
-                    if ($mainImage && $mainImage->image) {
-                        $avatarUrl = $mainImage->image;
-                    }
+            // this.userService.getLastReactorPhotos(user_id, 1) - эмуляция
+            $lastReactionUserImage = \DB::select("
+                SELECT ui.image
+                FROM user_reactions ur
+                LEFT JOIN user_images ui ON ui.user_id = ur.user_id
+                WHERE ur.reactor_id = ? AND ur.type IN ('like', 'superlike')
+                ORDER BY ur.date DESC
+                LIMIT 1
+            ", [$userId]);
 
-                    // Get last message
-                    $lastMessage = ChatMessage::where('conversation_id', $conversation->id)
-                        ->with('sender:id,name')
-                        ->orderBy('id', 'desc')
-                        ->first();
+            // return { items: (await Promise.all(conversations.map(async c => ({ ... })))).filter(c => c.last_message != null) }
+            $items = [];
+            foreach ($conversations as $c) {
+                // last_message: await this.dbService.chatMessage.findFirst({ ... })
+                $lastMessage = \DB::selectOne("
+                    SELECT receiver_id, message, date, type
+                    FROM chat_messages
+                    WHERE conversation_id = ?
+                    ORDER BY date DESC
+                    LIMIT 1
+                ", [$c->id]);
 
-                    // Get unread count for current user
-                    $unreadCount = ChatMessage::where('conversation_id', $conversation->id)
-                        ->where('receiver_id', $userId)
-                        ->where('is_seen', false)
-                        ->count();
-
-                    // Determine if pinned for current user
-                    $isPinned = $conversation->user1_id === $userId
-                        ? $conversation->is_pinned_by_user1
-                        : $conversation->is_pinned_by_user2;
-
-                    return [
-                        'chat_id' => $conversation->id,
-                        'user' => [
-                            'id' => $otherUser->id,
-                            'name' => $otherUser->name,
-                            'avatar_url' => $avatarUrl,
-                            'online' => $otherUser->is_online,
-                        ],
-                        'last_message' => $lastMessage ? [
-                            'user_id' => $lastMessage->sender_id,
-                            'username' => $lastMessage->sender->name ?? null,
-                            'text' => $lastMessage->message,
-                            'type' => $lastMessage->type === 'media' ? 'media' : 'text',
-                            'timestamp' => $lastMessage->date ? $lastMessage->date->utc()->toISOString() : now()->utc()->toISOString(),
-                        ] : null,
-                        'is_pinned' => $isPinned,
-                        'unread_count' => $unreadCount,
+                // .filter(c => c.last_message != null)
+                if ($lastMessage !== null) {
+                    $items[] = [
+                        'id' => $c->id,
+                        'user_id' => $c->user_id,
+                        'name' => $c->name,
+                        'is_pinned' => (bool) $c->is_pinned,
+                        'superboom' => (bool) $c->superboom,
+                        'user_image' => $c->user_image,
+                        'is_online' => (bool) $c->is_online, // Boolean(+c.is_online)
+                        'unread_messages_count' => (int) $c->unread_messages_count, // +c.unread_messages_count
+                        'last_message' => [
+                            'receiver_id' => $lastMessage->receiver_id,
+                            'message' => $lastMessage->message,
+                            'date' => $lastMessage->date,
+                            'type' => $lastMessage->type
+                        ]
                     ];
-                })
-                ->sortByDesc(function ($conversation) {
-                    // получаем timestamps для сортировки
-                    $timestamp = 0;
-                    if ($conversation['last_message'] && $conversation['last_message']['timestamp']) {
-                        try {
-                            $timestamp = \Carbon\Carbon::parse($conversation['last_message']['timestamp'])->timestamp;
-                        } catch (\Exception $e) {
-                            $timestamp = 0;
-                        }
-                    }
-
-                    // если закреп, добавим число
-                    if ($conversation['is_pinned']) {
-                        return $timestamp + 9999999999;
-                    }
-
-                    return $timestamp;
-                })
-                ->values()
-                ->toArray();
-
-            // Get matched users with their avatars and match timestamps
-            $matchedUsersWithTimestamp = \DB::table('user_reactions as ur1')
-                ->join('user_reactions as ur2', function ($join) {
-                    $join->on('ur1.reactor_id', '=', 'ur2.user_id')
-                        ->on('ur1.user_id', '=', 'ur2.reactor_id');
-                })
-                ->where('ur1.reactor_id', $userId)
-                ->whereIn('ur1.type', ['like', 'superlike'])
-                ->whereIn('ur2.type', ['like', 'superlike'])
-                ->select(
-                    'ur1.user_id',
-                    \DB::raw('GREATEST(ur1.date, ur2.date) as match_time')
-                )
-                ->orderBy('match_time', 'desc') // Latest matches first
-                ->get();
-
-            $matches = [];
-            if ($matchedUsersWithTimestamp->isNotEmpty()) {
-                $matchedUserIds = $matchedUsersWithTimestamp->pluck('user_id');
-
-                // Get users data first
-                $users = \DB::table('users')
-                    ->whereIn('id', $matchedUserIds)
-                    ->select('id', 'name')
-                    ->get()
-                    ->keyBy('id');
-
-                // Get main images for these users
-                $mainImages = \DB::table('user_images')
-                    ->whereIn('user_id', $matchedUserIds)
-                    ->where('is_main', true)
-                    ->select('user_id', 'image')
-                    ->get()
-                    ->keyBy('user_id');
-
-                // Get first available images for users without main image
-                $usersWithoutMain = $matchedUserIds->diff($mainImages->keys());
-                $fallbackImages = collect();
-                if ($usersWithoutMain->isNotEmpty()) {
-                    $fallbackImages = \DB::table('user_images')
-                        ->whereIn('user_id', $usersWithoutMain)
-                        ->select('user_id', 'image')
-                        ->orderBy('id', 'asc')
-                        ->get()
-                        ->groupBy('user_id')
-                        ->map(function ($images) {
-                            return $images->first();
-                        });
                 }
-
-                // Build matches array maintaining the time-based order
-                $matches = $matchedUsersWithTimestamp->map(function ($match) use ($users, $mainImages, $fallbackImages) {
-                    if (empty($users[$match->user_id])) {
-                        return null;
-                    }
-                    $user = $users[$match->user_id];
-                    $avatar = null;
-                    if (isset($mainImages[$user->id])) {
-                        $avatar = $mainImages[$user->id]->image;
-                    } elseif ($fallbackImages->has($user->id)) {
-                        $avatar = $fallbackImages[$user->id]->image;
-                    }
-
-                    return [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'avatar_url' => $avatar,
-                        'match_time' => \Carbon\Carbon::parse($match->match_time)->utc()->toISOString(),
-                    ];
-                })->filter()->values()->toArray();
             }
 
-            $response = [
-                'conversations' => $conversations,
-                'match' => $matches,
-                'match_count' => count($matches),
-            ];
+            // last_matches: last_matches.map(m => ({ ...m, is_online: Boolean(+m.is_online), conversation_id: +m.conversation_id || null }))
+            $matches = collect($lastMatches)->map(function ($m) {
+                return [
+                    'user_id' => $m->user_id,
+                    'is_online' => (bool) $m->is_online, // Boolean(+m.is_online)
+                    'name' => $m->name,
+                    'conversation_id' => $m->conversation_id ? (int) $m->conversation_id : null, // +m.conversation_id || null
+                    'user_image' => $m->user_image
+                ];
+            })->toArray();
 
-            return $this->success($response);
+            // Структура ответа в новом формате
+            return $this->success([
+                'conversations' => $items,
+                'match' => $matches,
+                'match_count' => count($matches)
+            ]);
 
         } catch (\Exception $e) {
-            \Log::error('Failed to fetch conversation: ' . $e->getMessage(), [
+            \Log::error('Failed to fetch conversation: '.$e->getMessage(), [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
