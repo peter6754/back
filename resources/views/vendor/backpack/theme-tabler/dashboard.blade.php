@@ -74,7 +74,8 @@
         $valueText .= "Женщины: {$stats['female']}<br>";
         $valueText .= "М+Ж: {$stats['m_f']}<br>";
         $valueText .= "М+М: {$stats['m_m']}<br>";
-        $valueText .= "Ж+Ж: {$stats['f_f']}";
+        $valueText .= "Ж+Ж: {$stats['f_f']}<br>";
+        $valueText .= "Всего: {$stats['total']}";
 
 
         Widget::add()
