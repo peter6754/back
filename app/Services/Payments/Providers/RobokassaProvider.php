@@ -153,12 +153,36 @@ class RobokassaProvider implements PaymentProviderInterface
         $baseUrl = 'https://auth.robokassa.ru/Merchant/Index.aspx';
         $queryParams = [];
 
-        $signature = $this->signatureMerchant([
-            $params['price'],
-            $getData['id'],
-            $this->password1,
-            "Shp_product=".$params['product'],
+        $queryParams['Receipt'] = json_encode([
+            'items' => [
+                [
+                    'name' => $params['description'],
+                    'sum' => $params['price'],
+                    'quantity' => 1,
+                    'payment_method' => 'full_payment',
+                    'payment_object' => 'commodity',
+                    'tax' => 'none'
+                ]
+            ]
         ]);
+        unset($queryParams['Receipt']);
+
+        if (!empty($queryParams['Receipt'])) {
+            $signature = $this->signatureMerchant([
+                urlencode($queryParams['Receipt']),
+                $params['price'],
+                $getData['id'],
+                $this->password1,
+                "Shp_product=".$params['product'],
+            ]);
+        } else {
+            $signature = $this->signatureMerchant([
+                $params['price'],
+                $getData['id'],
+                $this->password1,
+                "Shp_product=".$params['product'],
+            ]);
+        }
 
         $queryParams = array_merge([
             'MerchantLogin' => $this->merchantLogin,
@@ -170,18 +194,6 @@ class RobokassaProvider implements PaymentProviderInterface
             'Shp_product' => $params['product'],
             'isTest' => $this->isTest,
             'SignatureValue' => $signature,
-            'Receipt' => [
-                'items' => [
-                    [
-                        'name' => $params['description'],
-                        'sum' => $params['price'],
-                        'quantity' => 1,
-                        'payment_method' => 'full_payment',
-                        'payment_object' => 'commodity',
-                        'tax' => 'none'
-                    ]
-                ]
-            ]
         ], $queryParams);
 
         if (isset($params['recurring'])) {
