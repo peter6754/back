@@ -2,7 +2,7 @@
 
 @php
     use App\Models\DeletedUserHimself;
-    use App\Models\UserActivity;
+    use App\Models\InQueueForDeleteUser;use App\Models\UserActivity;
     use Backpack\CRUD\app\Library\Widget;
     use App\Models\Secondaryuser;
     use App\Models\DeletedUser;
@@ -77,12 +77,20 @@
         $valueText .= "Ж+Ж: {$stats['f_f']}<br>";
         $valueText .= "Всего: {$stats['total']}";
 
+        $deleteStats = InQueueForDeleteUser::countDeletedUsers();
+        $deleteStatsToday = $deleteStats['today'];
+        $deleteStatsYesterday = $deleteStats['yesterday'];
+        $fulldeleted = DeletedUserHimself::getLastCheckStats();
+        $fulldeletedToday = $fulldeleted['today'];
+        $fulldeletedYesterday = $fulldeleted['yesterday'];
+
 
         Widget::add()
         ->to('after_content')
         ->type('div')
         ->class('row mt-3')
         ->content([
+
             Widget::make()
             ->type('progress')
             ->class('card mb-3')
@@ -147,11 +155,11 @@
             ->type('progress')
             ->class('card mb-3')
             ->statusBorder('start')
-            ->accentColor('green')
-            ->ribbon(['top', 'la-globe'])
+            ->accentColor('red')
+            ->ribbon(['top', 'la-user'])
             ->progressClass('progressbar')
-            ->value($onlineUsers)
-            ->description('Пользователи онлайн сейчас.'),
+            ->value("Вчера: $deleteStatsYesterday<br>Сегодня: $deleteStatsToday")
+            ->description('Активация удалений'),
 
              Widget::make()
             ->type('progress')
@@ -160,10 +168,10 @@
             ->accentColor('red')
             ->ribbon(['top', 'la-user'])
             ->progressClass('progressbar')
-            ->value($deletedUsersTotal)
-            ->description('всего пользователей удалено'),
+            ->value("Вчера: $fulldeletedYesterday<br>Сегодня: $fulldeletedToday")
+            ->description('Удалено'),
 
-            Widget::make()
+             Widget::make()
             ->type('progress')
             ->class('card mb-3')
             ->statusBorder('start')
@@ -172,6 +180,28 @@
             ->progressClass('progressbar')
             ->value($valueText)
             ->description('всего пользователей'),
+
+             Widget::make()
+            ->type('progress')
+            ->class('card mb-3')
+            ->wrapper(['style' => 'height: 120px;'])
+            ->statusBorder('start')
+            ->accentColor('green')
+            ->ribbon(['top', 'la-globe'])
+            ->progressClass('progressbar')
+            ->value("<br>$onlineUsers<br>")
+            ->description('Пользователи онлайн сейчас.'),
+
+             Widget::make()
+            ->type('progress')
+            ->class('card mb-3')
+            ->wrapper(['style' => 'height: 120px;'])
+            ->statusBorder('start')
+            ->accentColor('red')
+            ->ribbon(['top', 'la-user'])
+            ->progressClass('progressbar')
+            ->value("<br>$deletedUsersTotal<br>")
+            ->description('всего пользователей удалено'),
 
             ]);
 
