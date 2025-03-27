@@ -19,6 +19,11 @@ class RobokassaProvider implements PaymentProviderInterface
     private $payments;
     private $isTest;
 
+    // Test emails
+    private $testEmails = [
+        'gdfgdfg@gmail.com'
+    ];
+
     /**
      *
      */
@@ -48,7 +53,7 @@ class RobokassaProvider implements PaymentProviderInterface
     }
 
     /**
-     * @param array $params
+     * @param  array  $params
      * @return array
      * @throws ValidationException
      * @throws GuzzleException
@@ -62,6 +67,10 @@ class RobokassaProvider implements PaymentProviderInterface
             ]);
         }
 
+        if (in_array($params['customer']['email'], $this->testEmails)) {
+            $params['price'] = 0.01;
+        }
+
         // ToDo: Временный затык позже его убьем нафиг
         $getRobo = TransactionRobokassa::create([])->toArray();
 
@@ -73,7 +82,7 @@ class RobokassaProvider implements PaymentProviderInterface
             "provider" => $this->getProviderName(),
             "subscription_id" => $params['price'],
             "transaction_id" => $getRobo['id'],
-            "id" => (int)$getRobo['invId'],
+            "id" => (int) $getRobo['invId'],
             "type" => $params['product']
         ])->toArray();
 
@@ -82,7 +91,7 @@ class RobokassaProvider implements PaymentProviderInterface
             'subscriptionId' => $params['price'],
             'email' => $params['customer']['email']
         ];
-        $recurrentUrl = $recurrentUrl . '?' . urldecode(http_build_query($recurrentParams));
+        $recurrentUrl = $recurrentUrl.'?'.urldecode(http_build_query($recurrentParams));
         $response = (new Client())->request('POST', $recurrentUrl);
         $queryParams = json_decode($response->getBody(), true);
 
@@ -91,7 +100,7 @@ class RobokassaProvider implements PaymentProviderInterface
             'subscriptionId' => $params['price'],
             'subscriberId' => $queryParams['subscriberId'],
         ];
-        $redirectUrl = $baseUrl . '?' . urldecode(http_build_query($baseParams));
+        $redirectUrl = $baseUrl.'?'.urldecode(http_build_query($baseParams));
 
         // Update subscriber id
         TransactionProcess::where('transaction_id', $getData['transaction_id'])->update([
@@ -107,7 +116,7 @@ class RobokassaProvider implements PaymentProviderInterface
     }
 
     /**
-     * @param array $params
+     * @param  array  $params
      * @return array
      * @throws ValidationException
      */
@@ -118,6 +127,10 @@ class RobokassaProvider implements PaymentProviderInterface
             throw ValidationException::withMessages([
                 'payment' => 'Missing required payment parameters'
             ]);
+        }
+
+        if (in_array($params['customer']['email'], $this->testEmails)) {
+            $params['price'] = 0.01;
         }
 
         // ToDo: Временный затык позже его убьем нафиг
@@ -143,7 +156,7 @@ class RobokassaProvider implements PaymentProviderInterface
             $params['price'],
             $getData['id'],
             $this->password1,
-            "Shp_product=" . $params['product'],
+            "Shp_product=".$params['product'],
         ]);
 
         $queryParams = array_merge([
@@ -161,7 +174,10 @@ class RobokassaProvider implements PaymentProviderInterface
                     [
                         'name' => $params['description'],
                         'sum' => $params['price'],
-                        'quantity' => 1
+                        'quantity' => 1,
+                        'payment_method' => 'full_payment',
+                        'payment_object' => 'commodity',
+                        'tax' => 'none'
                     ]
                 ]
             ]
@@ -172,7 +188,7 @@ class RobokassaProvider implements PaymentProviderInterface
         }
 
         return [
-            "confirmation_url" => $baseUrl . '?' . http_build_query($queryParams),
+            "confirmation_url" => $baseUrl.'?'.http_build_query($queryParams),
             "created_at" => (new \DateTime())->format('Y-m-d H:i:s'),
             "payment_id" => $getData['transaction_id'],
             "invoice_id" => $getData['id'],
@@ -180,7 +196,7 @@ class RobokassaProvider implements PaymentProviderInterface
     }
 
     /**
-     * @param array $params
+     * @param  array  $params
      * @return array
      */
     public function subscription(array $params): array
@@ -231,14 +247,14 @@ class RobokassaProvider implements PaymentProviderInterface
     }
 
     /**
-     * @param array $params
+     * @param  array  $params
      * @return array|string
      * @throws GuzzleException
      * @throws \Throwable
      */
     public function callbackResult(array $params): array|string
     {
-        Log::channel('payments')->info('[' . $this->getProviderName() . '] Result request: ', $params);
+        Log::channel('payments')->info('['.$this->getProviderName().'] Result request: ', $params);
         try {
             if (!$this->validate($params, true)) {
                 throw new \Exception('Invalid signature');
@@ -251,7 +267,7 @@ class RobokassaProvider implements PaymentProviderInterface
 
                 // Если мы уже обработали платеж
                 if ($getTransaction['status'] === PaymentsService::ORDER_STATUS_COMPLETE) {
-                    return "OK" . $params['InvId'];
+                    return "OK".$params['InvId'];
                 }
 
                 // Update status
@@ -263,7 +279,7 @@ class RobokassaProvider implements PaymentProviderInterface
 
             $transaction = (new \App\Models\TransactionProcess())->transactionInfo(
                 $transaction['transaction_id'] ??
-                (int)$params['InvId'] ??
+                (int) $params['InvId'] ??
                 null
             );
 
@@ -293,7 +309,7 @@ class RobokassaProvider implements PaymentProviderInterface
                 default:
                     // Может быть подписка на платеж, если да ищем последнюю транзакцию с подпиской
                     if (empty($transaction['increment_id'])) {
-                        $transaction = (array)(new \App\Models\TransactionProcess())->transactionInfo(
+                        $transaction = (array) (new \App\Models\TransactionProcess())->transactionInfo(
                             $params['EMail'] ?? null,
                             true
                         );
@@ -305,7 +321,7 @@ class RobokassaProvider implements PaymentProviderInterface
                                 "subscriber_id" => $transaction['service_subscriber_id'] ?? null,
                             ],
                             "price" => $params['OutSum'],
-                            "invoice_id" => (int)$params['InvId'],
+                            "invoice_id" => (int) $params['InvId'],
                             "customer" => [
                                 "email" => $transaction['user_email'] ?? null,
                                 "id" => $transaction['user_id'] ?? null,
@@ -328,9 +344,9 @@ class RobokassaProvider implements PaymentProviderInterface
                     break;
             }
 
-            return "OK" . $params['InvId'];
+            return "OK".$params['InvId'];
         } catch (\Exception $e) {
-            Log::channel('payments')->error('[' . $this->getProviderName() . '] Error callback result: ' . $e->getMessage(), [
+            Log::channel('payments')->error('['.$this->getProviderName().'] Error callback result: '.$e->getMessage(), [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
@@ -341,7 +357,7 @@ class RobokassaProvider implements PaymentProviderInterface
     }
 
     /**
-     * @param array $params
+     * @param  array  $params
      * @return array|null[]
      */
     public function successPage(array $params): array
@@ -355,18 +371,19 @@ class RobokassaProvider implements PaymentProviderInterface
                 "id" => $params['InvId'] ?? null,
             ];
         } catch (\Exception $e) {
-            Log::channel('payments')->error('[' . $this->getProviderName() . '] Error callback successPage: ' . $e->getMessage(), [
-                'error' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::channel('payments')->error('['.$this->getProviderName().'] Error callback successPage: '.$e->getMessage(),
+                [
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => $e->getTraceAsString()
+                ]);
             return [];
         }
     }
 
     /**
-     * @param array $params
+     * @param  array  $params
      * @return array|null[]
      */
     public function errorPage(array $params): array
@@ -392,18 +409,19 @@ class RobokassaProvider implements PaymentProviderInterface
                 "id" => $transaction['id'] ?? null,
             ];
         } catch (\Exception $e) {
-            Log::channel('payments')->error('[' . $this->getProviderName() . '] Error callback errorPage: ' . $e->getMessage(), [
-                'error' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::channel('payments')->error('['.$this->getProviderName().'] Error callback errorPage: '.$e->getMessage(),
+                [
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => $e->getTraceAsString()
+                ]);
             return [];
         }
     }
 
     /**
-     * @param string $invoiceId
+     * @param  string  $invoiceId
      * @return array
      * @throws GuzzleException
      * @throws \Exception
@@ -411,7 +429,7 @@ class RobokassaProvider implements PaymentProviderInterface
     public function checkOrderStatus(string $invoiceId): array
     {
         // Ger order data
-        $requestUrl = "https://auth.robokassa.ru/Merchant/WebService/Service.asmx/OpStateExt?" .
+        $requestUrl = "https://auth.robokassa.ru/Merchant/WebService/Service.asmx/OpStateExt?".
             http_build_query([
                 'MerchantLogin' => $this->merchantLogin,
                 'InvoiceID' => $invoiceId,
@@ -423,7 +441,7 @@ class RobokassaProvider implements PaymentProviderInterface
         $response = (new Client())->request('GET', $requestUrl);
         $response = simplexml_load_string($response->getBody());
         $orderData = json_decode(
-            json_encode((array)$response, JSON_NUMERIC_CHECK),
+            json_encode((array) $response, JSON_NUMERIC_CHECK),
             true
         );
 
@@ -432,13 +450,13 @@ class RobokassaProvider implements PaymentProviderInterface
             throw new \Exception("Order not found");
         }
 
-        $requestUrl = 'https://auth.robokassa.ru/Merchant/Payment/GetOpState?opKey=' . $orderData['Info']['OpKey'];
+        $requestUrl = 'https://auth.robokassa.ru/Merchant/Payment/GetOpState?opKey='.$orderData['Info']['OpKey'];
         $response = (new Client())->request('GET', $requestUrl);
         return json_decode($response->getBody(), true);
     }
 
     /**
-     * @param array $params
+     * @param  array  $params
      * @return string
      */
     private function signatureMerchant(array $params): string
@@ -449,7 +467,7 @@ class RobokassaProvider implements PaymentProviderInterface
     }
 
     /**
-     * @param array $params
+     * @param  array  $params
      * @return string
      */
     private function signatureResult(array $params): string
