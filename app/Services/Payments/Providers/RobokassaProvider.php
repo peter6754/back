@@ -21,6 +21,7 @@ class RobokassaProvider implements PaymentProviderInterface
 
     // Test emails
     private $testEmails = [
+        'wellbeingnata@gmail.com',
         'gdfgdfg@gmail.com'
     ];
 
