@@ -7,6 +7,7 @@ use App\Http\Controllers\Migrate\ProxyController;
 use App\Http\Controllers\Payments\PaymentsController;
 use App\Http\Controllers\Payments\StatusesController;
 use App\Http\Controllers\Recommendations\RecommendationsController;
+use App\Http\Controllers\Users\FeedbackController;
 use App\Http\Controllers\Users\InfoController;
 use App\Http\Controllers\Users\ReferenceDataController;
 use App\Http\Controllers\Users\SettingsController;
@@ -193,6 +194,12 @@ Route::prefix('users')->middleware('auth')->group(function () {
         Route::post('blocked-contacts', [SettingsController::class, 'createBlockedContact']);
         Route::delete('blocked-contacts', [SettingsController::class, 'deleteBlockedContact']);
     });
+
+    // Feedbacks
+    Route::get('feedbacks', [FeedbackController::class, 'getFeedbacks']);
+    Route::post('feedbacks', [FeedbackController::class, 'leaveFeedback']);
+    Route::put('feedbacks/{user_id}', [FeedbackController::class, 'changeFeedback']);
+    Route::delete('feedbacks/{sender_id}', [FeedbackController::class, 'deleteFeedback']);
 
     // Справочные данные
     Route::prefix('reference-data')->group(function () {
