@@ -153,7 +153,7 @@ class RobokassaProvider implements PaymentProviderInterface
         $baseUrl = 'https://auth.robokassa.ru/Merchant/Index.aspx';
         $queryParams = [];
 
-        $queryParams['Receipt'] = json_encode([
+        $queryParams['Receipt'] = urlencode(json_encode([
             'items' => [
                 [
                     'name' => $params['description'],
@@ -164,14 +164,14 @@ class RobokassaProvider implements PaymentProviderInterface
                     'tax' => 'none'
                 ]
             ]
-        ]);
-        unset($queryParams['Receipt']);
+        ]));
+        // unset($queryParams['Receipt']);
 
         if (!empty($queryParams['Receipt'])) {
             $signature = $this->signatureMerchant([
-                urlencode($queryParams['Receipt']),
                 $params['price'],
                 $getData['id'],
+                $queryParams['Receipt'],
                 $this->password1,
                 "Shp_product=".$params['product'],
             ]);
