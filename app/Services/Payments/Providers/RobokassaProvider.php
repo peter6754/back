@@ -155,7 +155,16 @@ class RobokassaProvider implements PaymentProviderInterface
             'ExpirationDate' => $expirationDate->format('c'),
             'Shp_product' => $params['product'],
             'isTest' => $this->isTest,
-            'SignatureValue' => $signature
+            'SignatureValue' => $signature,
+            'Receipt' => [
+                'items' => [
+                    [
+                        'name' => $params['description'],
+                        'sum' => $params['price'],
+                        'quantity' => 1
+                    ]
+                ]
+            ]
         ], $queryParams);
 
         if (isset($params['recurring'])) {
