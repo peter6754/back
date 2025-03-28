@@ -10,6 +10,7 @@ use App\Models\Transactions;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 use Backpack\CRUD\app\Library\Widget;
+use Carbon\Carbon;
 use Illuminate\Support\Str;
 
 /**
@@ -52,16 +53,20 @@ class BoughtSubscriptionsCrudController extends CrudController
          * - CRUD::column('price')->type('number');
          */
         $genders = ['m_f', 'm_m', 'f_f'];
-        $todayMenSum = Transactions::getTodayTransactionsSumForMen();
-        $todayWomenSum = Transactions::getTodayTransactionsSumForWomen();
-        $yesterdayMenSum = Transactions::getYesterdayTransactionsSumForMen();
-        $yesterdayWomenSum = Transactions::getYesterdayTransactionsSumForWomen();
-        $todayOtherSum = Transactions::getTodayTransactionsSumForGenders($genders);
-        $yesterdayOtherSum = Transactions::getYesterdayTransactionsSumForGenders($genders);
+        $todayMen = Transactions::getTodayTransactionsSumForMen();
+        $todayWomen = Transactions::getTodayTransactionsSumForWomen();
+        $yesterdayMen = Transactions::getYesterdayTransactionsSumForMen();
+        $yesterdayWomen = Transactions::getYesterdayTransactionsSumForWomen();
+        $todayOther = Transactions::getTodayTransactionsSumForGenders($genders);
+        $yesterdayOther = Transactions::getYesterdayTransactionsSumForGenders($genders);
+        $todayStart = Carbon::now('Europe/Moscow')->startOfDay()->setTimezone('UTC');
+        $todayEnd = Carbon::now('Europe/Moscow')->endOfDay()->setTimezone('UTC');
+        $yesterday = Carbon::now('Europe/Moscow')->subDay()->startOfDay()->setTimezone('UTC');
+        $todayExpired = BoughtSubscriptions::getExpiredSubscriptionsStats($todayStart, $todayEnd);
+        $yesterdayExpired = BoughtSubscriptions::getExpiredSubscriptionsStats($yesterday, $todayStart);
 
         Widget::add()->to('before_content')->type('div')->class('row')->content([
 
-            //widget made using fluent syntax
             Widget::make()
                 ->type('progress')
                 ->class('card mb-3')
@@ -69,8 +74,8 @@ class BoughtSubscriptionsCrudController extends CrudController
                 ->accentColor('green')
                 ->ribbon(['top', 'la-ruble-sign'])
                 ->progressClass('progressbar')
-                ->value($todayMenSum)
-                ->description('Сегодня подписок мужчин на сумму'),
+                ->value("Ж: $todayWomen->count на сумму: $todayWomen->sum <br> М: $todayMen->count на сумму: $todayMen->sum")
+                ->description('Сегодня подключили подписок'),
 
             Widget::make()
                 ->type('progress')
@@ -79,8 +84,8 @@ class BoughtSubscriptionsCrudController extends CrudController
                 ->accentColor('green')
                 ->ribbon(['top', 'la-ruble-sign'])
                 ->progressClass('progressbar')
-                ->value($todayWomenSum)
-                ->description('Сегодня подписок женщин на сумму'),
+                ->value("Ж: $yesterdayWomen->count на сумму: $yesterdayWomen->sum <br> М: $yesterdayMen->count на сумму: $yesterdayMen->sum")
+                ->description('Вчера подключили подписок'),
 
             Widget::make()
                 ->type('progress')
@@ -89,8 +94,8 @@ class BoughtSubscriptionsCrudController extends CrudController
                 ->accentColor('green')
                 ->ribbon(['top', 'la-ruble-sign'])
                 ->progressClass('progressbar')
-                ->value($yesterdayMenSum)
-                ->description('Вчера подписок мужчин на сумму'),
+                ->value("Ж: {$todayExpired->count_women} на сумму: {$todayExpired->total_sum_women} <br> М: {$todayExpired->count_men} на сумму: {$todayExpired->total_sum_men}")
+                ->description('Сегодня закончилось подписок'),
 
             Widget::make()
                 ->type('progress')
@@ -99,28 +104,28 @@ class BoughtSubscriptionsCrudController extends CrudController
                 ->accentColor('green')
                 ->ribbon(['top', 'la-ruble-sign'])
                 ->progressClass('progressbar')
-                ->value($yesterdayWomenSum)
-                ->description('Вчера подписок женщин на сумму'),
+                ->value("Ж: {$yesterdayExpired->count_women} на сумму: {$yesterdayExpired->total_sum_women} <br> М: {$yesterdayExpired->count_men} на сумму: {$yesterdayExpired->total_sum_men}")
+                ->description('Вчера закончилось подписок'),
 
-            Widget::make()
-                ->type('progress')
-                ->class('card mb-3')
-                ->statusBorder('start')
-                ->accentColor('green')
-                ->ribbon(['top', 'la-ruble-sign'])
-                ->progressClass('progressbar')
-                ->value($todayOtherSum)
-                ->description('Сегодня подписок остальных на сумму'),
-
-            Widget::make()
-                ->type('progress')
-                ->class('card mb-3')
-                ->statusBorder('start')
-                ->accentColor('green')
-                ->ribbon(['top', 'la-ruble-sign'])
-                ->progressClass('progressbar')
-                ->value($yesterdayOtherSum)
-                ->description('Вчера подписок остальных на сумму')
+//            Widget::make()
+//                ->type('progress')
+//                ->class('card mb-3')
+//                ->statusBorder('start')
+//                ->accentColor('green')
+//                ->ribbon(['top', 'la-ruble-sign'])
+//                ->progressClass('progressbar')
+//                ->value("Количество: " . $todayOther->count . ", Сумма: " . $todayOther->sum)
+//                ->description('Сегодня подписок остальных на сумму'),
+//
+//            Widget::make()
+//                ->type('progress')
+//                ->class('card mb-3')
+//                ->statusBorder('start')
+//                ->accentColor('green')
+//                ->ribbon(['top', 'la-ruble-sign'])
+//                ->progressClass('progressbar')
+//                ->value("Количество: " . $yesterdayOther->count . ", Сумма: " . $yesterdayOther->sum)
+//                ->description('Вчера подписок остальных на сумму')
         ]);
 
     }
