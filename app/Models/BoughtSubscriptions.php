@@ -26,4 +26,19 @@ class BoughtSubscriptions extends Model
     {
         return $this->belongsTo(SubscriptionPackages::class);
     }
+
+    public static function getExpiredSubscriptionsStats($dateStart, $dateEnd)
+    {
+
+        return self::join('transactions', 'transactions.id', '=', 'bought_subscriptions.transaction_id')
+            ->join('users', 'transactions.user_id', '=', 'users.id')
+            ->whereBetween('bought_subscriptions.due_date', [$dateStart, $dateEnd])
+            ->selectRaw("
+            SUM(CASE WHEN users.gender = 'male' THEN transactions.price ELSE 0 END) as total_sum_men,
+            COUNT(CASE WHEN users.gender = 'male' THEN bought_subscriptions.id ELSE NULL END) as count_men,
+            SUM(CASE WHEN users.gender = 'female' THEN transactions.price ELSE 0 END) as total_sum_women,
+            COUNT(CASE WHEN users.gender = 'female' THEN bought_subscriptions.id ELSE NULL END) as count_women
+        ")
+            ->first();
+    }
 }
