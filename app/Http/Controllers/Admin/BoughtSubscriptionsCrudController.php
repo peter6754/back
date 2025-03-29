@@ -74,7 +74,8 @@ class BoughtSubscriptionsCrudController extends CrudController
                 ->accentColor('green')
                 ->ribbon(['top', 'la-ruble-sign'])
                 ->progressClass('progressbar')
-                ->value("Ж: $todayWomen->count на сумму: $todayWomen->sum <br> М: $todayMen->count на сумму: $todayMen->sum")
+                ->value("Ж: $todayWomen->count на сумму: $todayWomen->sum <br>
+                         М: $todayMen->count на сумму: $todayMen->sum <br> Итого: " . ($todayWomen->sum + $todayMen->sum))
                 ->description('Сегодня подключили подписок'),
 
             Widget::make()
@@ -84,7 +85,8 @@ class BoughtSubscriptionsCrudController extends CrudController
                 ->accentColor('green')
                 ->ribbon(['top', 'la-ruble-sign'])
                 ->progressClass('progressbar')
-                ->value("Ж: $yesterdayWomen->count на сумму: $yesterdayWomen->sum <br> М: $yesterdayMen->count на сумму: $yesterdayMen->sum")
+                ->value("Ж: $yesterdayWomen->count на сумму: $yesterdayWomen->sum <br>
+                         М: $yesterdayMen->count на сумму: $yesterdayMen->sum <br> Итого: " . ($yesterdayWomen->sum + $yesterdayMen->sum))
                 ->description('Вчера подключили подписок'),
 
             Widget::make()
@@ -94,7 +96,8 @@ class BoughtSubscriptionsCrudController extends CrudController
                 ->accentColor('green')
                 ->ribbon(['top', 'la-ruble-sign'])
                 ->progressClass('progressbar')
-                ->value("Ж: {$todayExpired->count_women} на сумму: {$todayExpired->total_sum_women} <br> М: {$todayExpired->count_men} на сумму: {$todayExpired->total_sum_men}")
+                ->value("Ж: {$todayExpired->count_women} на сумму: {$todayExpired->total_sum_women} <br>
+                         М: {$todayExpired->count_men} на сумму: {$todayExpired->total_sum_men} <br> Итого: " . ($todayExpired->total_sum_women + $todayExpired->total_sum_men))
                 ->description('Сегодня закончилось подписок'),
 
             Widget::make()
@@ -104,7 +107,8 @@ class BoughtSubscriptionsCrudController extends CrudController
                 ->accentColor('green')
                 ->ribbon(['top', 'la-ruble-sign'])
                 ->progressClass('progressbar')
-                ->value("Ж: {$yesterdayExpired->count_women} на сумму: {$yesterdayExpired->total_sum_women} <br> М: {$yesterdayExpired->count_men} на сумму: {$yesterdayExpired->total_sum_men}")
+                ->value("Ж: {$yesterdayExpired->count_women} на сумму: {$yesterdayExpired->total_sum_women} <br>
+                         М: {$yesterdayExpired->count_men} на сумму: {$yesterdayExpired->total_sum_men} <br> Итого: " . ($yesterdayExpired->total_sum_women + $yesterdayExpired->total_sum_men))
                 ->description('Вчера закончилось подписок'),
 
 //            Widget::make()
