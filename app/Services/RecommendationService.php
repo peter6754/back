@@ -297,33 +297,106 @@ class RecommendationService
      */
     public function superlike(string $userId, array $params)
     {
-        $reactionExists = $this->checkExistingReaction($userId, $params);
-        $superboom = $this->getSuperboomStatus($params);
-
-        $this->updateOrCreateReaction([
-            'user_id' => $params['user_id'],
+        Log::channel('recommendations')->info('RecommendationService > superlike called with:', [
             'reactor_id' => $userId,
-        ], [
-            'from_top' => $params['from_top'] ?? false,
-            'superboom' => $superboom,
-            'type' => 'superlike',
-            'date' => now()
+            'data' => $params
         ]);
 
-        UserInformation::where('user_id', $userId)->decrement('superlikes');
+        try {
+            $user = Secondaryuser::with([
+                'userDeviceTokens',
+                'userInformation',
+                'userSettings'
+            ])
+            ->select(['id', 'email'])
+            ->findOrFail($params['user_id']);
 
-        if (!empty($params['comment'])) {
-            $this->leaveComment($params['comment'], $userId, $params['user_id']);
+            $reaction = UserReaction::where([
+                'reactor_id' => $params['user_id'],
+                'user_id' => $userId
+            ])
+            ->whereIn('type', ['like', 'superlike'])
+            ->first();
+
+            Log::channel('recommendations')->info('RecommendationService > superlike > user:', [
+                'reactor_id' => $userId,
+                'user' => $user
+            ]);
+
+            Log::channel('recommendations')->info('RecommendationService > superlike > reaction:', [
+                'reactor_id' => $userId,
+                'reaction' => $reaction
+            ]);
+
+            UserReaction::updateOrCreate(
+                [
+                    'reactor_id' => $userId,
+                    'user_id' => $params['user_id']
+                ],
+                [
+                    'date' => now(),
+                    'type' => 'superlike',
+                    'superboom' => $user->userInformation && $user->userInformation->superboom_due_date >= now(),
+                    'from_top' => $params['from_top'] ?? false
+                ]
+            );
+
+            UserInformation::where('user_id', $userId)->decrement('superlikes');
+
+            if (!empty($params['comment'])) {
+                $this->leaveComment($params['comment'], $userId, $params['user_id']);
+            }
+
+            $userTokens = $user->userDeviceTokens->pluck('token')->filter()->toArray();
+
+            if ($reaction && $user->userSettings->new_couples_push) {
+                (new NotificationService())->sendPushNotification(
+                    $userTokens,
+                    "У вас совпала новая пара! Зайдите, чтобы посмотреть и начать общение.",
+                    "Новая пара!"
+                );
+            } elseif (!$reaction && $user->userSettings->new_super_likes_push) {
+                (new NotificationService())->sendPushNotification(
+                    $userTokens,
+                    "Вам поставили суперлайк! Заходите в TinderOne, чтобы найти свою пару!",
+                    "Вы кому-то нравитесь!"
+                );
+            }
+
+            if ($user->email) {
+                try {
+                    \Mail::send('emails.new_match', [], function($message) use ($user) {
+                        $message->to($user->email)->subject('Новая пара в TinderOne');
+                    });
+
+                    Log::channel('recommendations')->info('RecommendationService > superlike > match email sent:', [
+                        'reactor_id' => $userId,
+                        'email' => $user->email
+                    ]);
+                } catch (\Exception $e) {
+                    Log::channel('recommendations')->error('RecommendationService > superlike > email error:', [
+                        'reactor_id' => $userId,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+
+            Log::channel('recommendations')->info('RecommendationService > superlike finished with:', [
+                'reactor_id' => $userId,
+                'is_match' => !!$reaction
+            ]);
+
+            return [
+                'is_match' => $reaction ? true : false
+            ];
+
+        } catch (\Exception $err) {
+            Log::channel('recommendations')->error('RecommendationService > superlike > error:', [
+                'user_id' => $params['user_id'],
+                'err' => $err->getMessage()
+            ]);
+            throw $err;
         }
-
-        // Send notifications
-        (new \App\Services\RecommendationService())->handleLikeNotification(
-            $params['user_id'],
-            $reactionExists,
-            true
-        );
-
-        return ['is_match' => $reactionExists];
     }
 
     /**
