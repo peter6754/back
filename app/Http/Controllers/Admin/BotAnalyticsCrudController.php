@@ -60,29 +60,55 @@ class BotAnalyticsCrudController extends CrudController
         $today = Carbon::today();
         $todayEnd = Carbon::today()->endOfDay();
 
-        $botIds = Secondaryuser::where('is_bot', 1)->pluck('id');
-
-        $likedUsers = UserReaction::whereIn('reactor_id', $botIds)
+        $likedUsersQuery = UserReaction::select('user_id')
+            ->whereIn('reactor_id', function($query) {
+                $query->select('id')
+                    ->from('users')
+                    ->where('is_bot', 1);
+            })
             ->whereBetween('date', [$today, $todayEnd])
-            ->distinct()
-            ->pluck('user_id');
+            ->distinct();
 
-        $totalLikedUsers = $likedUsers->count();
+        $totalLikedUsers = $likedUsersQuery->count();
 
-        $purchasedUsers = Transactions::whereIn('user_id', $likedUsers)
+        $purchasedUsers = Transactions::whereIn('user_id', function($query) use ($today, $todayEnd) {
+            $query->select('user_id')
+                ->from('user_reactions')
+                ->whereIn('reactor_id', function($subQuery) {
+                    $subQuery->select('id')
+                        ->from('users')
+                        ->where('is_bot', 1);
+                })
+                ->whereBetween('date', [$today, $todayEnd])
+                ->distinct();
+        })
             ->whereBetween('purchased_at', [$today, $todayEnd])
             ->where('price', '>', 0)
             ->where('status', 'succeeded')
             ->distinct()
             ->count('user_id');
 
-        $totalRevenue = Transactions::whereIn('user_id', $likedUsers)
+        $totalRevenue = Transactions::whereIn('user_id', function($query) use ($today, $todayEnd) {
+            $query->select('user_id')
+                ->from('user_reactions')
+                ->whereIn('reactor_id', function($subQuery) {
+                    $subQuery->select('id')
+                        ->from('users')
+                        ->where('is_bot', 1);
+                })
+                ->whereBetween('date', [$today, $todayEnd])
+                ->distinct();
+        })
             ->whereBetween('purchased_at', [$today, $todayEnd])
             ->where('price', '>', 0)
             ->where('status', 'succeeded')
             ->sum('price');
 
-        $totalLikes = UserReaction::whereIn('reactor_id', $botIds)
+        $totalLikes = UserReaction::whereIn('reactor_id', function($query) {
+            $query->select('id')
+                ->from('users')
+                ->where('is_bot', 1);
+        })
             ->whereBetween('date', [$today, $todayEnd])
             ->count();
 
@@ -91,7 +117,7 @@ class BotAnalyticsCrudController extends CrudController
             'unique_liked_users' => $totalLikedUsers,
             'purchased_users' => $purchasedUsers,
             'conversion_rate' => $totalLikedUsers > 0 ? round(($purchasedUsers / $totalLikedUsers) * 100, 2) : 0,
-            'total_revenue' => $totalRevenue,
+            'total_revenue' => $totalRevenue ?: 0,
             'date' => $today->format('d.m.Y')
         ];
     }
@@ -101,23 +127,32 @@ class BotAnalyticsCrudController extends CrudController
      */
     private function getWeeklyAnalytics()
     {
-        $weekAgo = Carbon::today()->subDays(7);
-        $today = Carbon::today()->endOfDay();
-
-        $botIds = Secondaryuser::where('is_bot', 1)->pluck('id');
-
         $weeklyData = [];
 
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::today()->subDays($i);
             $dateEnd = $date->copy()->endOfDay();
 
-            $likedUsers = UserReaction::whereIn('reactor_id', $botIds)
+            $likedUsersCount = UserReaction::whereIn('reactor_id', function($query) {
+                $query->select('id')
+                    ->from('users')
+                    ->where('is_bot', 1);
+            })
                 ->whereBetween('date', [$date, $dateEnd])
                 ->distinct()
-                ->pluck('user_id');
+                ->count('user_id');
 
-            $purchased = Transactions::whereIn('user_id', $likedUsers)
+            $purchased = Transactions::whereIn('user_id', function($query) use ($date, $dateEnd) {
+                $query->select('user_id')
+                    ->from('user_reactions')
+                    ->whereIn('reactor_id', function($subQuery) {
+                        $subQuery->select('id')
+                            ->from('users')
+                            ->where('is_bot', 1);
+                    })
+                    ->whereBetween('date', [$date, $dateEnd])
+                    ->distinct();
+            })
                 ->whereBetween('purchased_at', [$date, $dateEnd])
                 ->where('price', '>', 0)
                 ->where('status', 'succeeded')
@@ -126,9 +161,9 @@ class BotAnalyticsCrudController extends CrudController
 
             $weeklyData[] = [
                 'date' => $date->format('d.m'),
-                'liked_users' => $likedUsers->count(),
+                'liked_users' => $likedUsersCount,
                 'purchased_users' => $purchased,
-                'conversion_rate' => $likedUsers->count() > 0 ? round(($purchased / $likedUsers->count()) * 100, 1) : 0
+                'conversion_rate' => $likedUsersCount > 0 ? round(($purchased / $likedUsersCount) * 100, 1) : 0
             ];
         }
 
@@ -142,10 +177,13 @@ class BotAnalyticsCrudController extends CrudController
     {
         $totalBots = Secondaryuser::where('is_bot', 1)->count();
 
+
         $weekAgo = Carbon::today()->subDays(7);
-        $activeBots = UserReaction::whereIn('reactor_id',
-            Secondaryuser::where('is_bot', 1)->pluck('id')
-        )
+        $activeBots = UserReaction::whereIn('reactor_id', function($query) {
+            $query->select('id')
+                ->from('users')
+                ->where('is_bot', 1);
+        })
             ->where('date', '>=', $weekAgo)
             ->distinct()
             ->count('reactor_id');
@@ -163,27 +201,56 @@ class BotAnalyticsCrudController extends CrudController
      */
     private function getConversionAnalytics()
     {
-        $botIds = Secondaryuser::where('is_bot', 1)->pluck('id');
 
         $weeks = [];
 
         for ($i = 3; $i >= 0; $i--) {
-            $startDate = Carbon::today()->subWeeks($i + 1)->startOfWeek();
-            $endDate = Carbon::today()->subWeeks($i)->endOfWeek();
 
-            $likedUsers = UserReaction::whereIn('reactor_id', $botIds)
+            $endDate = Carbon::today()->subWeeks($i)->endOfDay();
+            $startDate = Carbon::today()->subWeeks($i + 1)->addDay()->startOfDay();
+
+            if ($i === 0) {
+                $endDate = Carbon::today()->endOfDay();
+                $startDate = Carbon::today()->subWeeks(1)->addDay()->startOfDay();
+            }
+
+            $likedUsersCount = UserReaction::whereIn('reactor_id', function($query) {
+                $query->select('id')
+                    ->from('users')
+                    ->where('is_bot', 1);
+            })
                 ->whereBetween('date', [$startDate, $endDate])
                 ->distinct()
-                ->pluck('user_id');
+                ->count('user_id');
 
-            $purchased = Transactions::whereIn('user_id', $likedUsers)
+            $purchased = Transactions::whereIn('user_id', function($query) use ($startDate, $endDate) {
+                $query->select('user_id')
+                    ->from('user_reactions')
+                    ->whereIn('reactor_id', function($subQuery) {
+                        $subQuery->select('id')
+                            ->from('users')
+                            ->where('is_bot', 1);
+                    })
+                    ->whereBetween('date', [$startDate, $endDate])
+                    ->distinct();
+            })
                 ->whereBetween('purchased_at', [$startDate, $endDate])
                 ->where('price', '>', 0)
                 ->where('status', 'succeeded')
                 ->distinct()
                 ->count('user_id');
 
-            $revenue = Transactions::whereIn('user_id', $likedUsers)
+            $revenue = Transactions::whereIn('user_id', function($query) use ($startDate, $endDate) {
+                $query->select('user_id')
+                    ->from('user_reactions')
+                    ->whereIn('reactor_id', function($subQuery) {
+                        $subQuery->select('id')
+                            ->from('users')
+                            ->where('is_bot', 1);
+                    })
+                    ->whereBetween('date', [$startDate, $endDate])
+                    ->distinct();
+            })
                 ->whereBetween('purchased_at', [$startDate, $endDate])
                 ->where('price', '>', 0)
                 ->where('status', 'succeeded')
@@ -191,10 +258,10 @@ class BotAnalyticsCrudController extends CrudController
 
             $weeks[] = [
                 'period' => $startDate->format('d.m') . ' - ' . $endDate->format('d.m'),
-                'liked_users' => $likedUsers->count(),
+                'liked_users' => $likedUsersCount,
                 'purchased_users' => $purchased,
-                'conversion_rate' => $likedUsers->count() > 0 ? round(($purchased / $likedUsers->count()) * 100, 1) : 0,
-                'revenue' => $revenue
+                'conversion_rate' => $likedUsersCount > 0 ? round(($purchased / $likedUsersCount) * 100, 1) : 0,
+                'revenue' => $revenue ?: 0
             ];
         }
 
