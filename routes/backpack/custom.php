@@ -37,6 +37,7 @@ Route::group([
     Route::crud('mail-queue', 'MailQueueCrudController');
     Route::crud('mail-template', 'MailTemplateCrudController');
     Route::crud('city-analytics', 'CityAnalyticsCrudController');
+    Route::crud('bot-analytics', 'BotAnalyticsCrudController');
 
 
 // Роуты для управления фотографиями пользователей
