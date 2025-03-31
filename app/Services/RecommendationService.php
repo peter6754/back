@@ -303,6 +303,25 @@ class RecommendationService
         ]);
 
         try {
+            // Get user information and check superlike allocation
+            $userInfo = UserInformation::where('user_id', $userId)->first();
+            
+            if (!$userInfo) {
+                $userInfo = UserInformation::create(['user_id' => $userId]);
+            }
+            
+            // Try to allocate weekly superlikes if eligible
+            $userInfo->allocateWeeklySuperlikes();
+            $userInfo->refresh();
+            
+            if ($userInfo->getRemainingSuperlikes() <= 0) {
+                Log::channel('recommendations')->warning('RecommendationService > superlike > no superlikes remaining:', [
+                    'reactor_id' => $userId,
+                    'remaining' => $userInfo->getRemainingSuperlikes()
+                ]);
+                
+                throw new \Exception('No superlikes remaining for this week');
+            }
             $user = Secondaryuser::with([
                 'userDeviceTokens',
                 'userInformation',
@@ -341,7 +360,8 @@ class RecommendationService
                 ]
             );
 
-            UserInformation::where('user_id', $userId)->decrement('superlikes');
+            // Use superlike from user information
+            $userInfo->useSuperlike();
 
             if (!empty($params['comment'])) {
                 $this->leaveComment($params['comment'], $userId, $params['user_id']);

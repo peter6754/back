@@ -140,10 +140,10 @@ class RecommendationsController extends Controller
             $getResponse = $this->recommendations->getRecommendations($request->user(), $query);
 
             // Return string error
-            if (!empty($getResponse['message'])) {
+            if (! empty($getResponse['message'])) {
 
                 if ($request->get('debug') == '1') {
-                    $errorCode = !empty($getResponse['code']) ? (9000 + $getResponse['code']) : 9404;
+                    $errorCode = ! empty($getResponse['code']) ? (9000 + $getResponse['code']) : 9404;
                     $httpCode = $getResponse['code'] ?? 404;
                     return $this->errorResponse(
                         $getResponse['message'],
