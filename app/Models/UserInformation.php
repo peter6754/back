@@ -39,6 +39,7 @@ class UserInformation extends Model
         'superlikes',
         'superlikes_last_reset',
         'superbooms',
+        'superbooms_last_reset',
         'superboom_due_date',
         'like_update',
         'last_banner'
@@ -46,6 +47,7 @@ class UserInformation extends Model
 
     protected $casts = [
         'superlikes_last_reset' => 'date',
+        'superbooms_last_reset' => 'date',
         'superboom_due_date' => 'datetime',
     ];
 
