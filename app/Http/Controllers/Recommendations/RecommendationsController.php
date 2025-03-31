@@ -468,4 +468,43 @@ class RecommendationsController extends Controller
             );
         }
     }
+
+    /**
+     * @param  Request  $request
+     * @OA\Post(
+     *      path="/recommendations/superboom",
+     *      tags={"Recommendations"},
+     *      security={{"bearerAuth":{}}},
+     *      summary="Activate superboom for user",
+     *
+     *      @OA\Response(
+     *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse"),
+     *          description="Successful operation",
+     *          response=201,
+     *      ),
+     *
+     *      @OA\Response(
+     *          @OA\JsonContent(ref="#/components/schemas/Unauthorized"),
+     *          description="Unauthorized",
+     *          response=401
+     *      )
+     *  )
+     * @return JsonResponse
+     */
+    public function superboom(Request $request): JsonResponse
+    {
+        try {
+            return $this->successResponse(
+                $this->recommendations->superboom($request->user()->id)
+            );
+        } catch (Exception $e) {
+            Log::channel('recommendations')->error(basename(__FILE__, ".php").' > '.__FUNCTION__.' error:', [
+                'user_id' => $request->user()->id ?? 'unknown',
+                'error' => $e->getMessage()
+            ]);
+            return $this->errorResponse(
+                $e->getMessage()
+            );
+        }
+    }
 }

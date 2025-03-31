@@ -688,4 +688,45 @@ class RecommendationService
             'from_reels' => false,
         ], $values));
     }
+
+    /**
+     * Activate superboom for user - extends superboom period by 30 minutes
+     *
+     * @param string $userId
+     * @return array
+     * @throws \Exception
+     */
+    public function superboom(string $userId): array
+    {
+        try {
+            $userInformation = UserInformation::where('user_id', $userId)->first();
+
+            if (!$userInformation) {
+                throw new \Exception('User information not found');
+            }
+
+            if ($userInformation->superbooms <= 0) {
+                throw new \Exception('No superboom available');
+            }
+
+            $currentSuperboomDate = $userInformation->superboom_due_date ?
+                \Carbon\Carbon::parse($userInformation->superboom_due_date) : null;
+            $now = now();
+
+            $baseDate = ($currentSuperboomDate && $currentSuperboomDate > $now) ? $currentSuperboomDate : $now;
+            $newSuperboomDate = $baseDate->copy()->addMinutes(30);
+
+            UserInformation::where('user_id', $userId)->update([
+                'superboom_due_date' => $newSuperboomDate,
+                'superbooms' => $userInformation->superbooms - 1
+            ]);
+
+            return [
+                'message' => 'Action was executed successfully'
+            ];
+
+        } catch (\Exception $e) {
+            throw $e;
+        }
+    }
 }
