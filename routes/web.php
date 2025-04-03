@@ -28,6 +28,9 @@ Route::prefix('recommendations')->middleware('auth')->group(function () {
     // Superlike action
     Route::post('superlike', [RecommendationsController::class, 'superlike']);
 
+    // Superboom action
+    Route::post('superboom', [RecommendationsController::class, 'superboom']);
+
     // Rollback action
     Route::post('rollback', [RecommendationsController::class, 'rollback']);
 

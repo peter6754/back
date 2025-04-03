@@ -140,10 +140,10 @@ class RecommendationsController extends Controller
             $getResponse = $this->recommendations->getRecommendations($request->user(), $query);
 
             // Return string error
-            if (!empty($getResponse['message'])) {
+            if (! empty($getResponse['message'])) {
 
                 if ($request->get('debug') == '1') {
-                    $errorCode = !empty($getResponse['code']) ? (9000 + $getResponse['code']) : 9404;
+                    $errorCode = ! empty($getResponse['code']) ? (9000 + $getResponse['code']) : 9404;
                     $httpCode = $getResponse['code'] ?? 404;
                     return $this->errorResponse(
                         $getResponse['message'],
@@ -465,6 +465,45 @@ class RecommendationsController extends Controller
             ]);
             return $this->errorResponse(
                 "Internal error"
+            );
+        }
+    }
+
+    /**
+     * @param  Request  $request
+     * @OA\Post(
+     *      path="/recommendations/superboom",
+     *      tags={"Recommendations"},
+     *      security={{"bearerAuth":{}}},
+     *      summary="Activate superboom for user",
+     *
+     *      @OA\Response(
+     *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse"),
+     *          description="Successful operation",
+     *          response=201,
+     *      ),
+     *
+     *      @OA\Response(
+     *          @OA\JsonContent(ref="#/components/schemas/Unauthorized"),
+     *          description="Unauthorized",
+     *          response=401
+     *      )
+     *  )
+     * @return JsonResponse
+     */
+    public function superboom(Request $request): JsonResponse
+    {
+        try {
+            return $this->successResponse(
+                $this->recommendations->superboom($request->user()->id)
+            );
+        } catch (Exception $e) {
+            Log::channel('recommendations')->error(basename(__FILE__, ".php").' > '.__FUNCTION__.' error:', [
+                'user_id' => $request->user()->id ?? 'unknown',
+                'error' => $e->getMessage()
+            ]);
+            return $this->errorResponse(
+                $e->getMessage()
             );
         }
     }

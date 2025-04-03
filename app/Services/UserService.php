@@ -9,6 +9,7 @@ use App\Models\LikeSettings;
 use App\Models\Secondaryuser;
 use App\Models\UserPreference;
 use App\Models\UserSettings;
+use App\Models\UserInformation;
 use Exception;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -316,7 +317,7 @@ class UserService
                 ] : null,
                 'role' => $user['user_information']['role'] ?? null,
                 'company' => $user['user_information']['company'] ?? null,
-                'superlikes' => $user['user_information']['superlikes'] ?? null,
+                'superlikes' => $this->getUserSuperlikes($userId),
                 'superbooms' => $user['user_information']['superbooms'] ?? null,
                 ...(in_array($user['gender'], $this->maleGenders) ?
                     ['likes' => 30 - count($user['sent_reactions'] ?? [])] :
@@ -1220,5 +1221,23 @@ class UserService
         return [
             'message' => 'Data updated successfully',
         ];
+    }
+
+    /**
+     * Get user's remaining superlikes from user information
+     */
+    private function getUserSuperlikes(string $userId): int
+    {
+        $userInfo = UserInformation::where('user_id', $userId)->first();
+        
+        if (!$userInfo) {
+            return 0;
+        }
+
+        // Try to allocate weekly superlikes if eligible
+        $userInfo->allocateWeeklySuperlikes();
+        $userInfo->refresh();
+        
+        return $userInfo->getRemainingSuperlikes();
     }
 }
