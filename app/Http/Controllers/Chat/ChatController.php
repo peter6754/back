@@ -393,6 +393,13 @@ class ChatController extends Controller
                 ->values()
                 ->toArray();
 
+            // Get list of user IDs who already have conversations with current user
+            $usersWithConversations = $conversations->map(function ($conversation) use ($userId) {
+                return $conversation->user1_id === $userId
+                    ? $conversation->user2_id
+                    : $conversation->user1_id;
+            })->unique()->values()->toArray();
+
             // Get matched users with their avatars and match timestamps
             $matchedUsersWithTimestamp = \DB::table('user_reactions as ur1')
                 ->join('user_reactions as ur2', function ($join) {
@@ -444,8 +451,10 @@ class ChatController extends Controller
                 }
 
                 // Build matches array maintaining the time-based order
-                $matches = $matchedUsersWithTimestamp->map(function ($match) use ($users, $mainImages, $fallbackImages) {
-                    if (empty($users[$match->user_id])) {
+                // Exclude users who already have conversations
+                $matches = $matchedUsersWithTimestamp->map(function ($match) use ($users, $mainImages, $fallbackImages, $usersWithConversations) {
+                    // Skip if user not found or already has conversation
+                    if (empty($users[$match->user_id]) || in_array($match->user_id, $usersWithConversations)) {
                         return null;
                     }
                     $user = $users[$match->user_id];
