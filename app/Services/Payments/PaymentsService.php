@@ -143,15 +143,15 @@ class PaymentsService extends Manager
 
         // Get price
         $package = ServicePackages::with('price')
-            ->find((int)$params["package_id"]);
-        if (!$package) {
+            ->find((int) $params["package_id"]);
+        if (! $package) {
             throw new \Exception("Item not found", 4040);
         }
         $package = $package->toArray();
 
         // Calculate product price
         $price = $package['price'][$gender] * $package['count'];
-//        $discount = ((100 - $package['stock']) / 100);
+        //        $discount = ((100 - $package['stock']) / 100);
         $discount = 1;
 
         // Create payment
@@ -178,13 +178,13 @@ class PaymentsService extends Manager
 
         // Get price
         $package = SubscriptionPackages::with('price')
-            ->find((int)$params["package_id"]);
-        if (!$package) {
+            ->find((int) $params["package_id"]);
+        if (! $package) {
             throw new \Exception("Item not found", 4040);
         }
         $package->toArray();
 
-//        $getSubscriptions = DB::table('bought_subscriptions')
+        //        $getSubscriptions = DB::table('bought_subscriptions')
 //            ->select([
 //                'bought_subscriptions.*',
 //                'transactions.user_id',
@@ -197,7 +197,7 @@ class PaymentsService extends Manager
 //        print_r($getSubscriptions);
 //        exit;
 
-        $price = (float)$package['price'][$gender];
+        $price = (float) $package['price'][$gender];
         if ($params["from_banner"]) {
             $price *= 0.7;
         }
@@ -230,9 +230,9 @@ class PaymentsService extends Manager
         $gender = self::$genders[$params["customer"]["gender"]];
 
         // Get price
-        $gift = Gifts::with('price')->find((int)$params["gift_id"]);
+        $gift = Gifts::with('price')->find((int) $params["gift_id"]);
         $user = Secondaryuser::find($params["user_id"]);
-        if (!$user || !$gift) {
+        if (! $user || ! $gift) {
             throw new \Exception("Gift/User doesn't exist", 4060);
         }
 
@@ -241,7 +241,7 @@ class PaymentsService extends Manager
 
         return $this->createPayment($provider, [
             "product" => PaymentsService::ORDER_PRODUCT_GIFT,
-            "price" => (float)$gift['price'][$gender],
+            "price" => (float) $gift['price'][$gender],
             "product_id" => $params["gift_id"],
             "customer" => $params["customer"],
             "receiver_id" => $user['id'],
@@ -258,22 +258,24 @@ class PaymentsService extends Manager
         try {
             $updateParams = [];
 
-            if (!empty($params['superlike'])) {
-                $updateParams['superlikes'] = DB::raw("`superlikes` + '{$params['superlike']}'");
+            // Add to purchased superlikes (not allocated ones)
+            if (! empty($params['superlike'])) {
+                $updateParams['purchased_superlikes'] = DB::raw("`purchased_superlikes` + '{$params['superlike']}'");
             }
 
-            if (!empty($params['superboom'])) {
-                $updateParams['superbooms'] = DB::raw("`superbooms` + '{$params['superboom']}'");
+            // Add to purchased superbooms (not allocated ones)
+            if (! empty($params['superboom'])) {
+                $updateParams['purchased_superbooms'] = DB::raw("`purchased_superbooms` + '{$params['superboom']}'");
             }
 
-            if (!empty($updateParams)) {
+            if (! empty($updateParams)) {
                 DB::table('user_information')
                     ->where('user_id', $params['user_id'])
                     ->update($updateParams);
             }
             return true;
         } catch (\Exception $e) {
-            Log::channel('payments')->error('Sending service failed: ' . $e->getMessage(), [
+            Log::channel('payments')->error('Sending service failed: '.$e->getMessage(), [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
@@ -318,7 +320,7 @@ class PaymentsService extends Manager
             });
             return true;
         } catch (\Exception $e) {
-            Log::channel('payments')->error('Sending subscription failed: ' . $e->getMessage(), [
+            Log::channel('payments')->error('Sending subscription failed: '.$e->getMessage(), [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
@@ -348,10 +350,10 @@ class PaymentsService extends Manager
                 'user_id' => $params['gift_receiver_id'],
                 'sender_id' => $params['gift_sender_id'],
                 'gift_id' => $params['gift_id']
-            ], !$hasPreviousMessages);
+            ], ! $hasPreviousMessages);
 
             // Уведомление о подарке
-            if (!$hasPreviousMessages) {
+            if (! $hasPreviousMessages) {
                 (new NotificationService())->sendPushNotification(
                     json_decode($params['receiver_device_tokens'], true),
                     PushMessages::NEW_GIFT_PUSH['message'],
@@ -361,7 +363,7 @@ class PaymentsService extends Manager
 
             return true;
         } catch (\Exception $e) {
-            Log::channel('payments')->error("Sending gift failed: " . $e->getMessage(), [
+            Log::channel('payments')->error("Sending gift failed: ".$e->getMessage(), [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
@@ -446,7 +448,7 @@ class PaymentsService extends Manager
                 return $updatedProcess > 0 && $updatedTransaction > 0;
             });
         } catch (\Exception $e) {
-            Log::channel('payments')->error('Error updating transaction: ' . $e->getMessage(), [
+            Log::channel('payments')->error('Error updating transaction: '.$e->getMessage(), [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),

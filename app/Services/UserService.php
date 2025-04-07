@@ -318,7 +318,7 @@ class UserService
                 'role' => $user['user_information']['role'] ?? null,
                 'company' => $user['user_information']['company'] ?? null,
                 'superlikes' => $this->getUserSuperlikes($userId),
-                'superbooms' => $user['user_information']['superbooms'] ?? null,
+                'superbooms' => $this->getUserSuperbooms($userId),
                 ...(in_array($user['gender'], $this->maleGenders) ?
                     ['likes' => 30 - count($user['sent_reactions'] ?? [])] :
                     []
@@ -1235,5 +1235,19 @@ class UserService
         }
 
         return $userInfo->getRemainingSuperlikes();
+    }
+
+    /**
+     * Get user's remaining superbooms from user information
+     */
+    private function getUserSuperbooms(string $userId): int
+    {
+        $userInfo = UserInformation::where('user_id', $userId)->first();
+
+        if (!$userInfo) {
+            return 0;
+        }
+
+        return $userInfo->getRemainingSuperbooms();
     }
 }
