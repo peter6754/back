@@ -705,7 +705,8 @@ class RecommendationService
                 throw new \Exception('User information not found');
             }
 
-            if ($userInformation->superbooms <= 0) {
+            // Check combined balance (allocated + purchased)
+            if ($userInformation->getRemainingSuperbooms() <= 0) {
                 throw new \Exception('No superboom available');
             }
 
@@ -716,9 +717,13 @@ class RecommendationService
             $baseDate = ($currentSuperboomDate && $currentSuperboomDate > $now) ? $currentSuperboomDate : $now;
             $newSuperboomDate = $baseDate->copy()->addMinutes(30);
 
-            UserInformation::where('user_id', $userId)->update([
+            // Use the useSuperboom method to properly deduct from allocated first, then purchased
+            if (!$userInformation->useSuperboom()) {
+                throw new \Exception('Failed to use superboom');
+            }
+
+            $userInformation->update([
                 'superboom_due_date' => $newSuperboomDate,
-                'superbooms' => $userInformation->superbooms - 1
             ]);
 
             return [
