@@ -150,10 +150,10 @@ class UserInformation extends Model
     }
 
     /**
-     * Allocate weekly superbooms for subscribed users
+     * Allocate monthly superbooms for subscribed users
      * Resets allocated superbooms to 1, keeps purchased superbooms intact
      */
-    public function allocateWeeklySuperbooms(): void
+    public function allocateMonthlySuperbooms(): void
     {
         $user = $this->user;
 
@@ -169,14 +169,14 @@ class UserInformation extends Model
             return;
         }
 
-        $currentWeek = now()->startOfWeek()->toDateString();
+        $currentMonth = now()->startOfMonth()->toDateString();
 
-        // Only allocate if not already done this week
+        // Only allocate if not already done this month
         // Reset allocated superbooms to 1, purchased_superbooms remain unchanged
-        if ($this->superbooms_last_reset !== $currentWeek) {
+        if ($this->superbooms_last_reset !== $currentMonth) {
             $this->update([
                 'superbooms' => 1,
-                'superbooms_last_reset' => $currentWeek,
+                'superbooms_last_reset' => $currentMonth,
             ]);
         }
     }

@@ -5,30 +5,29 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\Secondaryuser;
 use App\Models\UserInformation;
-use Carbon\Carbon;
 
-class AllocateWeeklySuperboomsCommand extends Command
+class AllocateMonthlySuperboomsCommand extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'superbooms:allocate-weekly';
+    protected $signature = 'superbooms:allocate-monthly';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Allocate weekly superbooms for gold and premium subscribers';
+    protected $description = 'Allocate monthly superbooms for gold and premium subscribers';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $this->info('Starting weekly superboom allocation...');
+        $this->info('Starting monthly superboom allocation...');
 
         $allocated = 0;
         $processed = 0;
@@ -47,7 +46,7 @@ class AllocateWeeklySuperboomsCommand extends Command
 
             $previousSuperbooms = $userInfo->superbooms ?? 0;
 
-            $this->allocateWeeklySuperbooms($userInfo);
+            $this->allocateMonthlySuperbooms($userInfo);
 
             $userInfo->refresh();
 
@@ -58,15 +57,15 @@ class AllocateWeeklySuperboomsCommand extends Command
 
         $this->info("Processed {$processed} subscribed users");
         $this->info("Allocated superbooms for {$allocated} users");
-        $this->info('Weekly superboom allocation completed!');
+        $this->info('Monthly superboom allocation completed!');
 
         return 0;
     }
 
     /**
-     * Allocate weekly superbooms for subscribed users
+     * Allocate monthly superbooms for subscribed users
      */
-    private function allocateWeeklySuperbooms(UserInformation $userInfo): void
+    private function allocateMonthlySuperbooms(UserInformation $userInfo): void
     {
         $user = $userInfo->user;
         
@@ -82,13 +81,13 @@ class AllocateWeeklySuperboomsCommand extends Command
             return;
         }
 
-        $currentWeek = now()->startOfWeek()->toDateString();
-        
-        // Only allocate if not already done this week
-        if ($userInfo->superbooms_last_reset !== $currentWeek) {
+        $currentMonth = now()->startOfMonth()->toDateString();
+
+        // Only allocate if not already done this month
+        if ($userInfo->superbooms_last_reset !== $currentMonth) {
             $userInfo->update([
                 'superbooms' => 1,
-                'superbooms_last_reset' => $currentWeek,
+                'superbooms_last_reset' => $currentMonth,
             ]);
         }
     }
