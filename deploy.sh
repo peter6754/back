@@ -16,9 +16,14 @@ php artisan route:clear  # Очистка кеша маршрутов
 php artisan cache:clear  # Очистка кеша приложения
 php artisan view:clear   # Очистка кеша шаблонов
 
+# Применение миграций базы данных
+php artisan migrate --force # Применение миграций без подтверждения
+
 # Пересборка кеша (только для production)
 php artisan config:cache # Кеширование конфигурации
 php artisan route:cache  # Кеширование маршрутов
+
+
 
 # Генерируем swagger документацию
 php artisan l5-swagger:generate
