@@ -381,24 +381,6 @@ class RecommendationService
                 );
             }
 
-            if ($user->email) {
-                try {
-                    \Mail::send('emails.new_match', [], function ($message) use ($user) {
-                        $message->to($user->email)->subject('Новая пара в TinderOne');
-                    });
-
-                    Log::channel('recommendations')->info('RecommendationService > superlike > match email sent:', [
-                        'reactor_id' => $userId,
-                        'email' => $user->email
-                    ]);
-                } catch (\Exception $e) {
-                    Log::channel('recommendations')->error('RecommendationService > superlike > email error:', [
-                        'reactor_id' => $userId,
-                        'error' => $e->getMessage()
-                    ]);
-                }
-            }
-
             Log::channel('recommendations')->info('RecommendationService > superlike finished with:', [
                 'reactor_id' => $userId,
                 'is_match' => ! ! $reaction
