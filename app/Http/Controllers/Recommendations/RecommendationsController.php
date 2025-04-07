@@ -408,6 +408,17 @@ class RecommendationsController extends Controller
                 'user_id' => $request->user()->id ?? 'unknown',
                 'error' => $e->getMessage()
             ]);
+
+            // Check if it's a "no superlikes" error
+            if (strpos($e->getMessage(), 'No superlikes') !== false ||
+                strpos($e->getMessage(), 'No superlike') !== false) {
+                return $this->errorResponse(
+                    $e->getMessage(),
+                    9999,
+                    400
+                );
+            }
+
             return $this->errorResponse(
                 "Internal error"
             );

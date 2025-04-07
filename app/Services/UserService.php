@@ -1229,15 +1229,11 @@ class UserService
     private function getUserSuperlikes(string $userId): int
     {
         $userInfo = UserInformation::where('user_id', $userId)->first();
-        
+
         if (!$userInfo) {
             return 0;
         }
 
-        // Try to allocate weekly superlikes if eligible
-        $userInfo->allocateWeeklySuperlikes();
-        $userInfo->refresh();
-        
         return $userInfo->getRemainingSuperlikes();
     }
 }

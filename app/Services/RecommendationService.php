@@ -74,7 +74,7 @@ class RecommendationService
         $key = "top-profiles:".$customer['id'];
         $topProfiles = Redis::get($key);
 
-        if (!empty($topProfiles)) {
+        if (! empty($topProfiles)) {
             try {
                 $topProfiles = json_decode($topProfiles, true);
             } catch (\Exception $e) {
@@ -222,7 +222,7 @@ class RecommendationService
                     ];
                 }
 
-                if (!empty($fromDb)) {
+                if (! empty($fromDb)) {
                     Redis::rpush($key, ...$fromDb);
                     Redis::expire($key, $this->recommendationsCacheTTL);
                 }
@@ -305,37 +305,33 @@ class RecommendationService
         try {
             // Get user information and check superlike allocation
             $userInfo = UserInformation::where('user_id', $userId)->first();
-            
-            if (!$userInfo) {
+
+            if (! $userInfo) {
                 $userInfo = UserInformation::create(['user_id' => $userId]);
             }
-            
-            // Try to allocate weekly superlikes if eligible
-            $userInfo->allocateWeeklySuperlikes();
-            $userInfo->refresh();
-            
+
             if ($userInfo->getRemainingSuperlikes() <= 0) {
                 Log::channel('recommendations')->warning('RecommendationService > superlike > no superlikes remaining:', [
                     'reactor_id' => $userId,
                     'remaining' => $userInfo->getRemainingSuperlikes()
                 ]);
-                
-                throw new \Exception('No superlikes remaining for this week');
+
+                throw new \Exception('No superlike available');
             }
             $user = Secondaryuser::with([
                 'userDeviceTokens',
                 'userInformation',
                 'userSettings'
             ])
-            ->select(['id', 'email'])
-            ->findOrFail($params['user_id']);
+                ->select(['id', 'email'])
+                ->findOrFail($params['user_id']);
 
             $reaction = UserReaction::where([
                 'reactor_id' => $params['user_id'],
                 'user_id' => $userId
             ])
-            ->whereIn('type', ['like', 'superlike'])
-            ->first();
+                ->whereIn('type', ['like', 'superlike'])
+                ->first();
 
             Log::channel('recommendations')->info('RecommendationService > superlike > user:', [
                 'reactor_id' => $userId,
@@ -361,9 +357,11 @@ class RecommendationService
             );
 
             // Use superlike from user information
-            $userInfo->useSuperlike();
+            if (! $userInfo->useSuperlike()) {
+                throw new \Exception('Failed to deduct superlike');
+            }
 
-            if (!empty($params['comment'])) {
+            if (! empty($params['comment'])) {
                 $this->leaveComment($params['comment'], $userId, $params['user_id']);
             }
 
@@ -375,7 +373,7 @@ class RecommendationService
                     "У вас совпала новая пара! Зайдите, чтобы посмотреть и начать общение.",
                     "Новая пара!"
                 );
-            } elseif (!$reaction && $user->userSettings->new_super_likes_push) {
+            } elseif (! $reaction && $user->userSettings->new_super_likes_push) {
                 (new NotificationService())->sendPushNotification(
                     $userTokens,
                     "Вам поставили суперлайк! Заходите в TinderOne, чтобы найти свою пару!",
@@ -385,7 +383,7 @@ class RecommendationService
 
             if ($user->email) {
                 try {
-                    \Mail::send('emails.new_match', [], function($message) use ($user) {
+                    \Mail::send('emails.new_match', [], function ($message) use ($user) {
                         $message->to($user->email)->subject('Новая пара в TinderOne');
                     });
 
@@ -403,7 +401,7 @@ class RecommendationService
 
             Log::channel('recommendations')->info('RecommendationService > superlike finished with:', [
                 'reactor_id' => $userId,
-                'is_match' => !!$reaction
+                'is_match' => ! ! $reaction
             ]);
 
             return [
@@ -431,7 +429,7 @@ class RecommendationService
             ->latest('date')
             ->first(['user_id']);
 
-        if (!$lastReacted || $lastReacted->user_id != $params['user_id']) {
+        if (! $lastReacted || $lastReacted->user_id != $params['user_id']) {
             throw new \Exception('Your last reaction doesn\'t match to the given user_id');
         }
 
@@ -492,7 +490,7 @@ class RecommendationService
             ->limit($this->recommendationsCacheSize);
 
         // Условие радиуса поиска
-        if (!$user->userSettings->is_global_search) {
+        if (! $user->userSettings->is_global_search) {
             $query->whereIn('u.id', function ($subquery) use ($user, $searchRadius) {
                 $subquery->select('u2.id')
                     ->from('users as u2')
@@ -721,7 +719,7 @@ class RecommendationService
         try {
             $userInformation = UserInformation::where('user_id', $userId)->first();
 
-            if (!$userInformation) {
+            if (! $userInformation) {
                 throw new \Exception('User information not found');
             }
 
