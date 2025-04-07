@@ -23,8 +23,6 @@ php artisan migrate --force # Применение миграций без по�
 php artisan config:cache # Кеширование конфигурации
 php artisan route:cache  # Кеширование маршрутов
 
-
-
 # Генерируем swagger документацию
 php artisan l5-swagger:generate
 
