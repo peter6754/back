@@ -30,9 +30,9 @@ class AllocateWeeklySuperlikesCommand extends Command
     {
         $this->info('Starting weekly superlike allocation...');
 
-        $weekStart = Carbon::now()->startOfWeek();
         $allocated = 0;
         $processed = 0;
+        $skipped = 0;
 
         // Get all users with Gold and Premium subscriptions only
         $subscribedUsers = Secondaryuser::whereHas('activeSubscription', function ($query) {
@@ -44,19 +44,34 @@ class AllocateWeeklySuperlikesCommand extends Command
         foreach ($subscribedUsers as $user) {
             $processed++;
 
-            $userInfo = $user->userInformation ?? UserInformation::create(['user_id' => $user->id]);
+            $userInfo = $user->userInformation;
 
-            // Принудительно начисляем суперлайки и обновляем дату
-            $userInfo->update([
-                'superlikes' => 5,
-                'superlikes_last_reset' => now()->toDateString(),
-            ]);
+            // Skip if no user information or no reset date set
+            if (!$userInfo || !$userInfo->superlikes_last_reset) {
+                $skipped++;
+                continue;
+            }
 
-            $allocated++;
+            // Check if 7 days have passed since last reset
+            $lastReset = Carbon::parse($userInfo->superlikes_last_reset);
+            $daysSinceReset = $lastReset->diffInDays(now());
+
+            if ($daysSinceReset >= 7) {
+                // Начисляем суперлайки (старые начисленные сгорают, купленные остаются)
+                $userInfo->update([
+                    'superlikes' => 5,
+                    'superlikes_last_reset' => now()->toDateString(),
+                ]);
+                $allocated++;
+                $this->info("User {$user->id}: allocated 5 superlikes (last reset: {$lastReset->format('Y-m-d')}, {$daysSinceReset} days ago)");
+            } else {
+                $skipped++;
+            }
         }
 
         $this->info("Processed {$processed} subscribed users");
         $this->info("Allocated superlikes for {$allocated} users");
+        $this->info("Skipped {$skipped} users (not enough time passed or no reset date)");
         $this->info('Weekly superlike allocation completed!');
 
         return 0;
