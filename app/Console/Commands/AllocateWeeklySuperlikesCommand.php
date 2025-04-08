@@ -14,7 +14,7 @@ class AllocateWeeklySuperlikesCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'superlikes:allocate-weekly';
+    protected $signature = 'superlikes:allocate-weekly {--force : Force allocation ignoring the 7-day period}';
 
     /**
      * The console command description.
@@ -47,23 +47,24 @@ class AllocateWeeklySuperlikesCommand extends Command
             $userInfo = $user->userInformation;
 
             // Skip if no user information or no reset date set
-            if (!$userInfo || !$userInfo->superlikes_last_reset) {
+            if (! $userInfo || ! $userInfo->superlikes_last_reset) {
                 $skipped++;
                 continue;
             }
 
             // Check if 7 days have passed since last reset
             $lastReset = Carbon::parse($userInfo->superlikes_last_reset);
-            $daysSinceReset = $lastReset->diffInDays(now());
+            $daysSinceReset = $lastReset->diffInDays(now(), true);
+            $force = $this->option('force');
 
-            if ($daysSinceReset >= 7) {
+            if ($force || $daysSinceReset >= 7) {
                 // Начисляем суперлайки (старые начисленные сгорают, купленные остаются)
                 $userInfo->update([
                     'superlikes' => 5,
                     'superlikes_last_reset' => now()->toDateString(),
                 ]);
                 $allocated++;
-                $this->info("User {$user->id}: allocated 5 superlikes (last reset: {$lastReset->format('Y-m-d')}, {$daysSinceReset} days ago)");
+                #$this->info("User {$user->id}: allocated 5 superlikes (last reset: {$lastReset->format('Y-m-d')}, " . round($daysSinceReset, 2) . " days ago)");
             } else {
                 $skipped++;
             }

@@ -14,7 +14,7 @@ class AllocateWeeklySuperboomsCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'superbooms:allocate-monthly';
+    protected $signature = 'superbooms:allocate-monthly {--force : Force allocation ignoring the 30-day period}';
 
     /**
      * The console command description.
@@ -54,16 +54,17 @@ class AllocateWeeklySuperboomsCommand extends Command
 
             // Check if 30 days have passed since last reset
             $lastReset = Carbon::parse($userInfo->superbooms_last_reset);
-            $daysSinceReset = $lastReset->diffInDays(now());
+            $daysSinceReset = $lastReset->diffInDays(now(), true);
+            $force = $this->option('force');
 
-            if ($daysSinceReset >= 30) {
+            if ($force || $daysSinceReset >= 30) {
                 // Начисляем супербум (старые начисленные сгорают, купленные остаются)
                 $userInfo->update([
                     'superbooms' => 1,
                     'superbooms_last_reset' => now()->toDateString(),
                 ]);
                 $allocated++;
-                $this->info("User {$user->id}: allocated 1 superboom (last reset: {$lastReset->format('Y-m-d')}, {$daysSinceReset} days ago)");
+                #$this->info("User {$user->id}: allocated 1 superboom (last reset: {$lastReset->format('Y-m-d')}, " . round($daysSinceReset, 2) . " days ago)");
             } else {
                 $skipped++;
             }
