@@ -161,19 +161,20 @@ class RecommendationService
                     ELSE ROUND(ST_Distance_Sphere(POINT(?, ?),POINT(`long`, `lat`)) / 1000, 0)
                 END AS distance,
                 COALESCE(like_count, 0) AS like_count,
-                (superboom_due_date IS NOT NULL AND superboom_due_date >= NOW()) AS is_boosted
+                (superboom_due_date IS NOT NULL AND superboom_due_date >= UTC_TIMESTAMP()) AS is_boosted
             ", [
                     $myLng,
                     $myLat,
                     $myPhone
                 ])
-                ->orderByDesc(DB::raw('(superboom_due_date IS NOT NULL AND superboom_due_date >= NOW())'))
+                ->orderByDesc(DB::raw('(superboom_due_date IS NOT NULL AND superboom_due_date >= UTC_TIMESTAMP())'))
                 ->orderByDesc('like_count')
                 ->limit(15);
 
             $topProfiles = $query->get();
             foreach ($topProfiles as &$row) {
                 $row->blocked_me = (bool) $row->blocked_me;
+                $row->is_boosted = (bool) $row->is_boosted;
             }
 
             Redis::setex($key, 900, json_encode($topProfiles));
@@ -371,7 +372,7 @@ class RecommendationService
 
             $userTokens = $user->userDeviceTokens->pluck('token')->filter()->toArray();
 
-            if (!empty($userTokens)) {
+            if (! empty($userTokens)) {
                 if ($reaction && $user->userSettings->new_couples_push) {
                     (new NotificationService())->sendPushNotification(
                         $userTokens,
@@ -732,12 +733,33 @@ class RecommendationService
                 'superboom_due_date' => $newSuperboomDate,
             ]);
 
+            $this->clearTopProfilesCache();
+
             return [
                 'message' => 'Action was executed successfully'
             ];
 
         } catch (\Exception $e) {
             throw $e;
+        }
+    }
+
+    /**
+     * Clear top-profiles cache for all users
+     *
+     * @return void
+     */
+    private function clearTopProfilesCache(): void
+    {
+        try {
+            $pattern = 'top-profiles:*';
+            $keys = Redis::keys($pattern);
+
+            if (! empty($keys)) {
+                Redis::del($keys);
+            }
+        } catch (\Exception $e) {
+            Log::channel('recommendations')->warning('Failed to clear top-profiles cache: '.$e->getMessage());
         }
     }
 }
