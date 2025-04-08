@@ -310,22 +310,12 @@ class PaymentsService extends Manager
                 }
 
                 // Обновление информации пользователя / пакетов
-                // Начисляем суперлайки только для Gold (4-6) и Premium (7-9) подписок
-                if (in_array($params['subscription_id'], [4, 5, 6, 7, 8, 9])) {
-                    // Сразу начисляем еженедельные суперлайки и супербумы
-                    // Дата начала отсчета - момент покупки подписки
-                    $purchaseDate = now()->toDateString();
-
-                    // updateOrInsert создаст запись если её нет, или обновит существующую
-                    DB::table('user_information')->updateOrInsert(
-                        ['user_id' => $params['user_id']],
-                        [
-                            'superlikes' => 5,
-                            'superlikes_last_reset' => $purchaseDate,
-                            'superbooms' => 1,
-                            'superbooms_last_reset' => $purchaseDate,
-                        ]
-                    );
+                if ($params['subscription_id'] > 1) {
+                    $this->sendServicePackage([
+                        'user_id' => $params['user_id'],
+                        'superlike' => 5,
+                        'superboom' => 1,
+                    ]);
                 }
             });
             return true;

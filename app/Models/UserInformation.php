@@ -117,5 +117,68 @@ class UserInformation extends Model
         return false;
     }
 
+    /**
+     * Allocate weekly superlikes for subscribed users
+     * Resets allocated superlikes to 5, keeps purchased superlikes intact
+     */
+    public function allocateWeeklySuperlikes(): void
+    {
+        $user = $this->user;
+
+        // Check if user has Gold or Premium subscription
+        if (!$user || !$user->activeSubscription) {
+            return;
+        }
+
+        $subscriptionType = $user->activeSubscription->package->subscription->type ?? '';
+        $isEligible = in_array($subscriptionType, ['Tinderone Gold', 'Tinderone Premium']);
+
+        if (!$isEligible) {
+            return;
+        }
+
+        $currentWeek = now()->startOfWeek()->toDateString();
+
+        // Only allocate if not already done this week
+        // Reset allocated superlikes to 5, purchased_superlikes remain unchanged
+        if ($this->superlikes_last_reset !== $currentWeek) {
+            $this->update([
+                'superlikes' => 5,
+                'superlikes_last_reset' => $currentWeek,
+            ]);
+        }
+    }
+
+    /**
+     * Allocate monthly superbooms for subscribed users
+     * Resets allocated superbooms to 1, keeps purchased superbooms intact
+     */
+    public function allocateMonthlySuperbooms(): void
+    {
+        $user = $this->user;
+
+        // Check if user has Gold or Premium subscription
+        if (!$user || !$user->activeSubscription) {
+            return;
+        }
+
+        $subscriptionType = $user->activeSubscription->package->subscription->type ?? '';
+        $isEligible = in_array($subscriptionType, ['Tinderone Gold', 'Tinderone Premium']);
+
+        if (!$isEligible) {
+            return;
+        }
+
+        $currentMonth = now()->startOfMonth()->toDateString();
+
+        // Only allocate if not already done this month
+        // Reset allocated superbooms to 1, purchased_superbooms remain unchanged
+        if ($this->superbooms_last_reset !== $currentMonth) {
+            $this->update([
+                'superbooms' => 1,
+                'superbooms_last_reset' => $currentMonth,
+            ]);
+        }
+    }
 }
 
