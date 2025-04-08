@@ -161,20 +161,19 @@ class RecommendationService
                     ELSE ROUND(ST_Distance_Sphere(POINT(?, ?),POINT(`long`, `lat`)) / 1000, 0)
                 END AS distance,
                 COALESCE(like_count, 0) AS like_count,
-                (superboom_due_date IS NOT NULL AND superboom_due_date >= UTC_TIMESTAMP()) AS is_boosted
+                (superboom_due_date IS NOT NULL AND superboom_due_date >= NOW()) AS is_boosted
             ", [
                     $myLng,
                     $myLat,
                     $myPhone
                 ])
-                ->orderByDesc(DB::raw('(superboom_due_date IS NOT NULL AND superboom_due_date >= UTC_TIMESTAMP())'))
+                ->orderByDesc(DB::raw('(superboom_due_date IS NOT NULL AND superboom_due_date >= NOW())'))
                 ->orderByDesc('like_count')
                 ->limit(15);
 
             $topProfiles = $query->get();
             foreach ($topProfiles as &$row) {
                 $row->blocked_me = (bool) $row->blocked_me;
-                $row->is_boosted = (bool) $row->is_boosted;
             }
 
             Redis::setex($key, 900, json_encode($topProfiles));
@@ -321,7 +320,7 @@ class RecommendationService
                     'remaining' => $userInfo->getRemainingSuperlikes()
                 ]);
 
-                throw new \Exception('No superlikes available');
+                throw new \Exception('No superlike available');
             }
             $user = Secondaryuser::with([
                 'userDeviceTokens',
@@ -372,20 +371,18 @@ class RecommendationService
 
             $userTokens = $user->userDeviceTokens->pluck('token')->filter()->toArray();
 
-            if (! empty($userTokens)) {
-                if ($reaction && $user->userSettings->new_couples_push) {
-                    (new NotificationService())->sendPushNotification(
-                        $userTokens,
-                        "У вас совпала новая пара! Зайдите, чтобы посмотреть и начать общение.",
-                        "Новая пара!"
-                    );
-                } elseif (! $reaction && $user->userSettings->new_super_likes_push) {
-                    (new NotificationService())->sendPushNotification(
-                        $userTokens,
-                        "Вам поставили суперлайк! Заходите в TinderOne, чтобы найти свою пару!",
-                        "Вы кому-то нравитесь!"
-                    );
-                }
+            if ($reaction && $user->userSettings->new_couples_push) {
+                (new NotificationService())->sendPushNotification(
+                    $userTokens,
+                    "У вас совпала новая пара! Зайдите, чтобы посмотреть и начать общение.",
+                    "Новая пара!"
+                );
+            } elseif (! $reaction && $user->userSettings->new_super_likes_push) {
+                (new NotificationService())->sendPushNotification(
+                    $userTokens,
+                    "Вам поставили суперлайк! Заходите в TinderOne, чтобы найти свою пару!",
+                    "Вы кому-то нравитесь!"
+                );
             }
 
             Log::channel('recommendations')->info('RecommendationService > superlike finished with:', [
@@ -714,7 +711,7 @@ class RecommendationService
 
             // Check combined balance (allocated + purchased)
             if ($userInformation->getRemainingSuperbooms() <= 0) {
-                throw new \Exception('No superbooms available');
+                throw new \Exception('No superboom available');
             }
 
             $currentSuperboomDate = $userInformation->superboom_due_date ?
@@ -725,7 +722,7 @@ class RecommendationService
             $newSuperboomDate = $baseDate->copy()->addMinutes(30);
 
             // Use the useSuperboom method to properly deduct from allocated first, then purchased
-            if (! $userInformation->useSuperboom()) {
+            if (!$userInformation->useSuperboom()) {
                 throw new \Exception('Failed to use superboom');
             }
 
@@ -733,33 +730,12 @@ class RecommendationService
                 'superboom_due_date' => $newSuperboomDate,
             ]);
 
-            $this->clearTopProfilesCache();
-
             return [
                 'message' => 'Action was executed successfully'
             ];
 
         } catch (\Exception $e) {
             throw $e;
-        }
-    }
-
-    /**
-     * Clear top-profiles cache for all users
-     *
-     * @return void
-     */
-    private function clearTopProfilesCache(): void
-    {
-        try {
-            $pattern = 'top-profiles:*';
-            $keys = Redis::keys($pattern);
-
-            if (! empty($keys)) {
-                Redis::del($keys);
-            }
-        } catch (\Exception $e) {
-            Log::channel('recommendations')->warning('Failed to clear top-profiles cache: '.$e->getMessage());
         }
     }
 }
