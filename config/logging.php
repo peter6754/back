@@ -153,6 +153,11 @@ return [
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => env('LOG_DAILY_DAYS', 14),
             'driver' => 'daily'
-        ]
+        ],
+
+        'sentry_logs' => [
+            'level' => env('LOG_LEVEL', 'info'),
+            'driver' => 'sentry_logs'
+        ],
     ]
 ];
