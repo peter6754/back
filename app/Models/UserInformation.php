@@ -119,7 +119,7 @@ class UserInformation extends Model
 
     /**
      * Allocate weekly superlikes for subscribed users
-     * Resets allocated superlikes to 5, keeps purchased superlikes intact
+     * Resets allocated superlikes to 5 every 7 days from last reset
      */
     public function allocateWeeklySuperlikes(): void
     {
@@ -137,21 +137,26 @@ class UserInformation extends Model
             return;
         }
 
-        $currentWeek = now()->startOfWeek()->toDateString();
+        // If no last reset date, don't allocate (will be set on purchase)
+        if (!$this->superlikes_last_reset) {
+            return;
+        }
 
-        // Only allocate if not already done this week
-        // Reset allocated superlikes to 5, purchased_superlikes remain unchanged
-        if ($this->superlikes_last_reset !== $currentWeek) {
+        $lastReset = \Carbon\Carbon::parse($this->superlikes_last_reset);
+        $daysSinceReset = $lastReset->diffInDays(now());
+
+        // Only allocate if 7 or more days have passed since last reset
+        if ($daysSinceReset >= 7) {
             $this->update([
                 'superlikes' => 5,
-                'superlikes_last_reset' => $currentWeek,
+                'superlikes_last_reset' => now()->toDateString(),
             ]);
         }
     }
 
     /**
      * Allocate weekly superbooms for subscribed users
-     * Resets allocated superbooms to 1, keeps purchased superbooms intact
+     * Resets allocated superbooms to 1 every 7 days from last reset
      */
     public function allocateWeeklySuperbooms(): void
     {
@@ -169,14 +174,19 @@ class UserInformation extends Model
             return;
         }
 
-        $currentWeek = now()->startOfWeek()->toDateString();
+        // If no last reset date, don't allocate (will be set on purchase)
+        if (!$this->superbooms_last_reset) {
+            return;
+        }
 
-        // Only allocate if not already done this week
-        // Reset allocated superbooms to 1, purchased_superbooms remain unchanged
-        if ($this->superbooms_last_reset !== $currentWeek) {
+        $lastReset = \Carbon\Carbon::parse($this->superbooms_last_reset);
+        $daysSinceReset = $lastReset->diffInDays(now());
+
+        // Only allocate if 7 or more days have passed since last reset
+        if ($daysSinceReset >= 7) {
             $this->update([
                 'superbooms' => 1,
-                'superbooms_last_reset' => $currentWeek,
+                'superbooms_last_reset' => now()->toDateString(),
             ]);
         }
     }

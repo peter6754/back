@@ -21,7 +21,7 @@ class AllocateWeeklySuperlikesCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Allocate weekly superlikes for gold and premium subscribers';
+    protected $description = 'Allocate superlikes every 7 days from last reset for gold and premium subscribers';
 
     /**
      * Execute the console command.

@@ -21,14 +21,14 @@ class AllocateWeeklySuperboomsCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Allocate weekly superbooms for gold and premium subscribers';
+    protected $description = 'Allocate superbooms every 7 days from last reset for gold and premium subscribers';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $this->info('Starting weekly superboom allocation...');
+        $this->info('Starting superboom allocation...');
 
         $allocated = 0;
         $processed = 0;
@@ -47,7 +47,7 @@ class AllocateWeeklySuperboomsCommand extends Command
 
             $previousSuperbooms = $userInfo->superbooms ?? 0;
 
-            $this->allocateWeeklySuperbooms($userInfo);
+            $userInfo->allocateWeeklySuperbooms();
 
             $userInfo->refresh();
 
@@ -58,38 +58,8 @@ class AllocateWeeklySuperboomsCommand extends Command
 
         $this->info("Processed {$processed} subscribed users");
         $this->info("Allocated superbooms for {$allocated} users");
-        $this->info('Weekly superboom allocation completed!');
+        $this->info('Superboom allocation completed!');
 
         return 0;
-    }
-
-    /**
-     * Allocate weekly superbooms for subscribed users
-     */
-    private function allocateWeeklySuperbooms(UserInformation $userInfo): void
-    {
-        $user = $userInfo->user;
-        
-        // Check if user has Gold or Premium subscription
-        if (!$user || !$user->activeSubscription) {
-            return;
-        }
-
-        $subscriptionType = $user->activeSubscription->package->subscription->type ?? '';
-        $isEligible = in_array($subscriptionType, ['Tinderone Gold', 'Tinderone Premium']);
-        
-        if (!$isEligible) {
-            return;
-        }
-
-        $currentWeek = now()->startOfWeek()->toDateString();
-        
-        // Only allocate if not already done this week
-        if ($userInfo->superbooms_last_reset !== $currentWeek) {
-            $userInfo->update([
-                'superbooms' => 1,
-                'superbooms_last_reset' => $currentWeek,
-            ]);
-        }
     }
 }

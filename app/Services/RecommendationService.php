@@ -316,7 +316,7 @@ class RecommendationService
                     'remaining' => $userInfo->getRemainingSuperlikes()
                 ]);
 
-                throw new \Exception('No superlike available');
+                throw new \Exception('No superlikes available');
             }
             $user = Secondaryuser::with([
                 'userDeviceTokens',
@@ -707,7 +707,7 @@ class RecommendationService
 
             // Check combined balance (allocated + purchased)
             if ($userInformation->getRemainingSuperbooms() <= 0) {
-                throw new \Exception('No superboom available');
+                throw new \Exception('No superbooms available');
             }
 
             $currentSuperboomDate = $userInformation->superboom_due_date ?
@@ -718,7 +718,7 @@ class RecommendationService
             $newSuperboomDate = $baseDate->copy()->addMinutes(30);
 
             // Use the useSuperboom method to properly deduct from allocated first, then purchased
-            if (!$userInformation->useSuperboom()) {
+            if (! $userInformation->useSuperboom()) {
                 throw new \Exception('Failed to use superboom');
             }
 
