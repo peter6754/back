@@ -152,6 +152,7 @@ class AuthService
 
         // Создаем токен аутентификации
         $token = app(JwtService::class)->encode([
+            'language' => $body['language'] ?? 'ru',
             'id' => $user->id
         ]);
 
