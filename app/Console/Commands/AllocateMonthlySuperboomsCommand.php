@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\Secondaryuser;
 use App\Models\UserInformation;
+use Carbon\Carbon;
 
 class AllocateMonthlySuperboomsCommand extends Command
 {
@@ -13,14 +14,14 @@ class AllocateMonthlySuperboomsCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'superbooms:allocate-monthly';
+    protected $signature = 'superbooms:allocate-monthly {--force : Force allocation ignoring the 30-day period}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Allocate monthly superbooms for gold and premium subscribers';
+    protected $description = 'Allocate superbooms every 30 days from last reset for gold and premium subscribers';
 
     /**
      * Execute the console command.
@@ -31,6 +32,7 @@ class AllocateMonthlySuperboomsCommand extends Command
 
         $allocated = 0;
         $processed = 0;
+        $skipped = 0;
 
         // Get all users with Gold and Premium subscriptions only
         $subscribedUsers = Secondaryuser::whereHas('activeSubscription', function ($query) {
@@ -42,53 +44,37 @@ class AllocateMonthlySuperboomsCommand extends Command
         foreach ($subscribedUsers as $user) {
             $processed++;
 
-            $userInfo = $user->userInformation ?? UserInformation::create(['user_id' => $user->id]);
+            $userInfo = $user->userInformation;
 
-            $previousSuperbooms = $userInfo->superbooms ?? 0;
+            // Skip if no user information or no reset date set
+            if (! $userInfo || ! $userInfo->superbooms_last_reset) {
+                $skipped++;
+                continue;
+            }
 
-            $this->allocateMonthlySuperbooms($userInfo);
+            // Check if 30 days have passed since last reset
+            $lastReset = Carbon::parse($userInfo->superbooms_last_reset);
+            $daysSinceReset = $lastReset->diffInDays(now(), true);
+            $force = $this->option('force');
 
-            $userInfo->refresh();
-
-            if ($userInfo->superbooms != $previousSuperbooms) {
+            if ($force || $daysSinceReset >= 30) {
+                // Начисляем супербум (старые начисленные сгорают, купленные остаются)
+                $userInfo->update([
+                    'superbooms' => 1,
+                    'superbooms_last_reset' => now()->toDateString(),
+                ]);
                 $allocated++;
+                #$this->info("User {$user->id}: allocated 1 superboom (last reset: {$lastReset->format('Y-m-d')}, " . round($daysSinceReset, 2) . " days ago)");
+            } else {
+                $skipped++;
             }
         }
 
         $this->info("Processed {$processed} subscribed users");
         $this->info("Allocated superbooms for {$allocated} users");
+        $this->info("Skipped {$skipped} users (not enough time passed or no reset date)");
         $this->info('Monthly superboom allocation completed!');
 
         return 0;
-    }
-
-    /**
-     * Allocate monthly superbooms for subscribed users
-     */
-    private function allocateMonthlySuperbooms(UserInformation $userInfo): void
-    {
-        $user = $userInfo->user;
-        
-        // Check if user has Gold or Premium subscription
-        if (!$user || !$user->activeSubscription) {
-            return;
-        }
-
-        $subscriptionType = $user->activeSubscription->package->subscription->type ?? '';
-        $isEligible = in_array($subscriptionType, ['Tinderone Gold', 'Tinderone Premium']);
-        
-        if (!$isEligible) {
-            return;
-        }
-
-        $currentMonth = now()->startOfMonth()->toDateString();
-
-        // Only allocate if not already done this month
-        if ($userInfo->superbooms_last_reset !== $currentMonth) {
-            $userInfo->update([
-                'superbooms' => 1,
-                'superbooms_last_reset' => $currentMonth,
-            ]);
-        }
     }
 }
