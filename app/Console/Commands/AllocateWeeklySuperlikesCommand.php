@@ -46,15 +46,13 @@ class AllocateWeeklySuperlikesCommand extends Command
 
             $userInfo = $user->userInformation ?? UserInformation::create(['user_id' => $user->id]);
 
-            $previousSuperlikes = $userInfo->superlikes ?? 0;
+            // Принудительно начисляем суперлайки и обновляем дату
+            $userInfo->update([
+                'superlikes' => 5,
+                'superlikes_last_reset' => now()->toDateString(),
+            ]);
 
-            $userInfo->allocateWeeklySuperlikes();
-
-            $userInfo->refresh();
-
-            if ($userInfo->superlikes != $previousSuperlikes) {
-                $allocated++;
-            }
+            $allocated++;
         }
 
         $this->info("Processed {$processed} subscribed users");

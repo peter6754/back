@@ -45,15 +45,13 @@ class AllocateWeeklySuperboomsCommand extends Command
 
             $userInfo = $user->userInformation ?? UserInformation::create(['user_id' => $user->id]);
 
-            $previousSuperbooms = $userInfo->superbooms ?? 0;
+            // Принудительно начисляем супербумы и обновляем дату
+            $userInfo->update([
+                'superbooms' => 1,
+                'superbooms_last_reset' => now()->toDateString(),
+            ]);
 
-            $userInfo->allocateWeeklySuperbooms();
-
-            $userInfo->refresh();
-
-            if ($userInfo->superbooms != $previousSuperbooms) {
-                $allocated++;
-            }
+            $allocated++;
         }
 
         $this->info("Processed {$processed} subscribed users");

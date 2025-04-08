@@ -8,13 +8,14 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote')->hourly();
 
-// Schedule daily superlike/superbooms allocation check
-// Each user gets their allocation 7 days after their last reset
+// Schedule weekly superlike/superbooms allocation every 7 days
 Schedule::command('superlikes:allocate-weekly')
-    ->daily()
+    ->weekly()
+    ->mondays()
     ->at('00:00');
 
 Schedule::command('superbooms:allocate-weekly')
-    ->daily()
+    ->weekly()
+    ->mondays()
     ->at('00:00');
 
