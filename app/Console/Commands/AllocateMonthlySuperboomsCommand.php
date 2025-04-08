@@ -7,7 +7,7 @@ use App\Models\Secondaryuser;
 use App\Models\UserInformation;
 use Carbon\Carbon;
 
-class AllocateWeeklySuperboomsCommand extends Command
+class AllocateMonthlySuperboomsCommand extends Command
 {
     /**
      * The name and signature of the console command.
@@ -47,7 +47,7 @@ class AllocateWeeklySuperboomsCommand extends Command
             $userInfo = $user->userInformation;
 
             // Skip if no user information or no reset date set
-            if (!$userInfo || !$userInfo->superbooms_last_reset) {
+            if (! $userInfo || ! $userInfo->superbooms_last_reset) {
                 $skipped++;
                 continue;
             }

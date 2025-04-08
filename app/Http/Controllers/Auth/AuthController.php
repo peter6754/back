@@ -127,11 +127,16 @@ class AuthController extends Controller
      *          required=true,
      *          @OA\JsonContent(
      *              required={"code"},
-     *              @OA\Property(
-     *                  property="code",
-     *                  type="string",
-     *                  example="7878"
-     *              )
+     *               @OA\Property(
+     *                    property="language",
+     *                    type="string",
+     *                    example="ru"
+     *               ),
+     *               @OA\Property(
+     *                   property="code",
+     *                   type="string",
+     *                   example="7878"
+     *               )
      *          )
      *      ),
      *      @OA\Response(
@@ -145,7 +150,8 @@ class AuthController extends Controller
     public function verify(Request $request): JsonResponse
     {
         $validatedData = $request->validate([
-            'code' => 'required|string|digits:4'
+            'code' => 'required|string|digits:4',
+            'language' => 'string'
         ]);
 
         try {

@@ -109,9 +109,11 @@ class RecommendationService
                  WHERE ur.user_id = u.id AND ur.type != 'dislike') AS like_count,
                 (SELECT 1 FROM bought_subscriptions bs
                  JOIN transactions t ON t.id = bs.transaction_id
-                 WHERE t.user_id = u.id AND bs.due_date >= NOW() LIMIT 1) AS has_subscription
+                 WHERE t.user_id = u.id AND bs.due_date >= NOW() LIMIT 1) AS has_subscription,
+                ui.superboom_due_date
             ")
                 ->leftJoin('user_settings as us', 'us.user_id', '=', 'u.id')
+                ->leftJoin('user_information as ui', 'ui.user_id', '=', 'u.id')
                 ->join('user_preferences as up', function ($join) use ($myUserId) {
                     $join->on('up.gender', '=', 'u.gender')
                         ->where('up.user_id', '=', $myUserId);
@@ -158,12 +160,14 @@ class RecommendationService
                     WHEN has_subscription IS NOT NULL AND NOT show_distance_from_me THEN NULL
                     ELSE ROUND(ST_Distance_Sphere(POINT(?, ?),POINT(`long`, `lat`)) / 1000, 0)
                 END AS distance,
-                COALESCE(like_count, 0) AS like_count
+                COALESCE(like_count, 0) AS like_count,
+                (superboom_due_date IS NOT NULL AND superboom_due_date >= NOW()) AS is_boosted
             ", [
                     $myLng,
                     $myLat,
                     $myPhone
                 ])
+                ->orderByDesc(DB::raw('(superboom_due_date IS NOT NULL AND superboom_due_date >= NOW())'))
                 ->orderByDesc('like_count')
                 ->limit(15);
 
@@ -367,18 +371,20 @@ class RecommendationService
 
             $userTokens = $user->userDeviceTokens->pluck('token')->filter()->toArray();
 
-            if ($reaction && $user->userSettings->new_couples_push) {
-                (new NotificationService())->sendPushNotification(
-                    $userTokens,
-                    "У вас совпала новая пара! Зайдите, чтобы посмотреть и начать общение.",
-                    "Новая пара!"
-                );
-            } elseif (! $reaction && $user->userSettings->new_super_likes_push) {
-                (new NotificationService())->sendPushNotification(
-                    $userTokens,
-                    "Вам поставили суперлайк! Заходите в TinderOne, чтобы найти свою пару!",
-                    "Вы кому-то нравитесь!"
-                );
+            if (!empty($userTokens)) {
+                if ($reaction && $user->userSettings->new_couples_push) {
+                    (new NotificationService())->sendPushNotification(
+                        $userTokens,
+                        "У вас совпала новая пара! Зайдите, чтобы посмотреть и начать общение.",
+                        "Новая пара!"
+                    );
+                } elseif (! $reaction && $user->userSettings->new_super_likes_push) {
+                    (new NotificationService())->sendPushNotification(
+                        $userTokens,
+                        "Вам поставили суперлайк! Заходите в TinderOne, чтобы найти свою пару!",
+                        "Вы кому-то нравитесь!"
+                    );
+                }
             }
 
             Log::channel('recommendations')->info('RecommendationService > superlike finished with:', [
