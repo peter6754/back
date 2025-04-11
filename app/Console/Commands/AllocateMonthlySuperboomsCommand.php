@@ -46,9 +46,19 @@ class AllocateMonthlySuperboomsCommand extends Command
 
             $userInfo = $user->userInformation;
 
-            // Skip if no user information or no reset date set
-            if (! $userInfo || ! $userInfo->superbooms_last_reset) {
+            // Skip if no user information
+            if (! $userInfo) {
                 $skipped++;
+                continue;
+            }
+
+            // Initialize last_reset if NULL (for existing users after migration)
+            if (! $userInfo->superbooms_last_reset) {
+                $userInfo->update([
+                    'superbooms' => 1,
+                    'superbooms_last_reset' => now()->toDateString(),
+                ]);
+                $allocated++;
                 continue;
             }
 
