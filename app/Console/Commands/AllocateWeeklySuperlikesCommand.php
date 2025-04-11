@@ -46,9 +46,19 @@ class AllocateWeeklySuperlikesCommand extends Command
 
             $userInfo = $user->userInformation;
 
-            // Skip if no user information or no reset date set
-            if (! $userInfo || ! $userInfo->superlikes_last_reset) {
+            // Skip if no user information
+            if (! $userInfo) {
                 $skipped++;
+                continue;
+            }
+
+            // Initialize last_reset if NULL (for existing users after migration)
+            if (! $userInfo->superlikes_last_reset) {
+                $userInfo->update([
+                    'superlikes' => 5,
+                    'superlikes_last_reset' => now()->toDateString(),
+                ]);
+                $allocated++;
                 continue;
             }
 
