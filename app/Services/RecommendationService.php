@@ -90,94 +90,104 @@ class RecommendationService
             $myLat = $customer['lat'];
             $myLng = $customer['long'];
 
-            // Создаем CTE
-            $filteredUsers = DB::table('users as u')
-                ->selectRaw("
-                u.id,
-                u.name,
-                u.age,
-                u.lat,
-                u.long,
-                u.phone,
-                (SELECT 1 FROM blocked_contacts bc
-                 WHERE bc.user_id = u.id AND bc.phone = ? LIMIT 1) AS blocked_me,
-                us.show_my_age,
-                us.show_distance_from_me,
-                (SELECT image FROM user_images ui
-                 WHERE ui.user_id = u.id ORDER BY ui.id LIMIT 1) AS image,
-                (SELECT COUNT(*) FROM user_reactions ur
-                 WHERE ur.user_id = u.id AND ur.type != 'dislike') AS like_count,
-                (SELECT 1 FROM bought_subscriptions bs
-                 JOIN transactions t ON t.id = bs.transaction_id
-                 WHERE t.user_id = u.id AND bs.due_date >= NOW() LIMIT 1) AS has_subscription,
-                ui.superboom_due_date
-            ")
-                ->leftJoin('user_settings as us', 'us.user_id', '=', 'u.id')
-                ->leftJoin('user_information as ui', 'ui.user_id', '=', 'u.id')
-                ->join('user_preferences as up', function ($join) use ($myUserId) {
-                    $join->on('up.gender', '=', 'u.gender')
-                        ->where('up.user_id', '=', $myUserId);
-                })
-                ->where('u.id', '!=', $myUserId)
-                ->whereNotNull('u.lat')
-                ->whereNotNull('u.long')
-                ->where('u.mode', 'authenticated')
-                ->whereNotNull('u.registration_date')
-                ->whereNotExists(function ($query) use ($myPhone) {
-                    $query->select(DB::raw(1))
-                        ->from('blocked_contacts as bc')
-                        ->whereRaw('bc.user_id = u.id')
-                        ->where('bc.phone', $myPhone);
-                })
-                ->whereNotExists(function ($query) use ($myUserId) {
-                    $query->select(DB::raw(1))
-                        ->from('blocked_contacts as my_bc')
-                        ->whereRaw('my_bc.phone = u.phone')
-                        ->where('my_bc.user_id', $myUserId);
-                })
-                ->whereNotExists(function ($query) use ($myUserId, $twoDaysAgo) {
-                    $query->select(DB::raw(1))
-                        ->from('user_reactions as ure')
-                        ->where('ure.reactor_id', $myUserId)
-                        ->where('ure.type', '!=', 'dislike')
-                        ->where('ure.date', '>=', $twoDaysAgo)
-                        ->whereRaw('ure.user_id = u.id');
-                });
+            // Чистый SQL запрос с CTE
+            $sql = "
+                WITH filtered_users AS (
+                    SELECT
+                        u.id,
+                        u.name,
+                        u.age,
+                        u.lat,
+                        u.long,
+                        u.phone,
+                        (SELECT 1 FROM blocked_contacts bc
+                         WHERE bc.user_id = u.id AND bc.phone = ? LIMIT 1) AS blocked_me,
+                        us.show_my_age,
+                        us.show_distance_from_me,
+                        (SELECT image FROM user_images ui
+                         WHERE ui.user_id = u.id ORDER BY ui.id LIMIT 1) AS image,
+                        (SELECT COUNT(*) FROM user_reactions ur
+                         WHERE ur.user_id = u.id AND ur.type != 'dislike') AS like_count,
+                        (SELECT 1 FROM bought_subscriptions bs
+                         JOIN transactions t ON t.id = bs.transaction_id
+                         WHERE t.user_id = u.id AND bs.due_date >= NOW() LIMIT 1) AS has_subscription,
+                        ui.superboom_due_date
+                    FROM users AS u
+                    LEFT JOIN user_settings AS us ON us.user_id = u.id
+                    LEFT JOIN user_information AS ui ON ui.user_id = u.id
+                    INNER JOIN user_preferences AS up ON up.gender = u.gender AND up.user_id = ?
+                    WHERE u.id != ?
+                        AND u.lat IS NOT NULL
+                        AND u.long IS NOT NULL
+                        AND u.mode = 'authenticated'
+                        AND u.registration_date IS NOT NULL
+                        AND NOT EXISTS (
+                            SELECT 1 FROM blocked_contacts AS bc
+                            WHERE bc.user_id = u.id AND bc.phone = ?
+                        )
+                        AND NOT EXISTS (
+                            SELECT 1 FROM blocked_contacts AS my_bc
+                            WHERE my_bc.phone = u.phone AND my_bc.user_id = ?
+                        )
+                        AND NOT EXISTS (
+                            SELECT 1 FROM user_reactions AS ure
+                            WHERE ure.reactor_id = ?
+                                AND ure.user_id = u.id
+                                AND ure.type != 'dislike'
+                                AND ure.date >= ?
+                        )
+                )
+                SELECT
+                    id,
+                    name,
+                    (blocked_me IS NOT NULL) AS blocked_me,
+                    CASE
+                        WHEN has_subscription IS NOT NULL AND NOT show_my_age THEN NULL
+                        ELSE age
+                    END AS age,
+                    image,
+                    CASE
+                        WHEN has_subscription IS NOT NULL AND NOT show_distance_from_me THEN NULL
+                        ELSE ROUND(ST_Distance_Sphere(POINT(?, ?), POINT(`long`, `lat`)) / 1000, 0)
+                    END AS distance,
+                    COALESCE(like_count, 0) AS like_count,
+                    (superboom_due_date IS NOT NULL AND superboom_due_date >= UTC_TIMESTAMP()) AS is_boosted
+                FROM filtered_users
+                ORDER BY
+                    (superboom_due_date IS NOT NULL AND superboom_due_date >= UTC_TIMESTAMP()) DESC,
+                    like_count DESC
+                LIMIT 15
+            ";
 
-            // Основной запрос из CTE
-            $query = DB::table(DB::raw("({$filteredUsers->toSql()}) as filtered_users"))
-                ->mergeBindings($filteredUsers)
-                ->selectRaw("
-                id,
-                name,
-                (blocked_me IS NOT NULL) AS blocked_me,
-                CASE
-                    WHEN has_subscription IS NOT NULL AND NOT show_my_age THEN NULL
-                    ELSE age
-                END AS age,
-                image,
-                CASE
-                    WHEN has_subscription IS NOT NULL AND NOT show_distance_from_me THEN NULL
-                    ELSE ROUND(ST_Distance_Sphere(POINT(?, ?),POINT(`long`, `lat`)) / 1000, 0)
-                END AS distance,
-                COALESCE(like_count, 0) AS like_count,
-                (superboom_due_date IS NOT NULL AND superboom_due_date >= UTC_TIMESTAMP()) AS is_boosted
-            ", [
-                    $myLng,
-                    $myLat,
-                    $myPhone
-                ])
-                ->orderByDesc(DB::raw('(superboom_due_date IS NOT NULL AND superboom_due_date >= UTC_TIMESTAMP())'))
-                ->orderByDesc('like_count')
-                ->limit(15);
+            $bindings = [
+                $myPhone,        // blocked_me subquery
+                $myUserId,       // user_preferences join
+                $myUserId,       // u.id != ?
+                $myPhone,        // blocked_contacts NOT EXISTS (who blocked me)
+                $myUserId,       // blocked_contacts NOT EXISTS (I blocked)
+                $myUserId,       // user_reactions NOT EXISTS
+                $twoDaysAgo,     // user_reactions date filter
+                $myLng,          // ST_Distance_Sphere longitude
+                $myLat,          // ST_Distance_Sphere latitude
+            ];
 
-            $topProfiles = $query->get();
-            foreach ($topProfiles as &$row) {
-                $row->blocked_me = (bool) $row->blocked_me;
-                $row->is_boosted = (bool) $row->is_boosted;
-            }
+            $results = DB::select($sql, $bindings);
 
-            Redis::setex($key, 900, json_encode($topProfiles));
+            // Преобразование stdClass в массивы и приведение типов
+            $topProfiles = array_map(function ($row) {
+                return [
+                    'id' => $row->id,
+                    'name' => $row->name,
+                    'blocked_me' => (bool) $row->blocked_me,
+                    'age' => $row->age !== null ? (int) $row->age : null,
+                    'image' => $row->image,
+                    'distance' => $row->distance !== null ? (int) $row->distance : null,
+                    'like_count' => (int) $row->like_count,
+                    'is_boosted' => (bool) $row->is_boosted,
+                ];
+            }, $results);
+
+            #Redis::setex($key, 900, json_encode($topProfiles));
         }
 
         return [
@@ -263,10 +273,10 @@ class RecommendationService
         $isMale = $user->gender === 'male';
         $hasActiveSubscription = $user->activeSubscription()->exists();
 
-        if ($isMale && !$hasActiveSubscription) {
+        if ($isMale && ! $hasActiveSubscription) {
             // Get or create user information
             $userInfo = $user->userInformation;
-            if (!$userInfo) {
+            if (! $userInfo) {
                 $userInfo = UserInformation::create([
                     'user_id' => $userId,
                     'daily_likes' => 30,
@@ -285,7 +295,7 @@ class RecommendationService
             }
 
             // Use one like
-            if (!$userInfo->useLike()) {
+            if (! $userInfo->useLike()) {
                 throw new \Exception('Failed to deduct like');
             }
         }
