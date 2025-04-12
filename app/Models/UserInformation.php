@@ -43,6 +43,8 @@ class UserInformation extends Model
         'superbooms_last_reset',
         'purchased_superbooms',
         'superboom_due_date',
+        'daily_likes',
+        'daily_likes_last_reset',
         'like_update',
         'last_banner'
     ];
@@ -51,6 +53,7 @@ class UserInformation extends Model
         'superlikes_last_reset' => 'date',
         'superbooms_last_reset' => 'date',
         'superboom_due_date' => 'datetime',
+        'daily_likes_last_reset' => 'date',
     ];
 
     /**
@@ -112,6 +115,26 @@ class UserInformation extends Model
                 // Then use purchased superbooms
                 $this->decrement('purchased_superbooms');
             }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Get remaining daily likes
+     */
+    public function getRemainingLikes(): int
+    {
+        return max(0, $this->daily_likes ?? 0);
+    }
+
+    /**
+     * Use one like
+     */
+    public function useLike(): bool
+    {
+        if ($this->getRemainingLikes() > 0) {
+            $this->decrement('daily_likes');
             return true;
         }
         return false;
