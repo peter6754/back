@@ -13,8 +13,12 @@ Schedule::command('superlikes:allocate-weekly')
     ->daily()
     ->at('00:00');
 
+// Schedule daily likes allocation for male users without subscription (runs daily at midnight)
+Schedule::command('likes:allocate-daily')
+    ->daily()
+    ->at('00:15');
+
 // Schedule superboom allocation check (runs daily, allocates only if 30 days passed)
 Schedule::command('superbooms:allocate-monthly')
     ->daily()
     ->at('00:30');
-

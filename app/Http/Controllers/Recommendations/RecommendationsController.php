@@ -338,6 +338,16 @@ class RecommendationsController extends Controller
                 'user_id' => $request->user()->id ?? 'unknown',
                 'error' => $e->getMessage()
             ]);
+
+            if ($e->getCode() == 9999 ||
+                strpos($e->getMessage(), 'No likes') !== false) {
+                return $this->errorResponse(
+                    $e->getMessage(),
+                    9999,
+                    400
+                );
+            }
+
             return $this->errorResponse(
                 "Internal error"
             );

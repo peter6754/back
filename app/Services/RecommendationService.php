@@ -255,6 +255,41 @@ class RecommendationService
      */
     public function like(string $userId, array $params)
     {
+        // Get user with necessary relations
+        $user = Secondaryuser::with(['userInformation', 'activeSubscription'])
+            ->findOrFail($userId);
+
+        // Check if user is male without active subscription
+        $isMale = $user->gender === 'male';
+        $hasActiveSubscription = $user->activeSubscription()->exists();
+
+        if ($isMale && !$hasActiveSubscription) {
+            // Get or create user information
+            $userInfo = $user->userInformation;
+            if (!$userInfo) {
+                $userInfo = UserInformation::create([
+                    'user_id' => $userId,
+                    'daily_likes' => 30,
+                    'daily_likes_last_reset' => now()->toDateString(),
+                ]);
+            }
+
+            // Check if user has remaining likes
+            if ($userInfo->getRemainingLikes() <= 0) {
+                Log::channel('recommendations')->warning('RecommendationService > like > no likes remaining:', [
+                    'reactor_id' => $userId,
+                    'remaining' => $userInfo->getRemainingLikes()
+                ]);
+
+                throw new \Exception('No likes available', 9999);
+            }
+
+            // Use one like
+            if (!$userInfo->useLike()) {
+                throw new \Exception('Failed to deduct like');
+            }
+        }
+
         $reactionExists = $this->checkExistingReaction($userId, $params);
         $superboom = $this->getSuperboomStatus($params);
 
@@ -671,7 +706,7 @@ class RecommendationService
      */
     private function leaveComment(string $comment, string $authorId, string $recipientId)
     {
-        // Реализация добавления комментария
+        // Реализация добавления комментария тут
     }
 
     /**

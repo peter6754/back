@@ -320,7 +320,7 @@ class UserService
                 'superlikes' => $this->getUserSuperlikes($userId),
                 'superbooms' => $this->getUserSuperbooms($userId),
                 ...(in_array($user['gender'], $this->maleGenders) ?
-                    ['likes' => 30 - count($user['sent_reactions'] ?? [])] :
+                    ['likes' => $this->getUserDailyLikes($userId)] :
                     []
                 ),
                 'show_distance_from_me' => $user['user_settings']['show_distance_from_me'] ?? null,
@@ -1249,5 +1249,35 @@ class UserService
         }
 
         return $userInfo->getRemainingSuperbooms();
+    }
+
+    /**
+     * Get user's remaining daily likes from user information
+     * For users with subscription, return null (unlimited)
+     * For users without subscription, return actual remaining likes
+     */
+    private function getUserDailyLikes(string $userId): ?int
+    {
+        $user = Secondaryuser::with(['userInformation', 'activeSubscription'])
+            ->find($userId);
+
+        if (!$user) {
+            return 0;
+        }
+
+        // Check if male without subscription
+        $isMale = in_array($user->gender, $this->maleGenders);
+        $hasSubscription = $user->activeSubscription()->exists();
+
+        if (!$isMale || $hasSubscription) {
+            return null; // Unlimited for females or users with subscription
+        }
+
+        $userInfo = $user->userInformation;
+        if (!$userInfo) {
+            return 30; // Default value
+        }
+
+        return $userInfo->getRemainingLikes();
     }
 }

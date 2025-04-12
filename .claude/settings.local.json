@@ -27,7 +27,8 @@
       "Read(/home/peter/tinderone-back/src/**)",
       "Read(/home/peter/tinderone-back/src/routes/user/**)",
       "Read(/home/peter/tinderone-back/src/routes/user/**)",
-      "Read(/home/peter/tinderone-back/src/routes/user/**)"
+      "Read(/home/peter/tinderone-back/src/routes/user/**)",
+      "Bash(time php artisan:*)"
     ],
     "deny": []
   }
