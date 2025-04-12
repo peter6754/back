@@ -77,86 +77,108 @@ class RecommendationService
         $myLat = $customer['lat'];
         $myLng = $customer['long'];
 
-        // Optimized query: removed duplicate blocked_me check and Redis caching
-        // Structure kept identical to original for deterministic results
-        $sql = "
-            WITH filtered_users AS (
-                SELECT
-                    u.id,
-                    u.name,
-                    u.age,
-                    u.lat,
-                    u.long,
-                    u.phone,
-                    us.show_my_age,
-                    us.show_distance_from_me,
-                    (SELECT image FROM user_images ui
-                     WHERE ui.user_id = u.id ORDER BY ui.id LIMIT 1) AS image,
-                    (SELECT COUNT(*) FROM user_reactions ur
-                     WHERE ur.user_id = u.id AND ur.type != 'dislike') AS like_count,
-                    (SELECT 1 FROM bought_subscriptions bs
-                     JOIN transactions t ON t.id = bs.transaction_id
-                     WHERE t.user_id = u.id AND bs.due_date >= NOW() LIMIT 1) AS has_subscription,
-                    ui.superboom_due_date
-                FROM users AS u
-                LEFT JOIN user_settings AS us ON us.user_id = u.id
-                LEFT JOIN user_information AS ui ON ui.user_id = u.id
-                INNER JOIN user_preferences AS up ON up.gender = u.gender AND up.user_id = ?
-                WHERE u.id != ?
-                    AND u.lat IS NOT NULL
-                    AND u.long IS NOT NULL
-                    AND u.mode = 'authenticated'
-                    AND u.registration_date IS NOT NULL
-                    AND NOT EXISTS (
-                        SELECT 1 FROM blocked_contacts AS bc
-                        WHERE bc.user_id = u.id AND bc.phone = ?
-                    )
-                    AND NOT EXISTS (
-                        SELECT 1 FROM blocked_contacts AS my_bc
-                        WHERE my_bc.phone = u.phone AND my_bc.user_id = ?
-                    )
-                    AND NOT EXISTS (
-                        SELECT 1 FROM user_reactions AS ure
-                        WHERE ure.reactor_id = ?
-                            AND ure.user_id = u.id
-                            AND ure.type != 'dislike'
-                            AND ure.date >= ?
-                    )
+        // PHASE 1: Get top 15 IDs with like counts (lightweight query without heavy subqueries)
+        // Optimization: Pre-aggregate like_counts in CTE (fast: only 23 reactions in DB)
+        // Then join and filter, but WITHOUT expensive image/subscription subqueries
+        $topIdsSql = "
+            WITH like_counts AS (
+                SELECT user_id, COUNT(*) as like_count
+                FROM user_reactions
+                WHERE type != 'dislike'
+                GROUP BY user_id
             )
             SELECT
-                id,
-                name,
-                FALSE AS blocked_me,
-                CASE
-                    WHEN has_subscription IS NOT NULL AND NOT show_my_age THEN NULL
-                    ELSE age
-                END AS age,
-                image,
-                CASE
-                    WHEN has_subscription IS NOT NULL AND NOT show_distance_from_me THEN NULL
-                    ELSE ROUND(ST_Distance_Sphere(POINT(?, ?), POINT(`long`, `lat`)) / 1000, 0)
-                END AS distance,
-                COALESCE(like_count, 0) AS like_count,
-                (superboom_due_date IS NOT NULL AND superboom_due_date >= UTC_TIMESTAMP()) AS is_boosted
-            FROM filtered_users
+                u.id,
+                COALESCE(lc.like_count, 0) AS like_count,
+                (ui.superboom_due_date IS NOT NULL AND ui.superboom_due_date >= UTC_TIMESTAMP()) AS is_boosted
+            FROM users AS u
+            LEFT JOIN user_information AS ui ON ui.user_id = u.id
+            LEFT JOIN like_counts AS lc ON lc.user_id = u.id
+            INNER JOIN user_preferences AS up ON up.gender = u.gender AND up.user_id = ?
+            WHERE u.id != ?
+                AND u.lat IS NOT NULL
+                AND u.long IS NOT NULL
+                AND u.mode = 'authenticated'
+                AND u.registration_date IS NOT NULL
+                AND NOT EXISTS (
+                    SELECT 1 FROM blocked_contacts AS bc
+                    WHERE bc.user_id = u.id AND bc.phone = ?
+                )
+                AND NOT EXISTS (
+                    SELECT 1 FROM blocked_contacts AS my_bc
+                    WHERE my_bc.phone = u.phone AND my_bc.user_id = ?
+                )
+                AND NOT EXISTS (
+                    SELECT 1 FROM user_reactions AS ure
+                    WHERE ure.reactor_id = ?
+                        AND ure.user_id = u.id
+                        AND ure.type != 'dislike'
+                        AND ure.date >= ?
+                )
             ORDER BY
-                (superboom_due_date IS NOT NULL AND superboom_due_date >= UTC_TIMESTAMP()) DESC,
+                is_boosted DESC,
                 like_count DESC
             LIMIT 15
         ";
 
-        $bindings = [
-            $myUserId,       // user_preferences join
-            $myUserId,       // u.id != ?
-            $myPhone,        // blocked_contacts NOT EXISTS (who blocked me)
-            $myUserId,       // blocked_contacts NOT EXISTS (I blocked)
-            $myUserId,       // user_reactions NOT EXISTS
-            $twoDaysAgo,     // user_reactions date filter
-            $myLng,          // ST_Distance_Sphere longitude
-            $myLat,          // ST_Distance_Sphere latitude
-        ];
+        $topIdsBindings = [$myUserId, $myUserId, $myPhone, $myUserId, $myUserId, $twoDaysAgo];
+        $topIds = DB::select($topIdsSql, $topIdsBindings);
 
-        $results = DB::select($sql, $bindings);
+        if (empty($topIds)) {
+            return ['items' => []];
+        }
+
+        $userIds = array_column($topIds, 'id');
+        $userIdsPlaceholders = implode(',', array_fill(0, count($userIds), '?'));
+
+        // PHASE 2: Get full details only for top 15 users (with expensive subqueries)
+        $detailsSql = "
+            SELECT
+                u.id,
+                u.name,
+                FALSE AS blocked_me,
+                CASE
+                    WHEN (SELECT 1 FROM bought_subscriptions bs
+                          JOIN transactions t ON t.id = bs.transaction_id
+                          WHERE t.user_id = u.id AND bs.due_date >= NOW() LIMIT 1) IS NOT NULL
+                         AND NOT COALESCE(us.show_my_age, 1)
+                    THEN NULL
+                    ELSE u.age
+                END AS age,
+                (SELECT image FROM user_images ui
+                 WHERE ui.user_id = u.id ORDER BY ui.id LIMIT 1) AS image,
+                CASE
+                    WHEN (SELECT 1 FROM bought_subscriptions bs
+                          JOIN transactions t ON t.id = bs.transaction_id
+                          WHERE t.user_id = u.id AND bs.due_date >= NOW() LIMIT 1) IS NOT NULL
+                         AND NOT COALESCE(us.show_distance_from_me, 1)
+                    THEN NULL
+                    ELSE ROUND(ST_Distance_Sphere(POINT(?, ?), POINT(u.long, u.lat)) / 1000, 0)
+                END AS distance,
+                (SELECT COUNT(*) FROM user_reactions ur
+                 WHERE ur.user_id = u.id AND ur.type != 'dislike') AS like_count,
+                (ui.superboom_due_date IS NOT NULL AND ui.superboom_due_date >= UTC_TIMESTAMP()) AS is_boosted
+            FROM users AS u
+            LEFT JOIN user_settings AS us ON us.user_id = u.id
+            LEFT JOIN user_information AS ui ON ui.user_id = u.id
+            WHERE u.id IN ({$userIdsPlaceholders})
+        ";
+
+        $detailsBindings = array_merge([$myLng, $myLat], $userIds);
+        $resultsUnsorted = DB::select($detailsSql, $detailsBindings);
+
+        // Sort results to match the order from phase 1 (boosted DESC, like_count DESC)
+        $resultsMap = [];
+        foreach ($resultsUnsorted as $row) {
+            $resultsMap[$row->id] = $row;
+        }
+
+        $results = [];
+        foreach ($userIds as $userId) {
+            if (isset($resultsMap[$userId])) {
+                $results[] = $resultsMap[$userId];
+            }
+        }
 
         // Преобразование stdClass в массивы и приведение типов
         $topProfiles = array_map(function ($row) {
