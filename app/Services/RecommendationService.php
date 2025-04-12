@@ -71,127 +71,109 @@ class RecommendationService
      */
     public function getTopProfiles(mixed $customer): array
     {
-        $key = "top-profiles:".$customer['id'];
-        $topProfiles = Redis::get($key);
+        $twoDaysAgo = now()->subDays(2)->toDateTimeString();
+        $myPhone = $customer['phone'];
+        $myUserId = $customer['id'];
+        $myLat = $customer['lat'];
+        $myLng = $customer['long'];
 
-        if (! empty($topProfiles)) {
-            try {
-                $topProfiles = json_decode($topProfiles, true);
-            } catch (\Exception $e) {
-                unset($topProfiles);
-                Redis::del($key);
-            }
-        }
-
-        if (empty($topProfiles)) {
-            $twoDaysAgo = now()->subDays(2)->toDateTimeString();
-            $myPhone = $customer['phone'];
-            $myUserId = $customer['id'];
-            $myLat = $customer['lat'];
-            $myLng = $customer['long'];
-
-            // Чистый SQL запрос с CTE
-            $sql = "
-                WITH filtered_users AS (
-                    SELECT
-                        u.id,
-                        u.name,
-                        u.age,
-                        u.lat,
-                        u.long,
-                        u.phone,
-                        (SELECT 1 FROM blocked_contacts bc
-                         WHERE bc.user_id = u.id AND bc.phone = ? LIMIT 1) AS blocked_me,
-                        us.show_my_age,
-                        us.show_distance_from_me,
-                        (SELECT image FROM user_images ui
-                         WHERE ui.user_id = u.id ORDER BY ui.id LIMIT 1) AS image,
-                        (SELECT COUNT(*) FROM user_reactions ur
-                         WHERE ur.user_id = u.id AND ur.type != 'dislike') AS like_count,
-                        (SELECT 1 FROM bought_subscriptions bs
-                         JOIN transactions t ON t.id = bs.transaction_id
-                         WHERE t.user_id = u.id AND bs.due_date >= NOW() LIMIT 1) AS has_subscription,
-                        ui.superboom_due_date
-                    FROM users AS u
-                    LEFT JOIN user_settings AS us ON us.user_id = u.id
-                    LEFT JOIN user_information AS ui ON ui.user_id = u.id
-                    INNER JOIN user_preferences AS up ON up.gender = u.gender AND up.user_id = ?
-                    WHERE u.id != ?
-                        AND u.lat IS NOT NULL
-                        AND u.long IS NOT NULL
-                        AND u.mode = 'authenticated'
-                        AND u.registration_date IS NOT NULL
-                        AND NOT EXISTS (
-                            SELECT 1 FROM blocked_contacts AS bc
-                            WHERE bc.user_id = u.id AND bc.phone = ?
-                        )
-                        AND NOT EXISTS (
-                            SELECT 1 FROM blocked_contacts AS my_bc
-                            WHERE my_bc.phone = u.phone AND my_bc.user_id = ?
-                        )
-                        AND NOT EXISTS (
-                            SELECT 1 FROM user_reactions AS ure
-                            WHERE ure.reactor_id = ?
-                                AND ure.user_id = u.id
-                                AND ure.type != 'dislike'
-                                AND ure.date >= ?
-                        )
-                )
+        // Optimized query: removed duplicate blocked_me check and Redis caching
+        // Structure kept identical to original for deterministic results
+        $sql = "
+            WITH filtered_users AS (
                 SELECT
-                    id,
-                    name,
-                    (blocked_me IS NOT NULL) AS blocked_me,
-                    CASE
-                        WHEN has_subscription IS NOT NULL AND NOT show_my_age THEN NULL
-                        ELSE age
-                    END AS age,
-                    image,
-                    CASE
-                        WHEN has_subscription IS NOT NULL AND NOT show_distance_from_me THEN NULL
-                        ELSE ROUND(ST_Distance_Sphere(POINT(?, ?), POINT(`long`, `lat`)) / 1000, 0)
-                    END AS distance,
-                    COALESCE(like_count, 0) AS like_count,
-                    (superboom_due_date IS NOT NULL AND superboom_due_date >= UTC_TIMESTAMP()) AS is_boosted
-                FROM filtered_users
-                ORDER BY
-                    (superboom_due_date IS NOT NULL AND superboom_due_date >= UTC_TIMESTAMP()) DESC,
-                    like_count DESC
-                LIMIT 15
-            ";
+                    u.id,
+                    u.name,
+                    u.age,
+                    u.lat,
+                    u.long,
+                    u.phone,
+                    us.show_my_age,
+                    us.show_distance_from_me,
+                    (SELECT image FROM user_images ui
+                     WHERE ui.user_id = u.id ORDER BY ui.id LIMIT 1) AS image,
+                    (SELECT COUNT(*) FROM user_reactions ur
+                     WHERE ur.user_id = u.id AND ur.type != 'dislike') AS like_count,
+                    (SELECT 1 FROM bought_subscriptions bs
+                     JOIN transactions t ON t.id = bs.transaction_id
+                     WHERE t.user_id = u.id AND bs.due_date >= NOW() LIMIT 1) AS has_subscription,
+                    ui.superboom_due_date
+                FROM users AS u
+                LEFT JOIN user_settings AS us ON us.user_id = u.id
+                LEFT JOIN user_information AS ui ON ui.user_id = u.id
+                INNER JOIN user_preferences AS up ON up.gender = u.gender AND up.user_id = ?
+                WHERE u.id != ?
+                    AND u.lat IS NOT NULL
+                    AND u.long IS NOT NULL
+                    AND u.mode = 'authenticated'
+                    AND u.registration_date IS NOT NULL
+                    AND NOT EXISTS (
+                        SELECT 1 FROM blocked_contacts AS bc
+                        WHERE bc.user_id = u.id AND bc.phone = ?
+                    )
+                    AND NOT EXISTS (
+                        SELECT 1 FROM blocked_contacts AS my_bc
+                        WHERE my_bc.phone = u.phone AND my_bc.user_id = ?
+                    )
+                    AND NOT EXISTS (
+                        SELECT 1 FROM user_reactions AS ure
+                        WHERE ure.reactor_id = ?
+                            AND ure.user_id = u.id
+                            AND ure.type != 'dislike'
+                            AND ure.date >= ?
+                    )
+            )
+            SELECT
+                id,
+                name,
+                FALSE AS blocked_me,
+                CASE
+                    WHEN has_subscription IS NOT NULL AND NOT show_my_age THEN NULL
+                    ELSE age
+                END AS age,
+                image,
+                CASE
+                    WHEN has_subscription IS NOT NULL AND NOT show_distance_from_me THEN NULL
+                    ELSE ROUND(ST_Distance_Sphere(POINT(?, ?), POINT(`long`, `lat`)) / 1000, 0)
+                END AS distance,
+                COALESCE(like_count, 0) AS like_count,
+                (superboom_due_date IS NOT NULL AND superboom_due_date >= UTC_TIMESTAMP()) AS is_boosted
+            FROM filtered_users
+            ORDER BY
+                (superboom_due_date IS NOT NULL AND superboom_due_date >= UTC_TIMESTAMP()) DESC,
+                like_count DESC
+            LIMIT 15
+        ";
 
-            $bindings = [
-                $myPhone,        // blocked_me subquery
-                $myUserId,       // user_preferences join
-                $myUserId,       // u.id != ?
-                $myPhone,        // blocked_contacts NOT EXISTS (who blocked me)
-                $myUserId,       // blocked_contacts NOT EXISTS (I blocked)
-                $myUserId,       // user_reactions NOT EXISTS
-                $twoDaysAgo,     // user_reactions date filter
-                $myLng,          // ST_Distance_Sphere longitude
-                $myLat,          // ST_Distance_Sphere latitude
+        $bindings = [
+            $myUserId,       // user_preferences join
+            $myUserId,       // u.id != ?
+            $myPhone,        // blocked_contacts NOT EXISTS (who blocked me)
+            $myUserId,       // blocked_contacts NOT EXISTS (I blocked)
+            $myUserId,       // user_reactions NOT EXISTS
+            $twoDaysAgo,     // user_reactions date filter
+            $myLng,          // ST_Distance_Sphere longitude
+            $myLat,          // ST_Distance_Sphere latitude
+        ];
+
+        $results = DB::select($sql, $bindings);
+
+        // Преобразование stdClass в массивы и приведение типов
+        $topProfiles = array_map(function ($row) {
+            return [
+                'id' => $row->id,
+                'name' => $row->name,
+                'blocked_me' => (bool) $row->blocked_me,
+                'age' => $row->age !== null ? (int) $row->age : null,
+                'image' => $row->image,
+                'distance' => $row->distance !== null ? (int) $row->distance : null,
+                'like_count' => (int) $row->like_count,
+                'is_boosted' => (bool) $row->is_boosted,
             ];
-
-            $results = DB::select($sql, $bindings);
-
-            // Преобразование stdClass в массивы и приведение типов
-            $topProfiles = array_map(function ($row) {
-                return [
-                    'id' => $row->id,
-                    'name' => $row->name,
-                    'blocked_me' => (bool) $row->blocked_me,
-                    'age' => $row->age !== null ? (int) $row->age : null,
-                    'image' => $row->image,
-                    'distance' => $row->distance !== null ? (int) $row->distance : null,
-                    'like_count' => (int) $row->like_count,
-                    'is_boosted' => (bool) $row->is_boosted,
-                ];
-            }, $results);
-
-            #Redis::setex($key, 900, json_encode($topProfiles));
-        }
+        }, $results);
 
         return [
-            'items' => $topProfiles
+            'items' => $topProfiles,
         ];
     }
 
