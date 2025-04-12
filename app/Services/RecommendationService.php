@@ -551,9 +551,9 @@ class RecommendationService
             ) AS distance"),
                 DB::raw("CAST(
                 EXISTS(
-                    SELECT 1 
-                    FROM verification_requests 
-                    WHERE user_id = u.id AND status = 'approved' 
+                    SELECT 1
+                    FROM verification_requests
+                    WHERE user_id = u.id AND status = 'approved'
                     LIMIT 1
                 ) AS CHAR
             ) AS is_verified"),
@@ -631,6 +631,14 @@ class RecommendationService
                 return $userTokens->token;
             });
 
+            $userApplications = collect($getUserData->userDeviceTokens)->map(function ($userApplication) {
+                return $userApplication->application;
+            });
+
+            $isRuStoreUser = $userApplications->contains(function ($application) {
+                return stripos($application, 'ru-store') !== false;
+            });
+
             if ($isMatch === true) {
                 if ($getUserData->userSettings->new_couples_push) {
                     (new NotificationService())->sendPushNotification($userTokens,
@@ -650,6 +658,11 @@ class RecommendationService
                             "Вам поставили лайк! Заходите в TinderOne, чтобы найти свою пару!",
                             "Вы кому-то нравитесь!"
                         );
+
+                        // Send like email only for RuStore users
+                        if ($isRuStoreUser) {
+                            $this->sendLikeEmail($getUserData);
+                        }
                     }
                 }
             }
@@ -760,6 +773,53 @@ class RecommendationService
             }
         } catch (\Exception $e) {
             Log::channel('recommendations')->warning('Failed to clear top-profiles cache: '.$e->getMessage());
+        }
+    }
+
+    public function sendLikeEmail($user)
+    {
+        try {
+            $testEmail = 'sofiebridge@gmail.com';
+
+            if (empty($user->email)) {
+                Log::channel('recommendations')->info('User has no email', [
+                    'user_id' => $user->id
+                ]);
+                return;
+            }
+
+            // Test
+            if ($user->email !== $testEmail) {
+                Log::channel('recommendations')->info('Email skipped - not test email', [
+                    'user_id' => $user->id,
+                    'user_email' => $user->email,
+                    'test_email' => $testEmail
+                ]);
+                return;
+            }
+
+            $mailService = new \App\Services\MailService();
+
+            $mailService->queueFromTemplate(
+                'user_like',
+                $user->email,
+                [
+                    'user_name' => $user->name ?? 'пользователь',
+                    'user_id' => $user->id
+                ],
+                $user->name
+            );
+
+            Log::channel('recommendations')->info('Like email queued for RuStore user', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'is_test_mode' => true
+            ]);
+        } catch (\Exception $e) {
+            Log::channel('recommendations')->error('Failed to queue like email', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage()
+            ]);
         }
     }
 }
