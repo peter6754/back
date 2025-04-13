@@ -31,5 +31,9 @@
       "Bash(time php artisan:*)"
     ],
     "deny": []
-  }
+  },
+  "enabledMcpjsonServers": [
+    "laravel-boost"
+  ],
+  "enableAllProjectMcpServers": true
 }
