@@ -8,17 +8,14 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote')->hourly();
 
-// Schedule superlike allocation check (runs daily, allocates only if 7 days passed)
+// Schedule superlike allocation check (runs every minute, allocates only if 2 minutes passed)
 Schedule::command('superlikes:allocate-weekly')
-    ->daily()
-    ->at('00:00');
+    ->everyMinute();
 
-// Schedule daily likes allocation for male users without subscription (runs daily at midnight)
+// Schedule likes allocation for male users without subscription (runs every minute, allocates only if 4 minutes passed)
 Schedule::command('likes:allocate-daily')
-    ->daily()
-    ->at('00:15');
+    ->everyMinute();
 
-// Schedule superboom allocation check (runs daily, allocates only if 30 days passed)
+// Schedule superboom allocation check (runs every minute, allocates only if 3 minutes passed)
 Schedule::command('superbooms:allocate-monthly')
-    ->daily()
-    ->at('00:30');
+    ->everyMinute();

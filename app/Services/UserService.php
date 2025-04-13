@@ -319,10 +319,7 @@ class UserService
                 'company' => $user['user_information']['company'] ?? null,
                 'superlikes' => $this->getUserSuperlikes($userId),
                 'superbooms' => $this->getUserSuperbooms($userId),
-                ...(in_array($user['gender'], $this->maleGenders) ?
-                    ['likes' => $this->getUserDailyLikes($userId)] :
-                    []
-                ),
+                'likes' => $this->getUserDailyLikes($userId),
                 'show_distance_from_me' => $user['user_settings']['show_distance_from_me'] ?? null,
                 'show_my_age' => $user['user_settings']['show_my_age'] ?? null,
                 'show_my_orientation' => $user['user_settings']['show_my_orientation'] ?? null,
@@ -1253,10 +1250,10 @@ class UserService
 
     /**
      * Get user's remaining daily likes from user information
-     * For users with subscription, return null (unlimited)
-     * For users without subscription, return actual remaining likes
+     * For users with subscription or females, return "unlimited" string
+     * For males without subscription, return actual remaining likes (0 or more)
      */
-    private function getUserDailyLikes(string $userId): ?int
+    private function getUserDailyLikes(string $userId): int|string
     {
         $user = Secondaryuser::with(['userInformation', 'activeSubscription'])
             ->find($userId);
@@ -1270,14 +1267,14 @@ class UserService
         $hasSubscription = $user->activeSubscription()->exists();
 
         if (!$isMale || $hasSubscription) {
-            return null; // Unlimited for females or users with subscription
+            return 'unlimited'; // Unlimited for females or users with subscription
         }
 
         $userInfo = $user->userInformation;
         if (!$userInfo) {
-            return 30; // Default value
+            return 0; // Return 0 if no user info
         }
 
-        return $userInfo->getRemainingLikes();
+        return $userInfo->getRemainingLikes() ?? 0; // Ensure we never return null for males without subscription
     }
 }
