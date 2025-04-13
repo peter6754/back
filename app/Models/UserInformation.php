@@ -50,10 +50,10 @@ class UserInformation extends Model
     ];
 
     protected $casts = [
-        'superlikes_last_reset' => 'date',
-        'superbooms_last_reset' => 'date',
+        'superlikes_last_reset' => 'datetime',
+        'superbooms_last_reset' => 'datetime',
         'superboom_due_date' => 'datetime',
-        'daily_likes_last_reset' => 'date',
+        'daily_likes_last_reset' => 'datetime',
     ];
 
     /**
