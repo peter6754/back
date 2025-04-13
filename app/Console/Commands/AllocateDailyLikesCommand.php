@@ -13,25 +13,25 @@ class AllocateDailyLikesCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'likes:allocate-daily {--force : Force allocation ignoring the 1-day period}';
+    protected $signature = 'likes:allocate-daily {--force : Force allocation ignoring the 4-minute period}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Allocate daily likes (30) for male users without active subscription';
+    protected $description = 'Allocate likes (30) every 4 minutes for male users without active subscription';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $this->info('Starting daily likes allocation...');
+        $this->info('Starting likes allocation (every 4 minutes)...');
 
         $force = $this->option('force');
-        $today = now()->toDateString();
         $now = now()->toDateTimeString();
+        $fourMinutesAgo = now()->subMinutes(4)->toDateTimeString();
 
         $this->info('Step 1: Updating existing records...');
 
@@ -39,7 +39,7 @@ class AllocateDailyLikesCommand extends Command
             ? '1=1'
             : '(ui.daily_likes_last_reset IS NULL OR ui.daily_likes_last_reset < ?)';
 
-        $bindings = $force ? [$today] : [$today, $today];
+        $bindings = $force ? [$fourMinutesAgo] : [$fourMinutesAgo, $fourMinutesAgo];
 
         $updated = DB::update("
             UPDATE user_information ui
@@ -58,7 +58,7 @@ class AllocateDailyLikesCommand extends Command
               AND u.mode = 'authenticated'
               AND active_subs.user_id IS NULL
               AND {$dateCondition}
-        ", array_merge([$now], $bindings));
+        ", array_merge([$now, $now], $bindings));
 
         $this->info("Updated {$updated} existing records");
 
@@ -80,12 +80,12 @@ class AllocateDailyLikesCommand extends Command
               AND u.mode = 'authenticated'
               AND ui.user_id IS NULL
               AND active_subs.user_id IS NULL
-        ", [$today, $now]);
+        ", [$now, $now]);
 
         $this->info("Created {$created} new records");
 
         $total = $updated + $created;
-        $this->info("Daily likes allocation completed!");
+        $this->info("Likes allocation completed (every 4 minutes)!");
         $this->info("Total processed: {$total} users");
 
         return 0;
