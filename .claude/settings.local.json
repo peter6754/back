@@ -28,12 +28,13 @@
       "Read(/home/peter/tinderone-back/src/routes/user/**)",
       "Read(/home/peter/tinderone-back/src/routes/user/**)",
       "Read(/home/peter/tinderone-back/src/routes/user/**)",
-      "Bash(time php artisan:*)"
+      "Bash(time php artisan:*)",
+      "Bash(/dev/null)"
     ],
     "deny": []
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "laravel-boost"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }
