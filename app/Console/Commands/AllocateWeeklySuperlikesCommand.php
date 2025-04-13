@@ -14,14 +14,14 @@ class AllocateWeeklySuperlikesCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'superlikes:allocate-weekly {--force : Force allocation ignoring the 2-minute period}';
+    protected $signature = 'superlikes:allocate-weekly {--force : Force allocation ignoring the 7-day period}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Allocate superlikes every 2 minutes from last reset for gold and premium subscribers';
+    protected $description = 'Allocate superlikes every 7 days from last reset for gold and premium subscribers';
 
     /**
      * Execute the console command.
@@ -52,12 +52,12 @@ class AllocateWeeklySuperlikesCommand extends Command
                 continue;
             }
 
-            // Check if 2 minutes have passed since last reset
+            // Check if 7 days have passed since last reset
             $lastReset = Carbon::parse($userInfo->superlikes_last_reset);
-            $minutesSinceReset = $lastReset->diffInMinutes(now(), true);
+            $daysSinceReset = $lastReset->diffInDays(now(), true);
             $force = $this->option('force');
 
-            if ($force || $minutesSinceReset >= 2) {
+            if ($force || $daysSinceReset >= 7) {
                 // Начисляем суперлайки (старые начисленные сгорают, купленные остаются)
                 $userInfo->update([
                     'superlikes' => 5,

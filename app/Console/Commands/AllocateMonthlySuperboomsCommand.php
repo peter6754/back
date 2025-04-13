@@ -14,14 +14,14 @@ class AllocateMonthlySuperboomsCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'superbooms:allocate-monthly {--force : Force allocation ignoring the 3-minute period}';
+    protected $signature = 'superbooms:allocate-monthly {--force : Force allocation ignoring the 30-day period}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Allocate superbooms every 3 minutes from last reset for gold and premium subscribers';
+    protected $description = 'Allocate superbooms every 30 days from last reset for gold and premium subscribers';
 
     /**
      * Execute the console command.
@@ -52,12 +52,12 @@ class AllocateMonthlySuperboomsCommand extends Command
                 continue;
             }
 
-            // Check if 3 minutes have passed since last reset
+            // Check if 30 days have passed since last reset
             $lastReset = Carbon::parse($userInfo->superbooms_last_reset);
-            $minutesSinceReset = $lastReset->diffInMinutes(now(), true);
+            $daysSinceReset = $lastReset->diffInDays(now(), true);
             $force = $this->option('force');
 
-            if ($force || $minutesSinceReset >= 3) {
+            if ($force || $daysSinceReset >= 30) {
                 // Начисляем супербум (старые начисленные сгорают, купленные остаются)
                 $userInfo->update([
                     'superbooms' => 1,

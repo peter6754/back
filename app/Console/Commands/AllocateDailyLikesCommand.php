@@ -13,25 +13,25 @@ class AllocateDailyLikesCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'likes:allocate-daily {--force : Force allocation ignoring the 4-minute period}';
+    protected $signature = 'likes:allocate-daily {--force : Force allocation ignoring the 1-day period}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Allocate likes (30) every 4 minutes for male users without active subscription';
+    protected $description = 'Allocate likes (30) every 1 day (24 hours) for male users without active subscription';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $this->info('Starting likes allocation (every 4 minutes)...');
+        $this->info('Starting likes allocation (every 24 hours)...');
 
         $force = $this->option('force');
         $now = now()->toDateTimeString();
-        $fourMinutesAgo = now()->subMinutes(4)->toDateTimeString();
+        $oneDayAgo = now()->subDay()->toDateTimeString();
 
         $this->info('Step 1: Updating existing records...');
 
@@ -39,7 +39,7 @@ class AllocateDailyLikesCommand extends Command
             ? '1=1'
             : '(ui.daily_likes_last_reset IS NULL OR ui.daily_likes_last_reset < ?)';
 
-        $bindings = $force ? [$fourMinutesAgo] : [$fourMinutesAgo, $fourMinutesAgo];
+        $bindings = $force ? [] : [$oneDayAgo];
 
         $updated = DB::update("
             UPDATE user_information ui
@@ -85,7 +85,7 @@ class AllocateDailyLikesCommand extends Command
         $this->info("Created {$created} new records");
 
         $total = $updated + $created;
-        $this->info("Likes allocation completed (every 4 minutes)!");
+        $this->info("Likes allocation completed (every 24 hours)!");
         $this->info("Total processed: {$total} users");
 
         return 0;
