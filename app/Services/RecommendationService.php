@@ -814,21 +814,10 @@ class RecommendationService
     public function sendLikeEmail($user)
     {
         try {
-            $testEmail = 'sofiebridge@gmail.com';
 
             if (empty($user->email)) {
                 Log::channel('recommendations')->info('User has no email', [
                     'user_id' => $user->id
-                ]);
-                return;
-            }
-
-            // Test
-            if ($user->email !== $testEmail) {
-                Log::channel('recommendations')->info('Email skipped - not test email', [
-                    'user_id' => $user->id,
-                    'user_email' => $user->email,
-                    'test_email' => $testEmail
                 ]);
                 return;
             }
