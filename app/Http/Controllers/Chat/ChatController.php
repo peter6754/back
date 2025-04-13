@@ -294,66 +294,84 @@ class ChatController extends Controller
                 ->with([
                     'user1:id,name,is_online',
                     'user2:id,name,is_online',
+                    'user1.images',
+                    'user2.images',
                 ])
+                ->get();
+
+            // Get all conversation IDs for batch queries
+            $conversationIds = $conversations->pluck('id')->toArray();
+
+            // Batch load last messages for all conversations
+            $lastMessages = ChatMessage::whereIn('conversation_id', $conversationIds)
+                ->select('conversation_id', 'sender_id', 'message', 'type', 'date')
+                ->with('sender:id,name')
+                ->whereIn('id', function ($query) use ($conversationIds) {
+                    $query->select(\DB::raw('MAX(id)'))
+                        ->from('chat_messages')
+                        ->whereIn('conversation_id', $conversationIds)
+                        ->groupBy('conversation_id');
+                })
                 ->get()
-                ->map(function ($conversation) use ($userId) {
-                    // Determine the other user
-                    $otherUser = $conversation->user1_id === $userId
-                        ? $conversation->user2
-                        : $conversation->user1;
+                ->keyBy('conversation_id');
 
-                    // находим аватар
-                    $mainImage = UserImage::where('user_id', $otherUser->id)
-                        ->where('is_main', true)
-                        ->first();
+            // Batch load unread counts for all conversations
+            $unreadCounts = ChatMessage::whereIn('conversation_id', $conversationIds)
+                ->where('receiver_id', $userId)
+                ->where('is_seen', false)
+                ->select('conversation_id', \DB::raw('COUNT(*) as unread_count'))
+                ->groupBy('conversation_id')
+                ->get()
+                ->keyBy('conversation_id');
 
-                    // Если нет главного изображения, берем первое доступное
-                    if (! $mainImage) {
-                        $mainImage = UserImage::where('user_id', $otherUser->id)
-                            ->first();
+            $conversationsArray = $conversations->map(function ($conversation) use ($userId, $lastMessages, $unreadCounts) {
+                // Determine the other user
+                $otherUser = $conversation->user1_id === $userId
+                    ? $conversation->user2
+                    : $conversation->user1;
+
+                // Get avatar from eager-loaded user images
+                $avatarUrl = null;
+                if ($otherUser && $otherUser->images) {
+                    $mainImage = $otherUser->images->firstWhere('is_main', true);
+                    if (!$mainImage) {
+                        $mainImage = $otherUser->images->first();
                     }
-
-                    $avatarUrl = null;
                     if ($mainImage && $mainImage->image) {
                         $avatarUrl = $mainImage->image;
                     }
+                }
 
-                    // Get last message
-                    $lastMessage = ChatMessage::where('conversation_id', $conversation->id)
-                        ->with('sender:id,name')
-                        ->orderBy('id', 'desc')
-                        ->first();
+                // Get last message from pre-loaded collection
+                $lastMessage = $lastMessages->get($conversation->id);
 
-                    // Get unread count for current user
-                    $unreadCount = ChatMessage::where('conversation_id', $conversation->id)
-                        ->where('receiver_id', $userId)
-                        ->where('is_seen', false)
-                        ->count();
+                // Get unread count from pre-loaded collection
+                $unreadCount = $unreadCounts->get($conversation->id)?->unread_count ?? 0;
 
-                    // Determine if pinned for current user
-                    $isPinned = $conversation->user1_id === $userId
-                        ? $conversation->is_pinned_by_user1
-                        : $conversation->is_pinned_by_user2;
+                // Determine if pinned for current user
+                $isPinned = $conversation->user1_id === $userId
+                    ? $conversation->is_pinned_by_user1
+                    : $conversation->is_pinned_by_user2;
 
-                    return [
-                        'chat_id' => $conversation->id,
-                        'user' => [
-                            'id' => $otherUser->id,
-                            'name' => $otherUser->name,
-                            'avatar_url' => $avatarUrl,
-                            'online' => $otherUser->is_online,
-                        ],
-                        'last_message' => $lastMessage ? [
-                            'user_id' => $lastMessage->sender_id,
-                            'username' => $lastMessage->sender->name ?? null,
-                            'text' => $lastMessage->message,
-                            'type' => $lastMessage->type === 'media' ? 'media' : 'text',
-                            'timestamp' => $lastMessage->date ? $lastMessage->date->utc()->toISOString() : now()->utc()->toISOString(),
-                        ] : null,
-                        'is_pinned' => $isPinned,
-                        'unread_count' => $unreadCount,
-                    ];
-                })
+                return [
+                    'chat_id' => $conversation->id,
+                    'user' => [
+                        'id' => $otherUser->id,
+                        'name' => $otherUser->name,
+                        'avatar_url' => $avatarUrl,
+                        'online' => $otherUser->is_online,
+                    ],
+                    'last_message' => $lastMessage ? [
+                        'user_id' => $lastMessage->sender_id,
+                        'username' => $lastMessage->sender->name ?? null,
+                        'text' => $lastMessage->message,
+                        'type' => $lastMessage->type === 'media' ? 'media' : 'text',
+                        'timestamp' => $lastMessage->date ? $lastMessage->date->utc()->toISOString() : now()->utc()->toISOString(),
+                    ] : null,
+                    'is_pinned' => $isPinned,
+                    'unread_count' => $unreadCount,
+                ];
+            })
                 ->sortByDesc(function ($conversation) {
                     // получаем timestamps для сортировки
                     $timestamp = 0;
@@ -448,7 +466,7 @@ class ChatController extends Controller
             }
 
             $response = [
-                'conversations' => $conversations,
+                'conversations' => $conversationsArray,
                 'match' => $matches,
                 'match_count' => count($matches),
             ];
