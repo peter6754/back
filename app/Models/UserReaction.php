@@ -122,20 +122,25 @@ class UserReaction extends Model
 
     /**
      * Check if this reaction creates a match.
+     * Optimized to avoid N+1 when used in loops.
      *
      * @return bool
      */
     public function createsMatch(): bool
     {
-        return in_array($this->type, ['like', 'superlike']) &&
-            UserReaction::where('reactor_id', $this->user_id)
-                ->where('user_id', $this->reactor_id)
-                ->positive()
-                ->exists();
+        if (! in_array($this->type, ['like', 'superlike'])) {
+            return false;
+        }
+
+        return UserReaction::where('reactor_id', $this->user_id)
+            ->where('user_id', $this->reactor_id)
+            ->positive()
+            ->exists();
     }
 
     /**
      * Check if two users have mutual likes (static method).
+     * Optimized to use a single query with a self-join.
      *
      * @param string $userId1
      * @param string $userId2
@@ -143,17 +148,15 @@ class UserReaction extends Model
      */
     public static function haveMutualLikes(string $userId1, string $userId2): bool
     {
-        // Check if user1 liked user2 AND user2 liked user1
-        $user1LikesUser2 = self::where('reactor_id', $userId1)
-            ->where('user_id', $userId2)
-            ->positive()
+        return \DB::table('user_reactions as ur1')
+            ->join('user_reactions as ur2', function ($join) {
+                $join->on('ur1.reactor_id', '=', 'ur2.user_id')
+                    ->on('ur1.user_id', '=', 'ur2.reactor_id');
+            })
+            ->where('ur1.reactor_id', $userId1)
+            ->where('ur1.user_id', $userId2)
+            ->whereIn('ur1.type', ['like', 'superlike'])
+            ->whereIn('ur2.type', ['like', 'superlike'])
             ->exists();
-
-        $user2LikesUser1 = self::where('reactor_id', $userId2)
-            ->where('user_id', $userId1)
-            ->positive()
-            ->exists();
-
-        return $user1LikesUser2 && $user2LikesUser1;
     }
 }
