@@ -134,7 +134,6 @@ class TransactionProcess extends Model
     public function getUserTransactions($user, int $page = 1, int $perPage = 7): array
     {
         $transactions = self::where('user_id', $user['id'])
-            ->with(['boughtSubscription.package']) // Загружаем вложенные отношения
             ->orderBy('purchased_at', 'desc')
             ->paginate($perPage, ['*'], 'page', $page);
 
@@ -143,36 +142,18 @@ class TransactionProcess extends Model
                 return [
                     'id' => $transaction->id,
                     'transaction_id' => $transaction->transaction_id,
-                    'type' => $transaction->type,
+                    'status_label' => $this->getStatusLabel($transaction->status),
+                    'status' => $transaction->status,
                     'type_label' => $this->getTypeLabel($transaction->type),
+                    'type' => $transaction->type,
                     'provider' => $transaction->provider,
                     'amount' => (float) $transaction->price,
-                    'currency' => 'USD',
                     'date' => $transaction->purchased_at?->toISOString(),
-                    'date_display' => $transaction->purchased_at?->format('M j, Y H:i'),
-                    'subscription' => $transaction->boughtSubscription ? [
-                        'package_name' => $transaction->boughtSubscription->package->name ?? 'Unknown',
-                        'term' => $transaction->boughtSubscription->term,
-                    ] : null,
                 ];
             }),
             'pagination' => [
                 'current_page' => $transactions->currentPage(),
-                'per_page' => $transactions->perPage(),
-                'total' => $transactions->total(),
                 'total_pages' => $transactions->lastPage(),
-                'has_more' => $transactions->hasMorePages(),
-                'next_page' => $transactions->nextPageUrl(),
-                'prev_page' => $transactions->previousPageUrl(),
-                'from' => $transactions->firstItem(),
-                'to' => $transactions->lastItem(),
-            ],
-            'summary' => [
-                'total_amount' => $transactions->sum('price'),
-                'subscription_count' => $transactions->where('type',
-                    PaymentsService::ORDER_PRODUCT_SUBSCRIPTION)->count(),
-                'package_count' => $transactions->where('type', PaymentsService::ORDER_PRODUCT_SERVICE)->count(),
-                'gift_count' => $transactions->where('type', PaymentsService::ORDER_PRODUCT_GIFT)->count(),
             ]
         ];
     }
