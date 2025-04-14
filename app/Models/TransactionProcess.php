@@ -179,12 +179,11 @@ class TransactionProcess extends Model
     protected function getStatusLabel(string $status): string
     {
         $statuses = [
-            'succeeded' => 'Completed',
-            'completed' => 'Completed',
-            'pending' => 'Pending',
-            'failed' => 'Failed',
-            'refunded' => 'Refunded',
-            'canceled' => 'Canceled',
+            PaymentsService::ORDER_STATUS_COMPLETE => trans('transactions.'.PaymentsService::ORDER_STATUS_COMPLETE),
+
+            PaymentsService::ORDER_STATUS_PENDING => trans('transactions.'.PaymentsService::ORDER_STATUS_PENDING),
+
+            PaymentsService::ORDER_STATUS_CANCEL => trans('transactions.'.PaymentsService::ORDER_STATUS_CANCEL),
         ];
 
         return $statuses[$status] ?? ucfirst($status);

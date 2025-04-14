@@ -23,6 +23,7 @@ class TranslationCrudController extends CrudController
     static $groups = [
         'tinderone' => 'TinderOne',
         'genders' => 'Гендеры',
+        'transactions' => 'Платежи'
     ];
 
     /**
