@@ -45,6 +45,7 @@
 <x-backpack::menu-item title="Статистика(временно)" icon="la la-question" :link="backpack_url('statistics')"/>
 <x-backpack::menu-item title="Аналитика по городам" icon="la la-question" :link="backpack_url('city-analytics')"/>
 <x-backpack::menu-item title="Аналитика по ботам" icon="la la-question" :link="backpack_url('bot-analytics')"/>
+<x-backpack::menu-item title="Переводы" icon="la la-question" :link="backpack_url('translation')" />
 
 <span class="nav-separator">Утилиты</span>
 <x-backpack::menu-item title='Log Manager' icon='la la-terminal' :link="backpack_url('log')" />

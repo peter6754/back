@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Symfony\Component\HttpFoundation\Response;
 use App\Http\Traits\ApiResponseTrait;
+use Illuminate\Support\Facades\App;
 use App\Models\Secondaryuser;
 use App\Services\JwtService;
 use Illuminate\Http\Request;
@@ -14,15 +15,15 @@ class AuthMiddleware
     use ApiResponseTrait;
 
     /**
-     * @param JwtService $jwtService
+     * @param  JwtService  $jwtService
      */
     public function __construct(private readonly JwtService $jwtService)
     {
     }
 
     /**
-     * @param Request $request
-     * @param Closure $next
+     * @param  Request  $request
+     * @param  Closure  $next
      * @return Response
      * @throws \Exception
      */
@@ -41,6 +42,9 @@ class AuthMiddleware
             if (!$user) {
                 throw new \Exception('User not found');
             }
+
+            // Выбираем язык пользователя (если указан)
+            App::setLocale($payload['language'] ?? config('locales.default_locale'));
 
             // Добавляем пользователя в запрос
             $request->setUserResolver(function () use ($user) {

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\TranslationCrudController;
 use App\Http\Controllers\Admin\UserPhotosPageController;
 use Illuminate\Support\Facades\Route;
 
@@ -52,7 +53,7 @@ Route::group([
             ->name('admin.users.photos.destroy');
     });
 
-// Дополнительные маршруты
+    // Дополнительные маршруты
     Route::get('mail-template/{id}/preview', 'MailTemplateCrudController@preview')
         ->name('mail-template.preview');
     Route::get('mail-queue/{id}/resend', 'MailQueueCrudController@resend')
@@ -65,6 +66,10 @@ Route::group([
         ->name('send-mail.send');
     Route::get('send-mail/template/{id}', 'SendMailController@getTemplate')
         ->name('send-mail.template');
+
+    Route::crud('translation', 'TranslationCrudController');
+    Route::post('translation/export', [TranslationCrudController::class, 'exportTranslations'])
+        ->name('translation.export');
 }); // this should be the absolute last line of this file
 
 /**

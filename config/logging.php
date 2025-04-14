@@ -155,9 +155,10 @@ return [
             'driver' => 'daily'
         ],
 
-        'sentry_logs' => [
-            'level' => env('LOG_LEVEL', 'info'),
-            'driver' => 'sentry_logs'
+        'sentry' => [
+            'level' => env('LOG_LEVEL', 'error'),
+            'driver' => 'sentry',
+            'bubble' => true,
         ],
     ]
 ];
