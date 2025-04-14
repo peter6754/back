@@ -47,7 +47,7 @@ class TransactionProcess extends Model
 
     /**
      * @param $idWhere
-     * @param bool $recurrent
+     * @param  bool  $recurrent
      * @return array
      */
     public function transactionInfo($idWhere, bool $recurrent = false): array
@@ -102,11 +102,11 @@ class TransactionProcess extends Model
             } else {
                 $getTransaction->where(function ($query) use ($idWhere) {
                     $query->where('t.transaction_id', $idWhere)
-                        ->orWhere('t.id', (int)$idWhere);
+                        ->orWhere('t.id', (int) $idWhere);
                 });
             }
 
-            return (array)$getTransaction->firstOrFail();
+            return (array) $getTransaction->firstOrFail();
         } catch (\Exception $e) {
             return [];
         }
@@ -127,8 +127,8 @@ class TransactionProcess extends Model
     /**
      * Получение транзакций пользователя для API с пагинацией
      * @param $user
-     * @param int $page
-     * @param int $perPage
+     * @param  int  $page
+     * @param  int  $perPage
      * @return array
      */
     public function getUserTransactions($user, int $page = 1, int $perPage = 7): array
@@ -139,42 +139,40 @@ class TransactionProcess extends Model
             ->paginate($perPage, ['*'], 'page', $page);
 
         return [
-            'success' => true,
-            'data' => [
-                'transactions' => $transactions->map(function ($transaction) {
-                    return [
-                        'id' => $transaction->id,
-                        'transaction_id' => $transaction->transaction_id,
-                        'type' => $transaction->type,
-                        'type_label' => $this->getTypeLabel($transaction->type),
-                        'provider' => $transaction->provider,
-                        'amount' => (float) $transaction->price,
-                        'currency' => 'USD',
-                        'date' => $transaction->purchased_at?->toISOString(),
-                        'date_display' => $transaction->purchased_at?->format('M j, Y H:i'),
-                        'subscription' => $transaction->boughtSubscription ? [
-                            'package_name' => $transaction->boughtSubscription->package->name ?? 'Unknown',
-                            'term' => $transaction->boughtSubscription->term,
-                        ] : null,
-                    ];
-                }),
-                'pagination' => [
-                    'current_page' => $transactions->currentPage(),
-                    'per_page' => $transactions->perPage(),
-                    'total' => $transactions->total(),
-                    'total_pages' => $transactions->lastPage(),
-                    'has_more' => $transactions->hasMorePages(),
-                    'next_page' => $transactions->nextPageUrl(),
-                    'prev_page' => $transactions->previousPageUrl(),
-                    'from' => $transactions->firstItem(),
-                    'to' => $transactions->lastItem(),
-                ],
-                'summary' => [
-                    'total_amount' => $transactions->sum('price'),
-                    'subscription_count' => $transactions->where('type', PaymentsService::ORDER_PRODUCT_SUBSCRIPTION)->count(),
-                    'package_count' => $transactions->where('type', PaymentsService::ORDER_PRODUCT_SERVICE)->count(),
-                    'gift_count' => $transactions->where('type', PaymentsService::ORDER_PRODUCT_GIFT)->count(),
-                ]
+            'items' => $transactions->map(function ($transaction) {
+                return [
+                    'id' => $transaction->id,
+                    'transaction_id' => $transaction->transaction_id,
+                    'type' => $transaction->type,
+                    'type_label' => $this->getTypeLabel($transaction->type),
+                    'provider' => $transaction->provider,
+                    'amount' => (float) $transaction->price,
+                    'currency' => 'USD',
+                    'date' => $transaction->purchased_at?->toISOString(),
+                    'date_display' => $transaction->purchased_at?->format('M j, Y H:i'),
+                    'subscription' => $transaction->boughtSubscription ? [
+                        'package_name' => $transaction->boughtSubscription->package->name ?? 'Unknown',
+                        'term' => $transaction->boughtSubscription->term,
+                    ] : null,
+                ];
+            }),
+            'pagination' => [
+                'current_page' => $transactions->currentPage(),
+                'per_page' => $transactions->perPage(),
+                'total' => $transactions->total(),
+                'total_pages' => $transactions->lastPage(),
+                'has_more' => $transactions->hasMorePages(),
+                'next_page' => $transactions->nextPageUrl(),
+                'prev_page' => $transactions->previousPageUrl(),
+                'from' => $transactions->firstItem(),
+                'to' => $transactions->lastItem(),
+            ],
+            'summary' => [
+                'total_amount' => $transactions->sum('price'),
+                'subscription_count' => $transactions->where('type',
+                    PaymentsService::ORDER_PRODUCT_SUBSCRIPTION)->count(),
+                'package_count' => $transactions->where('type', PaymentsService::ORDER_PRODUCT_SERVICE)->count(),
+                'gift_count' => $transactions->where('type', PaymentsService::ORDER_PRODUCT_GIFT)->count(),
             ]
         ];
     }
