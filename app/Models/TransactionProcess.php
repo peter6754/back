@@ -125,6 +125,93 @@ class TransactionProcess extends Model
     }
 
     /**
+     * Получение транзакций пользователя для API с пагинацией
+     * @param $user
+     * @param int $page
+     * @param int $perPage
+     * @return array
+     */
+    public function getUserTransactions($user, int $page = 1, int $perPage = 7): array
+    {
+        $transactions = self::where('user_id', $user['id'])
+            ->with(['boughtSubscription.package']) // Загружаем вложенные отношения
+            ->orderBy('purchased_at', 'desc')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        return [
+            'success' => true,
+            'data' => [
+                'transactions' => $transactions->map(function ($transaction) {
+                    return [
+                        'id' => $transaction->id,
+                        'transaction_id' => $transaction->transaction_id,
+                        'type' => $transaction->type,
+                        'type_label' => $this->getTypeLabel($transaction->type),
+                        'provider' => $transaction->provider,
+                        'amount' => (float) $transaction->price,
+                        'currency' => 'USD',
+                        'date' => $transaction->purchased_at?->toISOString(),
+                        'date_display' => $transaction->purchased_at?->format('M j, Y H:i'),
+                        'subscription' => $transaction->boughtSubscription ? [
+                            'package_name' => $transaction->boughtSubscription->package->name ?? 'Unknown',
+                            'term' => $transaction->boughtSubscription->term,
+                        ] : null,
+                    ];
+                }),
+                'pagination' => [
+                    'current_page' => $transactions->currentPage(),
+                    'per_page' => $transactions->perPage(),
+                    'total' => $transactions->total(),
+                    'total_pages' => $transactions->lastPage(),
+                    'has_more' => $transactions->hasMorePages(),
+                    'next_page' => $transactions->nextPageUrl(),
+                    'prev_page' => $transactions->previousPageUrl(),
+                    'from' => $transactions->firstItem(),
+                    'to' => $transactions->lastItem(),
+                ],
+                'summary' => [
+                    'total_amount' => $transactions->sum('price'),
+                    'subscription_count' => $transactions->where('type', PaymentsService::ORDER_PRODUCT_SUBSCRIPTION)->count(),
+                    'package_count' => $transactions->where('type', PaymentsService::ORDER_PRODUCT_SERVICE)->count(),
+                    'gift_count' => $transactions->where('type', PaymentsService::ORDER_PRODUCT_GIFT)->count(),
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * Получение читаемого названия типа транзакции
+     */
+    protected function getTypeLabel(?string $type): string
+    {
+        $types = [
+            PaymentsService::ORDER_PRODUCT_SUBSCRIPTION => 'Subscription',
+            PaymentsService::ORDER_PRODUCT_SERVICE => 'Service Package',
+            PaymentsService::ORDER_PRODUCT_GIFT => 'Gift',
+            // Добавьте другие типы по необходимости
+        ];
+
+        return $types[$type] ?? 'Unknown';
+    }
+
+    /**
+     * Получение читаемого названия статуса
+     */
+    protected function getStatusLabel(string $status): string
+    {
+        $statuses = [
+            'succeeded' => 'Completed',
+            'completed' => 'Completed',
+            'pending' => 'Pending',
+            'failed' => 'Failed',
+            'refunded' => 'Refunded',
+            'canceled' => 'Canceled',
+        ];
+
+        return $statuses[$status] ?? ucfirst($status);
+    }
+
+    /**
      * @return \Illuminate\Database\Eloquent\Relations\HasOne
      */
     public function boughtSubscription()

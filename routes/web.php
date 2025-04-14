@@ -11,6 +11,7 @@ use App\Http\Controllers\Users\FeedbackController;
 use App\Http\Controllers\Users\InfoController;
 use App\Http\Controllers\Users\ReferenceDataController;
 use App\Http\Controllers\Users\SettingsController;
+use App\Http\Controllers\Users\TransactionsController;
 use App\Http\Controllers\Users\UserPhotosController;
 use App\Http\Controllers\Users\UsersController;
 use Illuminate\Support\Facades\Route;
@@ -153,6 +154,9 @@ Route::prefix('users')->middleware('auth')->group(function () {
     Route::post('/infoRegistration', [UsersController::class, 'updateUserInfoRegistration']);
 
     Route::get('packagesInfo', [UsersController::class, 'getUserPackages']);
+
+    // User transactions
+    Route::get('transactions', [TransactionsController::class, 'getTransactions']);
 
     // update users coordinates
     Route::post('coordinates', [UsersController::class, 'updateCoordinates']);
