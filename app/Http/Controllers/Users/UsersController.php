@@ -84,15 +84,15 @@ class UsersController extends Controller
      *                          "bio": "Люблю путешествовать и читать книги",
      *                          "gender": {
      *                               "key": "male",
-     *                               "translation_ru": "Мужчина"
+     *                               "name": "Мужчина"
      *                           },
      *                          "sexual_orientation": {
      *                                "key": "hetero",
-     *                                "translation_ru": "Гетеро"
+     *                                "name": "Гетеро"
      *                            },
      *                          "zodiac_sign": {
      *                                "key": "taurus",
-     *                                "translation_ru": "Телец"
+     *                                "name": "Телец"
      *                            },
      *                          "education": "",
      *                          "family": "",
@@ -100,27 +100,27 @@ class UsersController extends Controller
      *                          "love_language": "",
      *                          "alcohole": {
      *                                "key": "on_holidays",
-     *                                "translation_ru": "Пью по праздникам"
+     *                                "name": "Пью по праздникам"
      *                            },
      *                          "smoking": {
      *                                "key": "i_smoke",
-     *                                "translation_ru": "Курю"
+     *                                "name": "Курю"
      *                            },
      *                          "sport": {
      *                                "key": "train_sometimes",
-     *                                "translation_ru": "Иногда тренируюсь"
+     *                                "name": "Иногда тренируюсь"
      *                            },
      *                          "food": {
      *                                "key": "everything",
-     *                                "translation_ru": "Ем всё"
+     *                                "name": "Ем всё"
      *                            },
      *                          "social_network": {
      *                                "key": "sometimes_im_on",
-     *                                "translation_ru": "Иногда захожу в соцсети"
+     *                                "name": "Иногда захожу в соцсети"
      *                            },
      *                          "sleep": {
      *                                "key": "owl",
-     *                                "translation_ru": "Я сова"
+     *                                "name": "Я сова"
      *                            },
      *                          "educational_institution": null,
      *                          "family_status": {

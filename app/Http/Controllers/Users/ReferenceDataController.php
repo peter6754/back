@@ -325,19 +325,19 @@ class ReferenceDataController extends Controller
      *                      "items": {
      *                          {
      *                              "key": "married",
-     *                              "translation_ru": "Женат"
+     *                              "name": "Женат"
      *                          },
      *                          {
      *                              "key": "not_married",
-     *                              "translation_ru": "Не женат"
+     *                              "name": "Не женат"
      *                          },
      *                          {
      *                              "key": "widow_er",
-     *                              "translation_ru": "Вдовец"
+     *                              "name": "Вдовец"
      *                          },
      *                          {
      *                               "key": "divorced",
-     *                               "translation_ru": "Разведен"
+     *                               "name": "Разведен"
      *                          }
      *                      }
      *                  }
@@ -365,7 +365,7 @@ class ReferenceDataController extends Controller
                 ->map(function ($translations, $key) use ($isMale) {
                     return [
                         'key' => $key,
-                        'translation_ru' => $isMale ? $translations[0] : $translations[1]
+                        'name' => $isMale ? $translations[0] : $translations[1]
                     ];
                 })
                 ->values();

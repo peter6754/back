@@ -22,7 +22,7 @@ class TranslationCrudController extends CrudController
      */
     static $groups = [
         'tinderone' => 'TinderOne',
-        'genders' => 'Гендеры',
+        'users' => 'Пользователи',
         'transactions' => 'Платежи'
     ];
 

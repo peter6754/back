@@ -45,6 +45,9 @@ class AuthMiddleware
 
             // Выбираем язык пользователя (если указан)
             App::setLocale($payload['language'] ?? config('locales.default_locale'));
+            if (isset($payload['language'])) {
+                $user->language = $payload['language'];
+            }
 
             // Добавляем пользователя в запрос
             $request->setUserResolver(function () use ($user) {
