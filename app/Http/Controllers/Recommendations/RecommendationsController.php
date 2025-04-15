@@ -73,35 +73,10 @@ class RecommendationsController extends Controller
      *       security={{"bearerAuth":{}}},
      *
      *       @OA\Parameter(
-     *          name="interest_id",
+     *          name="debug",
      *          in="query",
-     *          description="Filter by interest ID",
-     *          required=false,
-     *          @OA\Schema(type="string", example="123")
-     *       ),
-     *
-     *       @OA\Parameter(
-     *          name="min_photo_count",
-     *          in="query",
-     *          description="Minimum number of photos required",
-     *          required=false,
-     *          @OA\Schema(type="string", example="3")
-     *       ),
-     *
-     *       @OA\Parameter(
-     *          name="is_verified",
-     *          in="query",
-     *          description="Filter verified profiles (true/false)",
-     *          required=false,
-     *          @OA\Schema(type="string", example="true")
-     *       ),
-     *
-     *       @OA\Parameter(
-     *          name="has_info",
-     *          in="query",
-     *          description="Filter profiles with complete info",
-     *          required=false,
-     *          @OA\Schema(type="string", example="false")
+     *          description="enable new recommendation algorithm",
+     *          @OA\Schema(type="string", example="1")
      *       ),
      *
      *       @OA\Response(

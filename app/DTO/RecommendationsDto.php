@@ -11,6 +11,7 @@ class RecommendationsDto extends Data
         public ?string $interest_id,
         public ?string $is_verified,
         public ?string $has_info,
+        public ?string $debug,
 
 
         public ?string $user_id,
