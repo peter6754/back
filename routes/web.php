@@ -151,7 +151,7 @@ Route::prefix('users')->middleware('auth')->group(function () {
     Route::get('info/{id}', [InfoController::class, 'getUser']);
 
     // User info in registration
-    Route::post('/infoRegistration', [UsersController::class, 'updateUserInfoRegistration']);
+    Route::post('infoRegistration', [UsersController::class, 'updateUserInfoRegistration']);
 
     Route::get('packagesInfo', [UsersController::class, 'getUserPackages']);
 
