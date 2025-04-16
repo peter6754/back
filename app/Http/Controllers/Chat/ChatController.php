@@ -19,9 +19,7 @@ class ChatController extends Controller
 {
     use ApiResponseTrait;
 
-    public function __construct(private ChatService $chatService, private SeaweedFsService $seaweedFsService)
-    {
-    }
+    public function __construct(private ChatService $chatService, private SeaweedFsService $seaweedFsService) {}
 
     /**
      * Send message to conversation
@@ -336,7 +334,7 @@ class ChatController extends Controller
                 $avatarUrl = null;
                 if ($otherUser && $otherUser->images) {
                     $mainImage = $otherUser->images->firstWhere('is_main', true);
-                    if (! $mainImage) {
+                    if (!$mainImage) {
                         $mainImage = $otherUser->images->first();
                     }
                     if ($mainImage && $mainImage->image) {
@@ -395,12 +393,6 @@ class ChatController extends Controller
                 ->values()
                 ->toArray();
 
-            $conversationUserIds = $conversations->map(function ($conversation) use ($userId) {
-                return $conversation->user1_id === $userId
-                    ? $conversation->user2_id
-                    : $conversation->user1_id;
-            })->toArray();
-
             // Get matched users with their avatars and match timestamps
             $matchedUsersWithTimestamp = \DB::table('user_reactions as ur1')
                 ->join('user_reactions as ur2', function ($join) {
@@ -452,12 +444,7 @@ class ChatController extends Controller
                 }
 
                 // Build matches array maintaining the time-based order
-                $matches = $matchedUsersWithTimestamp->map(function ($match) use ($users, $mainImages, $fallbackImages, $conversationUserIds) {
-                    // Skip users who already have conversations
-                    if (in_array($match->user_id, $conversationUserIds)) {
-                        return null;
-                    }
-
+                $matches = $matchedUsersWithTimestamp->map(function ($match) use ($users, $mainImages, $fallbackImages) {
                     if (empty($users[$match->user_id])) {
                         return null;
                     }
@@ -487,7 +474,7 @@ class ChatController extends Controller
             return $this->success($response);
 
         } catch (\Exception $e) {
-            \Log::error('Failed to fetch conversation: '.$e->getMessage(), [
+            \Log::error('Failed to fetch conversation: ' . $e->getMessage(), [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
