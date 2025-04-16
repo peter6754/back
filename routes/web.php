@@ -156,7 +156,7 @@ Route::prefix('users')->middleware('auth')->group(function () {
     Route::get('packagesInfo', [UsersController::class, 'getUserPackages']);
 
     // User transactions
-    Route::get('transactions', [TransactionsController::class, 'getTransactions']);
+    Route::get('transactions', [TransactionsController::class, 'getTransactionsSubscriptions']);
 
     // update users coordinates
     Route::post('coordinates', [UsersController::class, 'updateCoordinates']);

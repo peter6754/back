@@ -133,7 +133,11 @@ class TransactionProcess extends Model
      */
     public function getUserTransactions($user, int $page = 1, int $perPage = 7): array
     {
-        $transactions = self::where('user_id', $user['id'])
+        $transactions = self::where([
+            'type' => PaymentsService::ORDER_PRODUCT_SUBSCRIPTION,
+            'user_id' => $user['id'],
+        ], $user['id'])
+            ->with(['boughtSubscription.package.subscription'])
             ->orderBy('purchased_at', 'desc')
             ->paginate($perPage, ['*'], 'page', $page);
 
@@ -142,6 +146,7 @@ class TransactionProcess extends Model
                 return [
                     'id' => $transaction->id,
                     'transaction_id' => $transaction->transaction_id,
+                    'subscription_name' => $transaction->boughtSubscription->package->subscription->type ?? 'Unknown',
                     'status_label' => $this->getStatusLabel($transaction->status),
                     'status' => $transaction->status,
                     'type_label' => $this->getTypeLabel($transaction->type),

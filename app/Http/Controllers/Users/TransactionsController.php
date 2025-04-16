@@ -34,8 +34,8 @@ class TransactionsController extends Controller
     }
 
     /**
-     * @param $id
      * @param  Request  $request
+     * @param  TransactionProcess  $transactions
      * @OA\Get(
      *      path="/users/transactions",
      *      tags={"User Transactions"},
@@ -56,7 +56,7 @@ class TransactionsController extends Controller
      * @return JsonResponse
      * @throws \Throwable
      */
-    public function getTransactions(Request $request, TransactionProcess $transactions): JsonResponse
+    public function getTransactionsSubscriptions(Request $request, TransactionProcess $transactions): JsonResponse
     {
         $viewer = $request->user()->toArray();
         try {
