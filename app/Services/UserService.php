@@ -103,90 +103,52 @@ class UserService
 
         $infoItems = [
             ($userSettings['show_my_orientation'] ?? false) && !empty($info['sexual_orientation'])
-                ? TranslateResponseHelper::response([
-                'name' => trans('users.orientations_' . $info['sexual_orientation']),
-                'key' => $info['sexual_orientation'],
-            ])
+                ? UserInformationTranslator::translate('orientations', $info['sexual_orientation'])
                 : null,
             !empty($userInformation['zodiac_sign'])
-                ? TranslateResponseHelper::response([
-                'name' => trans('users.zodiac_signs_' . $userInformation['zodiac_sign']),
-                'key' => $userInformation['zodiac_sign'],
-            ])
+                ? UserInformationTranslator::translate('zodiac_signs', $userInformation['zodiac_sign'])
                 : null,
             !empty($userInformation['alcohole'])
-                ? TranslateResponseHelper::response([
-                'name' => trans('users.alcohol_' . $userInformation['alcohole']),
-                'key' => $userInformation['alcohole'],
-            ])
+                ? UserInformationTranslator::translate('alcohol', $userInformation['alcohole'])
                 : null,
             !empty($userInformation['smoking'])
-                ? TranslateResponseHelper::response([
-                'name' => trans('users.smoking_' . $userInformation['smoking']),
-                'key' => $userInformation['smoking'],
-            ])
+                ? UserInformationTranslator::translate('smoking', $userInformation['smoking'])
                 : null,
             !empty($userInformation['education'])
-                ? TranslateResponseHelper::response([
-                'name' => trans('users.education_' . $userInformation['education']),
-                'key' => $userInformation['education'],
-            ])
+                ? UserInformationTranslator::translate('education', $userInformation['education'])
                 : null,
             !empty($userInformation['family'])
-                ? TranslateResponseHelper::response([
-                'name' => trans('users.family_' . $userInformation['family']),
-                'key' => $userInformation['family'],
-            ])
+                ? UserInformationTranslator::translate('family', $userInformation['family'])
                 : null,
             !empty($userInformation['communication'])
-                ? TranslateResponseHelper::response([
-                'name' => trans('users.communication_' . $userInformation['communication']),
-                'key' => $userInformation['communication'],
-            ])
+                ? UserInformationTranslator::translate('communication', $userInformation['communication'])
                 : null,
             ...array_map(function ($pet) {
                 return !empty($pet['pet'])
-                    ? TranslateResponseHelper::response([
-                        'name' => trans('users.pets_' . $pet['pet']),
-                        'key' => $pet['pet'],
-                    ])
+                    ? UserInformationTranslator::translate('pets', $pet['pet'])
                     : null;
             }, $info['pets'] ?? $info['user_pets'] ?? []),
             !empty($userInformation['sport'])
-                ? TranslateResponseHelper::response([
-                'name' => trans('users.sport_' . $userInformation['sport']),
-                'key' => $userInformation['sport'],
-            ])
+                ? UserInformationTranslator::translate('sport', $userInformation['sport'])
                 : null,
             !empty($userInformation['love_language'])
-                ? TranslateResponseHelper::response([
-                'name' => trans('users.love_language_' . $userInformation['love_language']),
-                'key' => $userInformation['love_language'],
-            ])
+                ? UserInformationTranslator::translate('love_language', $userInformation['love_language'])
                 : null,
             !empty($userInformation['food'])
-                ? TranslateResponseHelper::response([
-                'name' => trans('users.food_' . $userInformation['food']),
-                'key' => $userInformation['food'],
-            ])
+                ? UserInformationTranslator::translate('food', $userInformation['food'])
                 : null,
             !empty($userInformation['social_network'])
-                ? TranslateResponseHelper::response([
-                'name' => trans('users.social_network_' . $userInformation['social_network']),
-                'key' => $userInformation['social_network'],
-            ])
+                ? UserInformationTranslator::translate('social_network', $userInformation['social_network'])
                 : null,
             !empty($userInformation['sleep'])
-                ? TranslateResponseHelper::response([
-                'name' => trans('users.sleep_' . $userInformation['sleep']),
-                'key' => $userInformation['sleep'],
-            ])
+                ? UserInformationTranslator::translate('sleep', $userInformation['sleep'])
                 : null,
             !empty($userInformation['family_status'])
-                ? TranslateResponseHelper::response([
-                'name' => trans('users.family_statuses_' . $userInformation['family_status']),
-                'key' => $userInformation['family_status'],
-            ])
+                ? UserInformationTranslator::translate(
+                'family_statuses',
+                $userInformation['family_status'],
+                in_array($gender, $this->maleGenders) ? 'male' : 'female'
+            )
                 : null,
             $info['final_preference']['preference'] ??
                 $info['user_relationship_preferences'][0]['preference']['preference'] ?? null,
@@ -201,14 +163,11 @@ class UserService
             'residence' => $info['city']['formatted_address'] ?? null,
             'company' => $userInformation['company'] ?? null,
             'gender' => ($userSettings['show_my_gender'] ?? false) && !empty($info['gender'])
-                ? TranslateResponseHelper::response([
-                    'name' => trans('users.genders_' . $info['gender']),
-                    'key' => $info['gender'],
-                ])
+                ? UserInformationTranslator::translate('genders', $info['gender'])
                 : null,
-            'age' => $withQueryRaw['age'] ? (int)$withQueryRaw['age'] : null,
+            'age' => $withQueryRaw['age'] ? (int) $withQueryRaw['age'] : null,
             'info' => array_values(array_filter($infoItems)),
-            'distance' => $withQueryRaw['distance'] !== null ? (int)$withQueryRaw['distance'] : null,
+            'distance' => $withQueryRaw['distance'] !== null ? (int) $withQueryRaw['distance'] : null,
             'is_verified' => ($info['verification_request']['status'] ??
                     $info['verification_requests'][0]['status'] ?? null) === 'approved',
             'images' => array_column($info['images'] ?? $info['user_image'] ?? [], 'image'),
@@ -269,94 +228,107 @@ class UserService
                 'show_me' => collect($user['preferences'] ?? [])->pluck('gender')->toArray(),
                 'residence' => $user['city']['formatted_address'] ?? null,
                 'bio' => $user['user_information']['bio'] ?? null,
-                'gender' => !empty($user['gender'])
-                    ? TranslateResponseHelper::response([
-                        'name' => trans('users.gender_' . $user['gender']),
-                        'key' => $user['gender'],
-                    ])
-                    : null,
-                'sexual_orientation' => !empty($user['sexual_orientation'])
-                    ? TranslateResponseHelper::response([
-                        'name' => trans('users.orientations_' . $user['sexual_orientation']),
+                'gender' => !empty($user['gender']) ? TranslateResponseHelper::response([
+                    'name' => trans('users.gender_'.$user['gender']),
+                    'key' => $user['gender'],
+                ]) : null,
+                'sexual_orientation' => !empty($user['sexual_orientation']) ?
+                    TranslateResponseHelper::response([
+                        'name' => UserInformationTranslator::translate('orientations',
+                            $user['sexual_orientation']
+                        ),
                         'key' => $user['sexual_orientation'],
-                    ])
-                    : null,
-                'zodiac_sign' => !empty($user['user_information']['zodiac_sign'])
-                    ? TranslateResponseHelper::response([
-                        'name' => trans('users.zodiac_signs_' . $user['user_information']['zodiac_sign']),
+                    ]) : null,
+
+                'zodiac_sign' => !empty($user['user_information']['zodiac_sign']) ?
+                    TranslateResponseHelper::response([
+                        'name' => UserInformationTranslator::translate('zodiac_signs',
+                            $user['user_information']['zodiac_sign']
+                        ),
                         'key' => $user['user_information']['zodiac_sign'],
-                    ])
-                    : null,
-                'education' => !empty($user['user_information']['education'])
-                    ? TranslateResponseHelper::response([
-                        'name' => trans('users.education_' . $user['user_information']['education']),
-                        'key' => $user['user_information']['education'],
-                    ])
-                    : null,
-                'family' => !empty($user['user_information']['family'])
-                    ? TranslateResponseHelper::response([
-                        'name' => trans('users.family_' . $user['user_information']['family']),
-                        'key' => $user['user_information']['family'],
-                    ])
-                    : null,
-                'communication' => !empty($user['user_information']['communication'])
-                    ? TranslateResponseHelper::response([
-                        'name' => trans('users.communication_' . $user['user_information']['communication']),
-                        'key' => $user['user_information']['communication'],
-                    ])
-                    : null,
-                'love_language' => !empty($user['user_information']['love_language'])
-                    ? TranslateResponseHelper::response([
-                        'name' => trans('users.love_language_' . $user['user_information']['love_language']),
-                        'key' => $user['user_information']['love_language'],
-                    ])
-                    : null,
-                'alcohole' => !empty($user['user_information']['alcohole'])
-                    ? TranslateResponseHelper::response([
-                        'name' => trans('users.alcohol_' . $user['user_information']['alcohole']),
-                        'key' => $user['user_information']['alcohole'],
-                    ])
-                    : null,
-                'smoking' => !empty($user['user_information']['smoking'])
-                    ? TranslateResponseHelper::response([
-                        'name' => trans('users.smoking_' . $user['user_information']['smoking']),
-                        'key' => $user['user_information']['smoking'],
-                    ])
-                    : null,
-                'sport' => !empty($user['user_information']['sport'])
-                    ? TranslateResponseHelper::response([
-                        'name' => trans('users.sport_' . $user['user_information']['sport']),
-                        'key' => $user['user_information']['sport'],
-                    ])
-                    : null,
-                'food' => !empty($user['user_information']['food'])
-                    ? TranslateResponseHelper::response([
-                        'name' => trans('users.food_' . $user['user_information']['food']),
-                        'key' => $user['user_information']['food'],
-                    ])
-                    : null,
-                'social_network' => !empty($user['user_information']['social_network'])
-                    ? TranslateResponseHelper::response([
-                        'name' => trans('users.social_network_' . $user['user_information']['social_network']),
-                        'key' => $user['user_information']['social_network'],
-                    ])
-                    : null,
-                'sleep' => !empty($user['user_information']['sleep'])
-                    ? TranslateResponseHelper::response([
-                        'name' => trans('users.sleep_' . $user['user_information']['sleep']),
-                        'key' => $user['user_information']['sleep'],
-                    ])
-                    : null,
+                    ]) : null,
+
+                'education' => !empty($user['user_information']['education']) ? TranslateResponseHelper::response([
+                    'name' => UserInformationTranslator::translate('education',
+                        $user['user_information']['education']
+                    ),
+                    'key' => $user['user_information']['education'],
+                ]) : null,
+
+                'family' => !empty($user['user_information']['family']) ? TranslateResponseHelper::response([
+                    'name' => UserInformationTranslator::translate('family',
+                        $user['user_information']['family']
+                    ),
+                    'key' => $user['user_information']['family'],
+                ]) : null,
+
+                'communication' => !empty($user['user_information']['communication']) ? TranslateResponseHelper::response([
+                    'name' => UserInformationTranslator::translate('communication',
+                        $user['user_information']['communication']
+                    ),
+                    'key' => $user['user_information']['communication'],
+                ]) : null,
+
+                'love_language' => !empty($user['user_information']['love_language']) ? TranslateResponseHelper::response([
+                    'name' => UserInformationTranslator::translate('love_language',
+                        $user['user_information']['love_language']
+                    ),
+                    'key' => $user['user_information']['love_language'],
+                ]) : null,
+
+                'alcohole' => !empty($user['user_information']['alcohole']) ? TranslateResponseHelper::response([
+                    'name' => UserInformationTranslator::translate('alcohol',
+                        $user['user_information']['alcohole']
+                    ),
+                    'key' => $user['user_information']['alcohole'],
+                ]) : null,
+
+                'smoking' => !empty($user['user_information']['smoking']) ? TranslateResponseHelper::response([
+                    'name' => UserInformationTranslator::translate('smoking',
+                        $user['user_information']['smoking']
+                    ),
+                    'key' => $user['user_information']['smoking'],
+                ]) : null,
+
+                'sport' => !empty($user['user_information']['sport']) ? TranslateResponseHelper::response([
+                    'name' => UserInformationTranslator::translate('sport',
+                        $user['user_information']['sport']
+                    ),
+                    'key' => $user['user_information']['sport'],
+                ]) : null,
+
+                'food' => !empty($user['user_information']['food']) ? TranslateResponseHelper::response([
+                    'name' => UserInformationTranslator::translate('food',
+                        $user['user_information']['food']
+                    ),
+                    'key' => $user['user_information']['food'],
+                ]) : null,
+
+                'social_network' => !empty($user['user_information']['social_network']) ? TranslateResponseHelper::response([
+                    'name' => UserInformationTranslator::translate('social_network',
+                        $user['user_information']['social_network']
+                    ),
+                    'key' => $user['user_information']['social_network'],
+                ]) : null,
+
+                'sleep' => !empty($user['user_information']['sleep']) ? TranslateResponseHelper::response([
+                    'name' => UserInformationTranslator::translate('sleep',
+                        $user['user_information']['sleep']
+                    ),
+                    'key' => $user['user_information']['sleep'],
+                ]) : null,
                 'educational_institution' => $user['user_information']['educational_institution'] ?? null,
-                'family_status' => !empty($user['user_information']['family_status'])
-                    ? TranslateResponseHelper::response([
-                        'name' => trans('users.family_statuses_' . $user['user_information']['family_status']),
-                        'key' => $user['user_information']['family_status'],
-                    ])
-                    : null,
+                'family_status' => !empty($user['user_information']['family_status']) ? TranslateResponseHelper::response([
+                    'name' => UserInformationTranslator::translate(
+                        'family_statuses',
+                        $user['user_information']['family_status'],
+                        $user['gender']
+                    ),
+                    'key' => $user['user_information']['family_status'],
+                ]) : null,
                 'pets' => collect($user['pets'] ?? [])->map(function ($pet) {
                     return TranslateResponseHelper::response([
-                        'name' => trans('users.pets_' . $pet['pet']),
+                        'name' => UserInformationTranslator::translate('pets', $pet['pet']),
                         'key' => $pet['pet'],
                     ]);
                 }),
@@ -1106,9 +1078,9 @@ class UserService
     {
         // Original SQL from node js
         $user = DB::selectOne('
-            SELECT
+            SELECT 
                 u.phone,
-                u.email,
+                u.email, 
                 u.username,
                 uc.formatted_address as residence
             FROM users u
@@ -1122,13 +1094,13 @@ class UserService
 
         // Get user settings
         $userSettings = DB::selectOne('
-            SELECT
+            SELECT 
                 search_radius,
                 is_global_search,
                 recommendations,
                 visibility,
                 show_me_on_finder
-            FROM user_settings
+            FROM user_settings 
             WHERE user_id = ?
         ', [$userId]);
 
@@ -1137,8 +1109,8 @@ class UserService
         $isTimeDelete = null;
 
         $deleteQueue = DB::selectOne('
-            SELECT date, is_date_delete
-            FROM in_queue_for_delete_user
+            SELECT date, is_date_delete 
+            FROM in_queue_for_delete_user 
             WHERE user_id = ?
         ', [$userId]);
 
@@ -1153,8 +1125,8 @@ class UserService
 
                 // Update delete queue
                 DB::update('
-                    UPDATE in_queue_for_delete_user
-                    SET date = ?, is_date_delete = ?
+                    UPDATE in_queue_for_delete_user 
+                    SET date = ?, is_date_delete = ? 
                     WHERE user_id = ?
                 ', [
                     now()->addMilliseconds($timeLeftToDeleteAccount)->toDateString(),
@@ -1199,7 +1171,7 @@ class UserService
                 FROM users u
                 LEFT JOIN transactions t ON t.user_id = u.id
                 LEFT JOIN bought_subscriptions bs ON bs.transaction_id = t.id
-                WHERE u.id = ?
+                WHERE u.id = ? 
                 AND bs.due_date > NOW()
                 AND t.status = "succeeded"
             ', [$userId]);
