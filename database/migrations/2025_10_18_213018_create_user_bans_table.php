@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
+
+        Schema::dropIfExists('user_bans');
+
         Schema::create('user_bans', function (Blueprint $table) {
-            $table->id();
-            $table->uuid('user_id');
+            $table->string('user_id', 191)->primary();
             $table->boolean('is_permanent')->default(false);
-            $table->timestamp('banned_until')->nullable();
+            $table->dateTime('banned_until')->nullable();
             $table->text('reason')->nullable();
             $table->timestamps();
 
