@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Requests\SecondaryuserRequest;
+use App\Models\Secondaryuser;
 use App\Models\UserInformation;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
@@ -403,6 +404,8 @@ class SecondaryuserCrudController extends CrudController
          * - CRUD::column('price')->type('number');
          */
         CRUD::addButton('line', 'grant_subscription', 'view', 'crud::buttons.grant_subscription');
+        CRUD::addButton('line', 'ban', 'view', 'crud::buttons.ban', 'beginning');
+        CRUD::addButton('line', 'unban_user', 'view', 'crud::buttons.unban_user', 'beginning');
         CRUD::column('id')->label('ID')->visibleInTable(false)->visibleInShow(true);
         CRUD::column('name')->label('Имя');
         CRUD::column('username')->label('Логин');
@@ -665,5 +668,18 @@ class SecondaryuserCrudController extends CrudController
             'RuStore' => 0,
             'Другие' => 0
         ], $result);
+    }
+
+    /**
+     * @param $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function unban($id)
+    {
+        $user = Secondaryuser::findOrFail($id);
+        $user->unban();
+
+        \Alert::success('Пользователь разбанен.')->flash();
+        return redirect()->back();
     }
 }

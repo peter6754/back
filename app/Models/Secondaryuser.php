@@ -445,4 +445,83 @@ class Secondaryuser extends Model
     {
         return $this->hasMany(BlockedContacts::class, 'user_id');
     }
+
+    /**
+     * @return HasMany
+     */
+    public function bans(): HasMany
+    {
+        return $this->hasMany(UserBan::class, 'user_id', 'id');
+    }
+
+    /**
+     * Получить активный бан пользователя
+     */
+    public function activeBan()
+    {
+        return $this->hasOne(UserBan::class, 'user_id', 'id')->active();
+    }
+
+    /**
+     * @return bool
+     */
+    public function isBanned(): bool
+    {
+        return $this->mode === 'banned' && $this->activeBan()->exists();
+    }
+
+    /**
+     * @return UserBan|null
+     */
+    public function getActiveBan(): ?UserBan
+    {
+        return $this->activeBan;
+    }
+
+    /**
+     * @param bool $isPermanent
+     * @param $bannedUntil
+     * @param string|null $reason
+     * @return UserBan
+     */
+    public function ban(bool $isPermanent = false, $bannedUntil = null, string $reason = null): UserBan
+    {
+        $this->update(['mode' => 'banned']);
+
+        return UserBan::create([
+            'user_id' => $this->id,
+            'is_permanent' => $isPermanent,
+            'banned_until' => $bannedUntil,
+            'reason' => $reason,
+        ]);
+    }
+
+    /**
+     * @return void
+     */
+    public function unban(): void
+    {
+        $this->bans()->delete();
+        $this->update(['mode' => 'authenticated']);
+    }
+
+    /**
+     * @return array|null
+     */
+    public function getBanInfo(): ?array
+    {
+
+        $activeBan = $this->bans()->active()->first();
+
+        if (!$activeBan) {
+            return null;
+        }
+
+        return [
+            'is_banned' => true,
+            'is_permanent' => (bool) $activeBan->is_permanent,
+            'banned_until' => $activeBan->banned_until?->format('d.m.Y H:i'),
+            'reason' => $activeBan->reason,
+        ];
+    }
 }

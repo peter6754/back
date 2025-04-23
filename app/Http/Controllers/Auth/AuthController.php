@@ -100,6 +100,15 @@ class AuthController extends Controller
                 Response::HTTP_CREATED
             );
         } catch (Exception $e) {
+
+            if ($e->getCode() === 423) {
+                $decodedMessage = json_decode($e->getMessage(), true);
+                return response()->json([
+                    'code' => 423,
+                    'message' => $decodedMessage,
+                ], 423);
+            }
+
             return $this->errorResponse(
                 $e->getMessage(),
                 $e->getCode()

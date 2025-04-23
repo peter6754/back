@@ -65,3 +65,5 @@
     </a>
 </li>
 
+
+<x-backpack::menu-item title="User bans" icon="la la-question" :link="backpack_url('user-ban')" />

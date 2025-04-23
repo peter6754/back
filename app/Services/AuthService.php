@@ -68,6 +68,15 @@ class AuthService
             ->first();
 
         if ($user) {
+            $banInfo = $user->getBanInfo();
+
+            if ($banInfo && $banInfo['is_permanent']) {
+                throw new \Exception(json_encode($banInfo), 423);
+            }
+
+        }
+
+        if ($user) {
             // Отправка SMS зарегистрированному пользователю
             Log::channel("authservice")->info("[Login], send code {$code}, user: ".json_encode($user));
             if (!in_array($userPhone, $this->specialNumbers)) {

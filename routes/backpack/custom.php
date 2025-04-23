@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\SecondaryuserCrudController;
 use App\Http\Controllers\Admin\TranslationCrudController;
+use App\Http\Controllers\Admin\UserBanCrudController;
 use App\Http\Controllers\Admin\UserPhotosPageController;
 use Illuminate\Support\Facades\Route;
 
@@ -70,6 +72,9 @@ Route::group([
     Route::crud('translation', 'TranslationCrudController');
     Route::post('translation/export', [TranslationCrudController::class, 'exportTranslations'])
         ->name('translation.export');
+    Route::crud('user-ban', 'UserBanCrudController');
+    Route::get('user-ban/{id}/unban', [UserBanCrudController::class, 'unban'])->name('user-ban.unban');
+    Route::post('secondaryuser/unban/{id}', [SecondaryuserCrudController::class, 'unban'])->name('secondaryuser.unban');
 }); // this should be the absolute last line of this file
 
 /**
