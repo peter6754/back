@@ -24,6 +24,20 @@ class UserBan extends Model
         'is_permanent' => 'boolean',
         'banned_until' => 'datetime',
     ];
+    /**
+     * @var bool
+     */
+    public $incrementing = false;
+
+    /**
+     * @var string
+     */
+    protected $keyType = 'string';
+
+    /**
+     * @var string
+     */
+    protected $primaryKey = 'user_id';
 
     /**
      * @return BelongsTo
