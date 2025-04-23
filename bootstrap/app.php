@@ -50,6 +50,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // Обработка очереди писем каждые 2 минуты
         $schedule->command('mail:process-queue')
             ->everyTwoMinutes();
+
+        //Unban users
+        $schedule->command('users:unban-expired')->everyFiveMinutes();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         Integration::handles($exceptions);
