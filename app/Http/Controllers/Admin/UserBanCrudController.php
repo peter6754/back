@@ -31,7 +31,7 @@ class UserBanCrudController extends CrudController
     {
         CRUD::setModel(\App\Models\UserBan::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/user-ban');
-        CRUD::setEntityNameStrings('user ban', 'user bans');
+        CRUD::setEntityNameStrings('Бвн пользователей', 'Бвн пользователей');
     }
 
     /**
