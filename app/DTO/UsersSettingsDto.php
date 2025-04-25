@@ -16,12 +16,14 @@ class UsersSettingsDto extends Data
         // Validate
         $request->validate($requestParams);
 
-        // Set data
+        $result = [];
         foreach ($requestParams as $key => $value) {
-            $requestParams[$key] = $request->input($key);
+            $inputValue = $request->input($key);
+            if ($inputValue !== null) {
+                $result[$key] = $inputValue;
+            }
         }
 
-        // Return
-        return $requestParams;
+        return $result;
     }
 }
