@@ -55,14 +55,21 @@ class TranslationCrudController extends CrudController
                 $query->orWhere('key', 'like', "%{$searchTerm}%");
             });
 
-        CRUD::column('description')
-            ->label('Description')
-            ->limit(50)
-            ->searchLogic(function ($query, $column, $searchTerm) {
-                $query->orWhere('description', 'like', "%{$searchTerm}%");
-            });
+//        CRUD::column('description')
+//            ->label('Description')
+//            ->limit(50)
+//            ->searchLogic(function ($query, $column, $searchTerm) {
+//                $query->orWhere('description', 'like', "%{$searchTerm}%");
+//            });
 
         foreach (config('locales.available_locales') as $localeCode => $localeName) {
+            if (!in_array($localeCode, [
+                config('locales.default_locale'),
+                'en'
+            ])) {
+                continue;
+            }
+
             CRUD::column('translation_'.$localeCode)
                 ->label(Str::upper($localeCode))
                 ->type('text')
