@@ -64,6 +64,13 @@ class GreenSMSService
                 ];
             }
 
+            if (Cache::has('greensms.cooldown:'.$phone)) {
+                return [
+                    'message' => 'Cooldown active',
+                    'success' => false
+                ];
+            }
+
             $channels = array_diff(self::$defaultChannelsPriority, $exceptions);
 
             // Получаем историю использованных каналов для этого номера
@@ -119,6 +126,10 @@ class GreenSMSService
                                 'greensms_used_channels:'.$phone,
                                 $usedChannels,
                                 now()->addMinutes(15)
+                            );
+                            Cache::put(
+                                'greensms_cooldown:'.$phone, now()->addMinutes()->unix(),
+                                now()->addMinutes()
                             );
                         }
 
