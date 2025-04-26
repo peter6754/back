@@ -46,21 +46,6 @@ class ExpoProvider
 
     /**
      * @param array $messagesParams
-     * @return array
-     */
-    public function sendBulkMessagesAsync(array $messagesParams): array
-    {
-        $promises = [];
-
-        foreach ($messagesParams as $index => $params) {
-            $promises[$index] = $this->sendMessageAsync($params);
-        }
-
-        return $promises;
-    }
-
-    /**
-     * @param array $messagesParams
      * @return Promise\PromiseInterface
      */
     public function sendBatchMessagesAsync(array $messagesParams): Promise\PromiseInterface

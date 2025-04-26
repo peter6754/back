@@ -23,14 +23,14 @@ class OneSignalProvider
 
         $this->client = new Client([
             'headers' => [
-                'Authorization' => 'Basic ' . $this->restApiKey,
+                'Authorization' => 'Basic '.$this->restApiKey,
                 'Content-Type' => 'application/json'
             ],
         ]);
     }
 
     /**
-     * @param array $params
+     * @param  array  $params
      * @return Promise\PromiseInterface
      */
     public function sendMessageAsync(array $params): Promise\PromiseInterface
@@ -39,17 +39,19 @@ class OneSignalProvider
             'target_channel' => 'push',
             'app_id' => $this->appId,
             'contents' => [
-                "en" => $params['body'],
-                "ru" => $params['body']
+                "en" => $params['body']
             ],
             'headings' => [
-                "en" => $params['title'],
-                "ru" => $params['title'],
+                "en" => $params['title']
             ],
             'include_aliases' => [
-                'external_id' => [$params['to']],
                 'onesignal_id' => [$params['to']]
-            ]
+            ],
+            'android_sound' => $params['sound'] ?? 'default',
+            'ios_sound' => $params['sound'] ?? 'default',
+            'priority' => $params['priority'] ?? 10,
+            'data' => $params['data'] ?? [],
+            'url' => $params['url'] ?? null
         ];
 
         return $this->client->postAsync($this->apiUrl, [
@@ -65,23 +67,8 @@ class OneSignalProvider
     }
 
     /**
-     * @param array $messagesParams
-     * @return array
-     */
-    public function sendBulkMessagesAsync(array $messagesParams): array
-    {
-        $promises = [];
-
-        foreach ($messagesParams as $index => $params) {
-            $promises[$index] = $this->sendMessageAsync($params);
-        }
-
-        return $promises;
-    }
-
-    /**
      * @param $response
-     * @param array $params
+     * @param  array  $params
      * @return array
      */
     private function handleSuccessResponse($response, array $params): array
@@ -105,7 +92,7 @@ class OneSignalProvider
 
     /**
      * @param $exception
-     * @param array $params
+     * @param  array  $params
      * @return array
      */
     private function handleError($exception, array $params): array
@@ -124,7 +111,7 @@ class OneSignalProvider
     }
 
     /**
-     * @param array $params
+     * @param  array  $params
      * @return bool
      */
     public function sendMessage(array $params): bool

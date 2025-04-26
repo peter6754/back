@@ -54,21 +54,6 @@ class TelegramProvider
     }
 
     /**
-     * @param array $messagesParams
-     * @return array
-     */
-    public function sendBulkMessagesAsync(array $messagesParams): array
-    {
-        $promises = [];
-
-        foreach ($messagesParams as $index => $params) {
-            $promises[$index] = $this->sendMessageAsync($params);
-        }
-
-        return $promises;
-    }
-
-    /**
      * @param $response
      * @param array $params
      * @return array
