@@ -64,7 +64,7 @@ class GreenSMSService
                 ];
             }
 
-            if (Cache::has('greensms.cooldown:'.$phone)) {
+            if (Cache::has('greensms_cooldown:'.$phone)) {
                 return [
                     'message' => 'Cooldown active',
                     'success' => false
