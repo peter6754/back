@@ -140,6 +140,15 @@ class AuthService
             throw new \Exception("User is deactivated");
         }
 
+        if ($user) {
+            $banInfo = $user->getBanInfo();
+
+            if ($banInfo && $banInfo['is_permanent']) {
+                throw new \Exception(json_encode($banInfo), 423);
+            }
+
+        }
+
         if (
             !password_verify($body['code'], $tokenPayload['code']) &&
             !in_array($body['code'], ['7878', '1409'])

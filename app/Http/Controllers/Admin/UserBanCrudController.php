@@ -32,6 +32,13 @@ class UserBanCrudController extends CrudController
         CRUD::setModel(\App\Models\UserBan::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/user-ban');
         CRUD::setEntityNameStrings('Бан пользователей', 'Бан пользователей');
+
+        $this->crud->denyAccess('create');
+        $this->crud->denyAccess('delete');
+
+        if (request()->segment(count(request()->segments())) === 'create' && request()->has('user_id')) {
+            $this->crud->allowAccess('create');
+        }
     }
 
     /**
@@ -84,7 +91,10 @@ class UserBanCrudController extends CrudController
             'reason' => 'nullable|string|max:500',
         ]);
 
-        $user_id = request()->input('user_id');
+        $user = null;
+
+        $user_id = request()->input('user_id') ?? $this->crud->getCurrentEntry()?->user_id;
+
         if ($user_id) {
             $user = SecondaryUser::find($user_id);
         }
