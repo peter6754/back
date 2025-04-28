@@ -43,6 +43,13 @@ class AuthMiddleware
                 throw new \Exception('User not found');
             }
 
+            // Проверка на бан пользователя
+            $banInfo = $user->getBanInfo();
+
+            if ($banInfo && $banInfo['is_permanent']) {
+                throw new \Exception('User is blocked', 401);
+            }
+
             // Выбираем язык пользователя (если указан)
             App::setLocale($payload['language'] ?? config('locales.default_locale'));
             if (isset($payload['language'])) {
