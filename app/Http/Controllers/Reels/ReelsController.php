@@ -245,4 +245,47 @@ class ReelsController extends Controller
             return $this->errorResponse('Item not found', 404);
         }
     }
+
+    /**
+     * Like a reel
+     *
+     * @OA\Post(
+     *     path="/reels/{id}/likes",
+     *     tags={"Reels"},
+     *     summary="Like a reel",
+     *     description="Like a reel and create user reaction. Returns is_match flag if it's a mutual like.",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="Reel ID",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Like sent successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Like has been sent successfully"),
+     *             @OA\Property(property="is_match", type="boolean", example=false)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Reel not found"
+     *     )
+     * )
+     */
+    public function likeTheReel(string $id, Request $request): JsonResponse
+    {
+        try {
+            $userId = $request->user()->id;
+            $result = $this->reelsService->likeTheReel($id, $userId);
+
+            return $this->successResponse($result);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Item not found', 404);
+        }
+    }
 }

@@ -249,6 +249,9 @@ Route::prefix('reels')->middleware('auth')->group(function () {
 
     // Get reel comments
     Route::get('{id}/comments', [ReelsController::class, 'getComments']);
+
+    // Like a reel
+    Route::post('{id}/likes', [ReelsController::class, 'likeTheReel']);
 });
 
 // Image admin view and edit

@@ -39,7 +39,7 @@ class ReelsService
                 'message' => 'Video uploaded successfully'
             ];
         } catch (\Exception $e) {
-            throw new \Exception('Failed to upload video: ' . $e->getMessage());
+            throw new \Exception('Failed to upload video: '.$e->getMessage());
         }
     }
 
@@ -438,5 +438,56 @@ class ReelsService
                 ];
             })
             ->toArray();
+    }
+
+    /**
+     * Like a reel
+     *
+     * @param string $reelId
+     * @param string $userId
+     * @return array
+     */
+    public function likeTheReel(string $reelId, string $userId): array
+    {
+        try {
+            // Find the reel
+            $reel = DB::selectOne("
+                SELECT id, user_id FROM reels WHERE id = ?
+            ", [$reelId]);
+
+            if (! $reel) {
+                throw new \Exception('Reel not found');
+            }
+
+            // Check if user_reaction exists
+            $userReaction = DB::selectOne("
+                SELECT * FROM user_reactions
+                WHERE reactor_id = ?
+                AND user_id = ?
+                AND type IN ('superlike', 'like')
+            ", [$reel->user_id, $userId]);
+
+            // If user_reaction doesn't exist, create user_reaction
+            if (! $userReaction) {
+                DB::insert("
+                    INSERT INTO user_reactions (user_id, reactor_id, type, from_reels, date)
+                    VALUES (?, ?, 'like', 1, NOW())
+                    ON DUPLICATE KEY UPDATE date = NOW()
+                ", [$reel->user_id, $userId]);
+            }
+
+            // Create reel like INSERT IGNORE if like exists
+            DB::insert("
+                INSERT IGNORE INTO reel_likes (reel_id, user_id)
+                VALUES (?, ?)
+            ", [$reelId, $userId]);
+
+            return [
+                'message' => 'Like has been sent successfully',
+                'is_match' => ! ! $userReaction
+            ];
+        } catch (\Exception $e) {
+            throw new \Exception('Item not found: '.$e->getMessage());
+        }
     }
 }
