@@ -17,6 +17,77 @@ class ReelsController extends Controller
     }
 
     /**
+     * Add new reel - upload video
+     *
+     * @OA\Post(
+     *     path="/reels",
+     *     tags={"Reels"},
+     *     summary="Upload new reel video",
+     *     description="Upload video file to SeaweedFS and create temporary reel record",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 @OA\Property(
+     *                     property="video",
+     *                     type="string",
+     *                     format="binary",
+     *                     description="Video file (mp4, mov, avi, wmv, flv, mkv)"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Video uploaded successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="id", type="string", example="uuid"),
+     *             @OA\Property(property="path", type="string", example="fid123"),
+     *             @OA\Property(property="message", type="string", example="Video uploaded successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Upload failed"
+     *     )
+     * )
+     */
+    public function addReel(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'video' => [
+                    'required',
+                    'file',
+                    'mimes:mp4,mov,avi,wmv,flv,mkv',
+                    'max:102400',
+                ],
+            ], [
+                'video.required' => 'Video file is required',
+                'video.file' => 'The uploaded file must be a valid file',
+                'video.mimes' => 'Video must be one of the following formats: mp4, mov, avi, wmv, flv, mkv',
+                'video.max' => 'Video file size must not exceed 100MB',
+            ]);
+
+            $userId = $request->user()->id;
+            $video = $request->file('video');
+
+            $result = $this->reelsService->addReel($video, $userId);
+
+            return $this->successResponse($result);
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 500);
+        }
+    }
+
+    /**
      * Get reels feed for user
      *
      * @OA\Get(

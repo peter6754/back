@@ -2,10 +2,47 @@
 
 namespace App\Services;
 
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ReelsService
 {
+    public function __construct(private SeaweedFsService $seaweedFsService)
+    {
+    }
+
+    /**
+     * Add new reel - upload video to SeaweedFS
+     *
+     * @param UploadedFile $video
+     * @param string $userId
+     * @return array
+     */
+    public function addReel(UploadedFile $video, string $userId): array
+    {
+        try {
+            // Upload video to SeaweedFS
+            $videoContent = file_get_contents($video->getRealPath());
+            $videoFid = $this->seaweedFsService->uploadToStorage($videoContent, $video->getClientOriginalName());
+
+            $reelId = (string) Str::uuid();
+
+            DB::insert("
+                INSERT INTO reels (id, user_id, path, is_temporary, share_count)
+                VALUES (?, ?, ?, ?, ?)
+            ", [$reelId, $userId, $videoFid, 1, 0]);
+
+            return [
+                'id' => $reelId,
+                'path' => $videoFid,
+                'message' => 'Video uploaded successfully'
+            ];
+        } catch (\Exception $e) {
+            throw new \Exception('Failed to upload video: ' . $e->getMessage());
+        }
+    }
+
     /**
      * Get reels feed for user with complex filtering
      *

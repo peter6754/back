@@ -238,6 +238,9 @@ Route::prefix('users')->group(function () {
 
 // Reels routes
 Route::prefix('reels')->middleware('auth')->group(function () {
+    // Upload new reels video
+    Route::post('/', [ReelsController::class, 'addReel']);
+
     // Get reels feed
     Route::get('/', [ReelsController::class, 'getReels']);
 
