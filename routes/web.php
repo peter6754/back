@@ -250,6 +250,9 @@ Route::prefix('reels')->middleware('auth')->group(function () {
     // Get reel comments
     Route::get('{id}/comments', [ReelsController::class, 'getComments']);
 
+    // Mark reel as viewed
+    Route::post('{id}/views', [ReelsController::class, 'viewTheReel']);
+
     // Like a reel
     Route::post('{id}/likes', [ReelsController::class, 'likeTheReel']);
 });

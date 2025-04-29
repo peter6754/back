@@ -247,6 +247,48 @@ class ReelsController extends Controller
     }
 
     /**
+     * Mark reel as viewed
+     *
+     * @OA\Post(
+     *     path="/reels/{id}/views",
+     *     tags={"Reels"},
+     *     summary="Mark reel as viewed",
+     *     description="Record that the user has viewed this reel",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="Reel ID",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="View recorded successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Request has ended successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Reel not found"
+     *     )
+     * )
+     */
+    public function viewTheReel(string $id, Request $request): JsonResponse
+    {
+        try {
+            $userId = $request->user()->id;
+            $result = $this->reelsService->viewTheReel($id, $userId);
+
+            return $this->successResponse($result);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Item not found', 404);
+        }
+    }
+
+    /**
      * Like a reel
      *
      * @OA\Post(

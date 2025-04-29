@@ -441,6 +441,30 @@ class ReelsService
     }
 
     /**
+     * Mark reel as viewed - upsert using pure SQL
+     *
+     * @param string $reelId
+     * @param string $userId
+     * @return array
+     */
+    public function viewTheReel(string $reelId, string $userId): array
+    {
+        try {
+            DB::insert("
+                INSERT INTO reel_views (reel_id, user_id)
+                VALUES (?, ?)
+                ON DUPLICATE KEY UPDATE user_id = VALUES(user_id)
+            ", [$reelId, $userId]);
+
+            return [
+                'message' => 'Request has ended successfully'
+            ];
+        } catch (\Exception $e) {
+            throw new \Exception('Item not found');
+        }
+    }
+
+    /**
      * Like a reel
      *
      * @param string $reelId
