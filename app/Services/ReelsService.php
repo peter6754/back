@@ -16,26 +16,29 @@ class ReelsService
     public function getReels(string $userId, string $sharedId = ''): array
     {
         // Get user data with settings
-        $user = DB::table('users')
-            ->leftJoin('user_settings', 'users.id', '=', 'user_settings.user_id')
-            ->leftJoin('user_informations', 'users.id', '=', 'user_informations.user_id')
-            ->where('users.id', $userId)
-            ->select(
-                'users.phone',
-                'users.lat',
-                'users.long',
-                'user_settings.age_range',
-                'user_settings.search_radius',
-                'user_settings.recommendations',
-                'user_settings.is_global_search'
-            )
-            ->first();
+        $users = DB::select("
+            SELECT
+                u.phone,
+                u.lat,
+                u.`long`,
+                us.age_range,
+                us.search_radius,
+                us.recommendations,
+                us.is_global_search
+            FROM users u
+            LEFT JOIN user_settings us ON u.id = us.user_id
+            LEFT JOIN user_information ui ON u.id = ui.user_id
+            WHERE u.id = ?
+            LIMIT 1
+        ", [$userId]);
 
-        if (!$user) {
+        if (empty($users)) {
             throw new \Exception('User not found');
         }
 
-        // Original SQL query from NestJS
+        $user = $users[0];
+
+        // Original SQL from NestJS
         $reels = DB::select("
             WITH users_in_my_radius AS (
                 SELECT u.id FROM users u
@@ -106,8 +109,75 @@ class ReelsService
             ...explode('-', $user->age_range),          // age range min-max
         ]);
 
+        if (empty($reels)) {
+            return [];
+        }
+
+        // Get all reel IDs
+        $reelIds = array_map(fn ($r) => $r->id, $reels);
+        $reelIdsPlaceholders = implode(',', array_fill(0, count($reelIds), '?'));
+
+        // Get all likes for these reels in one query - pure SQL
+        $likesData = DB::select("
+            SELECT
+                rl.reel_id,
+                u.id as user_id,
+                u.name as username,
+                u.age as user_age,
+                (SELECT image FROM user_images WHERE user_id = u.id LIMIT 1) as user_image
+            FROM reel_likes rl
+            JOIN users u ON rl.user_id = u.id
+            WHERE rl.reel_id IN ($reelIdsPlaceholders)
+        ", $reelIds);
+
+        // Group likes by reel_id
+        $likesByReel = [];
+        foreach ($likesData as $like) {
+            if (! isset($likesByReel[$like->reel_id])) {
+                $likesByReel[$like->reel_id] = [];
+            }
+            $likesByReel[$like->reel_id][] = [
+                'user_id' => $like->user_id,
+                'user_image' => $like->user_image,
+                'username' => $like->username,
+                'user_age' => $like->user_age,
+            ];
+        }
+
+        // Get all comments for reels
+        $commentsData = DB::select("
+            SELECT
+                rc.reel_id,
+                rc.comment,
+                u.id as user_id,
+                u.name as user_name,
+                (SELECT image FROM user_images WHERE user_id = u.id LIMIT 1) as user_image
+            FROM reel_comments rc
+            JOIN users u ON rc.user_id = u.id
+            WHERE rc.reel_id IN ($reelIdsPlaceholders)
+            LIMIT 25
+        ", $reelIds);
+
+        // Group comments by reel_id limit 5 per reel
+        $commentsByReel = [];
+        foreach ($commentsData as $comment) {
+            if (! isset($commentsByReel[$comment->reel_id])) {
+                $commentsByReel[$comment->reel_id] = [];
+            }
+            if (count($commentsByReel[$comment->reel_id]) < 5) {
+                $commentsByReel[$comment->reel_id][] = [
+                    'user' => [
+                        'id' => $comment->user_id,
+                        'image' => $comment->user_image,
+                        'name' => $comment->user_name,
+                    ],
+                    'comment' => $comment->comment,
+                ];
+            }
+        }
+
         // Process reels data
-        return array_map(function ($reel) {
+        return array_map(function ($reel) use ($likesByReel, $commentsByReel) {
             return [
                 'id' => $reel->id,
                 'path' => $reel->path,
@@ -121,8 +191,8 @@ class ReelsService
                 ],
                 'preview_screenshot' => $reel->preview_screenshot,
                 'comments_count' => (int) $reel->comments_count,
-                'likes' => $this->getReelLikes($reel->id),
-                'comments' => $this->getReelComments($reel->id),
+                'likes' => $likesByReel[$reel->id] ?? [],
+                'comments' => $commentsByReel[$reel->id] ?? [],
             ];
         }, $reels);
     }
@@ -159,8 +229,74 @@ class ReelsService
             ORDER BY (r.id = ?) DESC
         ", [$userId, $userId, $selectedId]);
 
+        if (empty($reels)) {
+            return [];
+        }
+
+        // Get all reel IDs
+        $reelIds = array_map(fn ($r) => $r->id, $reels);
+        $reelIdsPlaceholders = implode(',', array_fill(0, count($reelIds), '?'));
+
+        // Get all likes for these reels in one query
+        $likesData = DB::select("
+            SELECT
+                rl.reel_id,
+                u.id as user_id,
+                u.name as username,
+                u.age as user_age,
+                (SELECT image FROM user_images WHERE user_id = u.id LIMIT 1) as user_image
+            FROM reel_likes rl
+            JOIN users u ON rl.user_id = u.id
+            WHERE rl.reel_id IN ($reelIdsPlaceholders)
+        ", $reelIds);
+
+        // Group likes by reel_id
+        $likesByReel = [];
+        foreach ($likesData as $like) {
+            if (! isset($likesByReel[$like->reel_id])) {
+                $likesByReel[$like->reel_id] = [];
+            }
+            $likesByReel[$like->reel_id][] = [
+                'id' => $like->user_id,
+                'image' => $like->user_image,
+                'name' => $like->username,
+                'age' => $like->user_age,
+            ];
+        }
+
+        // Get all comments for these reels in one query
+        $commentsData = DB::select("
+            SELECT
+                rc.reel_id,
+                rc.comment,
+                u.id as user_id,
+                u.name as user_name,
+                (SELECT image FROM user_images WHERE user_id = u.id LIMIT 1) as user_image
+            FROM reel_comments rc
+            JOIN users u ON rc.user_id = u.id
+            WHERE rc.reel_id IN ($reelIdsPlaceholders)
+        ", $reelIds);
+
+        // Group comments by reel_id (limit 5 per reel)
+        $commentsByReel = [];
+        foreach ($commentsData as $comment) {
+            if (! isset($commentsByReel[$comment->reel_id])) {
+                $commentsByReel[$comment->reel_id] = [];
+            }
+            if (count($commentsByReel[$comment->reel_id]) < 5) {
+                $commentsByReel[$comment->reel_id][] = [
+                    'user' => [
+                        'id' => $comment->user_id,
+                        'image' => $comment->user_image,
+                        'name' => $comment->user_name,
+                    ],
+                    'comment' => $comment->comment,
+                ];
+            }
+        }
+
         // Process reels data
-        return array_map(function ($reel) {
+        return array_map(function ($reel) use ($likesByReel, $commentsByReel) {
             return [
                 'id' => $reel->id,
                 'path' => $reel->path,
@@ -168,8 +304,8 @@ class ReelsService
                 'comments_count' => (int) $reel->comments_count,
                 'liked_by_me' => $reel->liked_by_me === '1',
                 'preview_screenshot' => $reel->preview_screenshot,
-                'likes' => $this->getReelLikes($reel->id),
-                'comments' => $this->getReelComments($reel->id),
+                'likes' => $likesByReel[$reel->id] ?? [],
+                'comments' => $commentsByReel[$reel->id] ?? [],
             ];
         }, $reels);
     }
