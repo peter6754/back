@@ -7,6 +7,7 @@ use App\Http\Controllers\Migrate\ProxyController;
 use App\Http\Controllers\Payments\PaymentsController;
 use App\Http\Controllers\Payments\StatusesController;
 use App\Http\Controllers\Recommendations\RecommendationsController;
+use App\Http\Controllers\Reels\ReelsController;
 use App\Http\Controllers\Users\FeedbackController;
 use App\Http\Controllers\Users\InfoController;
 use App\Http\Controllers\Users\ReferenceDataController;
@@ -233,6 +234,18 @@ Route::prefix('users')->middleware('auth')->group(function () {
 
 Route::prefix('users')->group(function () {
     Route::get('email-exist', [UsersController::class, 'getEmailExistenceStatus']);
+});
+
+// Reels routes
+Route::prefix('reels')->middleware('auth')->group(function () {
+    // Get reels feed
+    Route::get('/', [ReelsController::class, 'getReels']);
+
+    // Get user's own reels
+    Route::get('own', [ReelsController::class, 'getUserReels']);
+
+    // Get reel comments
+    Route::get('{id}/comments', [ReelsController::class, 'getComments']);
 });
 
 // Image admin view and edit
