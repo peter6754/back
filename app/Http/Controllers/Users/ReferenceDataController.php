@@ -254,7 +254,7 @@ class ReferenceDataController extends Controller
      *                          "aries": "Овен",
      *                          "taurus": "Телец",
      *                          "gemini": "Близнецы",
-     *                          "cancecr": "Рак",
+     *                          "cancer": "Рак",
      *                          "leo": "Лев",
      *                          "virgo": "Дева",
      *                          "libra": "Весы",
