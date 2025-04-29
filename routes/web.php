@@ -247,6 +247,9 @@ Route::prefix('reels')->middleware('auth')->group(function () {
     // Get user's own reels
     Route::get('own', [ReelsController::class, 'getUserReels']);
 
+    // Add comment to a reel
+    Route::post('{id}/comments', [ReelsController::class, 'addComment']);
+
     // Get reel comments
     Route::get('{id}/comments', [ReelsController::class, 'getComments']);
 

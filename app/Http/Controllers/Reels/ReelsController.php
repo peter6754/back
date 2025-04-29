@@ -193,6 +193,59 @@ class ReelsController extends Controller
     }
 
     /**
+     * Add comment to a reel
+     *
+     * @OA\Post(
+     *     path="/reels/{id}/comments",
+     *     tags={"Reels"},
+     *     summary="Add comment to a reel",
+     *     description="Add a comment to a specific reel",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="Reel ID",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="comment", type="string", example="Great video!")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Comment added successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Request has ended successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Reel not found"
+     *     )
+     * )
+     */
+    public function addComment(string $id, Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'comment' => 'required|string',
+            ]);
+
+            $userId = $request->user()->id;
+            $comment = $request->input('comment');
+            $result = $this->reelsService->addComment($userId, $id, $comment);
+
+            return $this->successResponse($result);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Item not found', 404);
+        }
+    }
+
+    /**
      * Get comments for a reel
      *
      * @OA\Get(

@@ -441,6 +441,30 @@ class ReelsService
     }
 
     /**
+     * Add comment to a reel - pure SQL
+     *
+     * @param string $userId
+     * @param string $reelId
+     * @param string $comment
+     * @return array
+     */
+    public function addComment(string $userId, string $reelId, string $comment): array
+    {
+        try {
+            DB::insert("
+                INSERT INTO reel_comments (reel_id, user_id, comment)
+                VALUES (?, ?, ?)
+            ", [$reelId, $userId, $comment]);
+
+            return [
+                'message' => 'Request has ended successfully'
+            ];
+        } catch (\Exception $e) {
+            throw new \Exception('Item not found');
+        }
+    }
+
+    /**
      * Mark reel as viewed - upsert using pure SQL
      *
      * @param string $reelId
