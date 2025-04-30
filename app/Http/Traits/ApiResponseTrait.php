@@ -127,6 +127,17 @@ trait ApiResponseTrait
      */
     protected function errorUnauthorized(): JsonResponse
     {
+
+        $banInfo = request()->attributes->get('ban_info');
+
+        if ($banInfo) {
+            return response()->json([
+                'error' => Response::$statusTexts[Response::HTTP_UNAUTHORIZED],
+                'code' => 4010,
+                'ban_info' => $banInfo
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+
         return $this->errorResponse(
             Response::$statusTexts[Response::HTTP_UNAUTHORIZED],
             4010,
