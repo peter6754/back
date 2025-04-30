@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class ReelsService
@@ -533,6 +534,88 @@ class ReelsService
             return [
                 'message' => 'Like has been sent successfully',
                 'is_match' => ! ! $userReaction
+            ];
+        } catch (\Exception $e) {
+            throw new \Exception('Item not found: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Delete a reel and its associated files
+     *
+     * @param string $reelId
+     * @param string $userId
+     * @return array
+     */
+    public function deleteTheReel(string $reelId, string $userId): array
+    {
+        try {
+            $reel = DB::selectOne("
+                SELECT id, user_id, path, preview_screenshot, is_temporary
+                FROM reels
+                WHERE id = ? AND user_id = ?
+            ", [$reelId, $userId]);
+
+            if (! $reel) {
+                throw new \Exception('Item not found');
+            }
+
+            if (! $reel->is_temporary) {
+                try {
+                    // Delete video file from storage
+                    if ($reel->path) {
+                        $this->seaweedFsService->deleteFromStorage($reel->path);
+                    }
+
+                } catch (\Exception $e) {
+                    Log::error("deleteTheReel, storage deletion exception, reelID = {$reelId}: ".$e->getMessage());
+                }
+            }
+
+            DB::delete("
+                DELETE FROM reels WHERE id = ? AND user_id = ?
+            ", [$reelId, $userId]);
+
+            return [
+                'message' => 'Reel has been deleted successfully'
+            ];
+        } catch (\Exception $e) {
+            throw new \Exception('Item not found: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Unlike a reel (remove like)
+     *
+     * @param string $reelId
+     * @param string $userId
+     * @return array
+     */
+    public function dislikeTheReel(string $reelId, string $userId): array
+    {
+        try {
+            $reel = DB::selectOne("
+                SELECT id, user_id FROM reels WHERE id = ?
+            ", [$reelId]);
+
+            if (! $reel) {
+                throw new \Exception('Item not found');
+            }
+
+            DB::delete("
+                DELETE FROM reel_likes WHERE reel_id = ? AND user_id = ?
+            ", [$reelId, $userId]);
+
+            DB::delete("
+                DELETE FROM user_reactions
+                WHERE user_id = ?
+                AND reactor_id = ?
+                AND type IN ('like', 'superlike')
+                AND from_reels = 1
+            ", [$reel->user_id, $userId]);
+
+            return [
+                'message' => 'Like has been unsent successfully'
             ];
         } catch (\Exception $e) {
             throw new \Exception('Item not found: '.$e->getMessage());

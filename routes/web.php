@@ -258,6 +258,12 @@ Route::prefix('reels')->middleware('auth')->group(function () {
 
     // Like a reel
     Route::post('{id}/likes', [ReelsController::class, 'likeTheReel']);
+
+    // Delete a reel
+    Route::delete('{id}', [ReelsController::class, 'deleteTheReel']);
+
+    // Unlike a reel (remove like)
+    Route::delete('{id}/likes', [ReelsController::class, 'dislikeTheReel']);
 });
 
 // Image admin view and edit

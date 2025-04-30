@@ -383,4 +383,88 @@ class ReelsController extends Controller
             return $this->errorResponse('Item not found', 404);
         }
     }
+
+    /**
+     * Delete a reel
+     *
+     * @OA\Delete(
+     *     path="/reels/{id}",
+     *     tags={"Reels"},
+     *     summary="Delete a reel",
+     *     description="Delete a reel and its associated files from storage. Only the owner can delete their reel.",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="Reel ID",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Reel deleted successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Reel has been deleted successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Reel not found or not owned by user"
+     *     )
+     * )
+     */
+    public function deleteTheReel(string $id, Request $request): JsonResponse
+    {
+        try {
+            $userId = $request->user()->id;
+            $result = $this->reelsService->deleteTheReel($id, $userId);
+
+            return $this->successResponse($result);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Item not found', 404);
+        }
+    }
+
+    /**
+     * Unlike a reel (remove like)
+     *
+     * @OA\Delete(
+     *     path="/reels/{id}/likes",
+     *     tags={"Reels"},
+     *     summary="Unlike a reel",
+     *     description="Remove like from a reel and delete associated user reactions",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="Reel ID",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Like removed successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Like has been unsent successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Reel not found"
+     *     )
+     * )
+     */
+    public function dislikeTheReel(string $id, Request $request): JsonResponse
+    {
+        try {
+            $userId = $request->user()->id;
+            $result = $this->reelsService->dislikeTheReel($id, $userId);
+
+            return $this->successResponse($result);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Item not found', 404);
+        }
+    }
 }
