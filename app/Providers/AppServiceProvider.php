@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use App\Services\RobokassaService;
 use Illuminate\Support\ServiceProvider;
+use App\Services\RobokassaService;
 
 class AppServiceProvider extends ServiceProvider
 {
