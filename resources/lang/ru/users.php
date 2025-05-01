@@ -12,6 +12,10 @@ return [
     'orientations_bisexual' => 'Бисексуал',
     'orientations_asexual' => 'Асексуал',
     'orientations_not_decided' => 'Не определился',
+    'family_statuses_married' => 'Женат / Замужем',
+    'family_statuses_not_married' => 'Не женат / Не замужем',
+    'family_statuses_widow_er' => 'Вдова / Вдовец',
+    'family_statuses_divorced' => 'Разведен / Разведена',
     'family_statuses_married_male' => 'Женат',
     'family_statuses_married_female' => 'Замужем',
     'family_statuses_not_married_male' => 'Не женат',
@@ -88,4 +92,5 @@ return [
     'social_network_sometimes_im_on' => 'Иногда захожу',
     'sleep_lark' => 'Жаворонок',
     'sleep_owl' => 'Сова',
+    'zodiac_signs_cancecr' => 'Рак',
 ];

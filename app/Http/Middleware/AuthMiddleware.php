@@ -47,6 +47,7 @@ class AuthMiddleware
             $banInfo = $user->getBanInfo();
 
             if ($banInfo && $banInfo['is_permanent']) {
+                request()->attributes->set('ban_info', $banInfo);
                 throw new \Exception('User is blocked', 401);
             }
 

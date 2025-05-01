@@ -12,6 +12,10 @@ return [
     'orientations_bisexual' => 'Bisexual',
     'orientations_asexual' => 'Asexual',
     'orientations_not_decided' => 'Not decided',
+    'family_statuses_married' => 'Married',
+    'family_statuses_not_married' => 'Single',
+    'family_statuses_widow_er' => 'Widow(er)',
+    'family_statuses_divorced' => 'Divorced',
     'family_statuses_married_male' => 'Married',
     'family_statuses_married_female' => 'Married',
     'family_statuses_not_married_male' => 'Single',
@@ -88,4 +92,5 @@ return [
     'social_network_sometimes_im_on' => 'Sometimes I’m on',
     'sleep_lark' => 'Lark',
     'sleep_owl' => 'Owl',
+    'zodiac_signs_cancecr' => 'Cancer',
 ];
