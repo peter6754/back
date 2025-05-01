@@ -9,7 +9,7 @@ Route::get('/payment/success', [RobokassaController::class, 'success'])
     ->name('robokassa.success');
 Route::get('/payment/fail', [RobokassaController::class, 'fail'])
     ->name('robokassa.fail');
-Route::get('/payment/result', [RobokassaController::class, 'handleResult'])
+Route::get('/payment/result', [RobokassaController::class, 'result'])
     ->name('robokassa.result');
 
 // Default routes
