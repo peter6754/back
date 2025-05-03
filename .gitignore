@@ -16,6 +16,6 @@ yarn-error.log
 /.vscode
 /.zed
 admin_panel_update.sh
-/node_modules
+node_modules
 .gitlab-ci.yml
 public/storage
