@@ -18,3 +18,4 @@ yarn-error.log
 admin_panel_update.sh
 /node_modules
 .gitlab-ci.yml
+public/storage
