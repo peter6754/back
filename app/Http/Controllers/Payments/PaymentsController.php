@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers\Payments;
 
+use Exception;
+use App\Models\User;
+use App\Models\Secondaryuser;
+use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use App\Http\Traits\ApiResponseTrait;
 use App\Http\Controllers\Controller;
 use App\Services\RobokassaService;
 use App\Models\Transactions;
+use App\Services\JwtService;
 
 class PaymentsController extends Controller
 {
@@ -56,25 +61,29 @@ class PaymentsController extends Controller
 
     /**
      * @param $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
+     * @throws Exception
      */
-    public function status($id)
+    public function status($id): JsonResponse
     {
-        try {
-            if (!$transaction = Transactions::select('status')->find($id)) {
-                throw new \Exception('Transaction not found', 4042);
-            }
-
-            return $this->successResponse([
-                'status' => $transaction->status
-            ]);
-
-        } catch (\Exception $e) {
+        if (!Secondaryuser::getUser()) {
             return $this->errorResponse(
-                $e->getMessage(),
-                $e->getCode(),
+                Response::$statusTexts[Response::HTTP_UNAUTHORIZED],
+                4010,
+                Response::HTTP_UNAUTHORIZED
+            );
+        }
+
+        if (!$transaction = Transactions::select('status')->find($id)) {
+            return $this->errorResponse(
+                "Transaction not found",
+                4042,
                 Response::HTTP_NOT_FOUND
             );
         }
+
+        return $this->successResponse([
+            'status' => $transaction->status
+        ]);
     }
 }
