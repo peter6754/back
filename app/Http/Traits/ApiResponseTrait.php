@@ -4,6 +4,7 @@ namespace App\Http\Traits;
 
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Http\JsonResponse;
+use App\Services\JwtService;
 
 trait ApiResponseTrait
 {
@@ -68,5 +69,15 @@ trait ApiResponseTrait
             $errorCode,
             Response::HTTP_NOT_FOUND
         );
+    }
+
+    protected function unauthorizedResponse() {
+        try {
+
+        $payload = app(JwtService::class)->decode(request()->bearerToken());
+
+        } catch (\Throwable $th) {
+
+        }
     }
 }
