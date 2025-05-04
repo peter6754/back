@@ -65,8 +65,6 @@ class PaymentsController extends Controller
 
     }
 
-
-
     /**
      * @param $id
      * @return JsonResponse
@@ -80,7 +78,7 @@ class PaymentsController extends Controller
         // Get transaction
         if (!$transaction = Transactions::select('status')->find($id)) {
             return $this->errorResponse(
-                "Transaction not found",
+                Response::$statusTexts[Response::HTTP_UNAUTHORIZED],
                 4042,
                 Response::HTTP_NOT_FOUND
             );
