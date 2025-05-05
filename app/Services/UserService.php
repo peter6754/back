@@ -1309,13 +1309,13 @@ class UserService
             if ($existingRequest && $existingRequest->status === 'rejected') {
                 DB::update('
                     UPDATE verification_requests
-                    SET image = ?, status = "pending", rejection_reason = NULL
+                    SET image = ?, status = "initial", rejection_reason = NULL
                     WHERE user_id = ?
                 ', [$imageFid, $userId]);
             } else {
                 DB::insert('
                     INSERT INTO verification_requests (user_id, image, status)
-                    VALUES (?, ?, "pending")
+                    VALUES (?, ?, "initial")
                 ', [$userId, $imageFid]);
             }
 
