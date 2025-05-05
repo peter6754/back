@@ -302,8 +302,12 @@ class UserService
                     ]);
                 }),
                 'interests' => collect($user['interests'] ?? [])->map(function ($userInterest) {
+
+                    $key = 'interests_' . $userInterest['interest']['id'];
+                    $translated = trans('interests.' . $key);
+
                     return [
-                        'name' => $userInterest['interest']['name'],
+                        'name' => $translated !== 'interests.' . $key ? $translated : $userInterest['interest']['name'],
                         'id' => $userInterest['interest']['id'],
                     ];
                 }),

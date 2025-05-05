@@ -256,6 +256,14 @@ class PricesController extends Controller
             // Все категории подарков
             $categories = GiftCategory::all();
 
+            // Применяем перевод по id
+            $categories->transform(function ($item) {
+                $key = 'gift_categories_' . $item->id;
+                $translated = trans('gift_categories.' . $key);
+                $item->name = $translated !== 'gift_categories.' . $key ? $translated : $item->name;
+                return $item;
+            });
+
             // Популярные подарки (по количеству в user_gifts)
             $popular_gifts = DB::table('user_gifts as ug')
                 ->leftJoin('gifts as g', 'g.id', '=', 'ug.gift_id')
@@ -356,10 +364,15 @@ class PricesController extends Controller
             $items = $gifts->map(function ($gift) use ($gender) {
                 $price = $gift->price->{$gender};
 
+                // Применяем перевод сообщения по id
+                $key = 'gift_messages_' . $gift->id;
+                $translatedMessage = trans('gift_messages.' . $key);
+                $message = $translatedMessage !== 'gift_messages.' . $key ? $translatedMessage : $gift->message;
+
                 return [
                     'id' => $gift->id,
                     'image' => $gift->image,
-                    'message' => $gift->message,
+                    'message' => $message,
                     'price' => (string)intval($price),
                 ];
             });
