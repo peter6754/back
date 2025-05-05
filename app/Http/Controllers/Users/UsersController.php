@@ -1081,4 +1081,129 @@ class UsersController extends Controller
             );
         }
     }
+
+    /**
+     * Create verification request for user
+     *
+     * @OA\Post(
+     *     path="/users/verification-request",
+     *     tags={"User Verification"},
+     *     summary="Create verification request",
+     *     description="Submit a verification request with an image document",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Image for verification",
+     *
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *
+     *             @OA\Schema(
+     *
+     *                 @OA\Property(
+     *                     property="image",
+     *                     type="string",
+     *                     format="binary",
+     *                     description="Image file for verification (jpeg, jpg, png, max 10MB)"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Verification request submitted successfully",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 example="Verification request submitted successfully"
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=409,
+     *         description="Verification request already exists",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 example="Verification request already exists"
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 example="The given data was invalid."
+     *             ),
+     *
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *
+     *                 @OA\Property(
+     *                     property="image",
+     *                     type="array",
+     *
+     *                     @OA\Items(
+     *                         type="string",
+     *                         example="Image is required"
+     *                     )
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *
+     *         @OA\JsonContent(ref="#/components/schemas/Unauthorized")
+     *     )
+     * )
+     */
+    public function createVerificationRequest(Request $request): JsonResponse
+    {
+        $request->validate([
+            'image' => 'required|file|image|mimes:jpeg,jpg,png|max:10240',
+        ], [
+            'image.required' => 'Image is required for upload',
+            'image.file' => 'The uploaded file must be a file',
+            'image.image' => 'The uploaded file must be an image',
+            'image.mimes' => 'Image must be in format: jpeg, jpg or png',
+            'image.max' => 'Image size must not exceed 10 MB',
+        ]);
+
+        try {
+            $user = $request->user();
+            $image = $request->file('image');
+
+            $result = $this->userService->createVerificationRequest($user->id, $image);
+
+            return $this->successResponse($result);
+
+        } catch (Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage(),
+                (int) $e->getCode() ?: 500
+            );
+        }
+    }
 }
