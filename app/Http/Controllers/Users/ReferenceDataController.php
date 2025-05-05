@@ -86,6 +86,14 @@ class ReferenceDataController extends Controller
 
             $interests = $query->select(['id', 'name'])->get();
 
+            // Применяем перевод по id
+            $interests->transform(function ($item) {
+                $key = 'interests_' . $item->id;
+                $translated = trans('interests.' . $key);
+                $item->name = $translated !== 'interests.' . $key ? $translated : $item->name;
+                return $item;
+            });
+
             return $this->successResponse([
                 'items' => $interests
             ]);
@@ -1112,12 +1120,13 @@ class ReferenceDataController extends Controller
         try {
 
             $customerData = $request->customer;
-
             $userId = $customerData['id'];
 
+            // Интересы текущего пользователя
             $myInterestIds = UserInterests::where('user_id', $userId)
                 ->pluck('interest_id');
 
+            // Получаем клубы пользователя
             $myClubs = UserInterests::where('user_interests.user_id', $userId)
                 ->join('interests', 'user_interests.interest_id', '=', 'interests.id')
                 ->select([
@@ -1127,9 +1136,22 @@ class ReferenceDataController extends Controller
                 ])
                 ->get();
 
+            // Применяем переводы
+            $myClubs->transform(function ($club) {
+                $club->name = trans('interests.interests_' . $club->id);
+                return $club;
+            });
+
+            // Дополнительные клубы (не в моих)
             $additionalClubs = Interests::whereNotIn('id', $myInterestIds)
                 ->select(['club_name as name', 'image', 'id'])
                 ->get();
+
+            // Применяем переводы
+            $additionalClubs->transform(function ($club) {
+                $club->name = trans('interests.interests_' . $club->id);
+                return $club;
+            });
 
             return $this->successResponse([
                 'my_clubs' => $myClubs,
@@ -1141,7 +1163,6 @@ class ReferenceDataController extends Controller
                 (int)$e->getCode()
             );
         }
-
     }
 
 
