@@ -54,7 +54,7 @@ class UserService
     private function getUserInfo(string $id): array
     {
         $user = Secondaryuser::with([
-            'finalPreference:preference',
+            'finalPreference:preference,id',
             'interests.interest:id,name',
             'images' => fn($query) => $query->select('user_id', 'image')->take(4),
             'verificationRequest:user_id,status',
@@ -146,8 +146,11 @@ class UserService
             !empty($userInformation['family_status'])
                 ? trans('users.family_statuses_' . $userInformation['family_status'] . '_' . (in_array($gender, $this->maleGenders) ? 'male' : 'female'))
                 : null,
-            $info['final_preference']['preference'] ??
-                $info['user_relationship_preferences'][0]['preference']['preference'] ?? null,
+            ($preferenceId = $info['final_preference']['id'] ?? $info['user_relationship_preferences'][0]['preference']['id'] ?? null)
+                ? (($translated = trans('relationship_preferences.relationship_preferences_' . $preferenceId)) !== 'relationship_preferences.relationship_preferences_' . $preferenceId
+                ? $translated
+                : $info['final_preference']['preference'] ?? $info['user_relationship_preferences'][0]['preference']['preference'] ?? null)
+                : ($info['final_preference']['preference'] ?? $info['user_relationship_preferences'][0]['preference']['preference'] ?? null),
         ];
 
         return [
@@ -168,7 +171,17 @@ class UserService
                     $info['verification_requests'][0]['status'] ?? null) === 'approved',
             'images' => array_column($info['images'] ?? $info['user_image'] ?? [], 'image'),
             'interests' => array_map(function ($interest) {
-                return $interest['interest']['name'];
+                $interestId = $interest['interest']['id'] ?? $interest['id'] ?? null;
+                $originalName = $interest['interest']['name'] ?? $interest['name'] ?? '';
+
+                if ($interestId) {
+                    $key = 'interests_' . $interestId;
+                    $translated = trans('interests.' . $key);
+
+                    return $translated !== 'interests.' . $key ? $translated : $originalName;
+                }
+
+                return $originalName;
             }, $info['interests'] ?? $info['user_interest'] ?? []),
             'gifts' => array_map(function ($gift) {
                 return $gift['gift']['image'];
@@ -312,7 +325,10 @@ class UserService
                     ];
                 }),
                 'relationship_preference' => !empty($user['final_preference']) ? [
-                    'preference' => $user['final_preference']['preference'],
+                    'preference' => trans('relationship_preferences.relationship_preferences_' . $user['final_preference']['id'])
+                    !== 'relationship_preferences.relationship_preferences_' . $user['final_preference']['id']
+                        ? trans('relationship_preferences.relationship_preferences_' . $user['final_preference']['id'])
+                        : $user['final_preference']['preference'],
                     'id' => $user['final_preference']['id'],
                 ] : null,
                 'role' => $user['user_information']['role'] ?? null,
