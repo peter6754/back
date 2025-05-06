@@ -162,6 +162,9 @@ Route::prefix('users')->middleware('auth')->group(function () {
     // update users coordinates
     Route::post('coordinates', [UsersController::class, 'updateCoordinates']);
 
+    // verification request
+    Route::post('verification-request', [UsersController::class, 'createVerificationRequest']);
+
     // My Profile
     Route::get('profile', [UsersController::class, 'getAccountInformation']);
     Route::put('profile', [UsersController::class, 'updateAccountInformation']);
