@@ -1352,4 +1352,43 @@ class UserService
             throw new Exception($e->getMessage(), $e->getCode());
         }
     }
+
+    /**
+     * Get verification status for user
+     *
+     * @param string $userId
+     * @return array
+     * @throws Exception
+     */
+    public function getVerificationStatus(string $userId): array
+    {
+        try {
+            $verificationRequest = VerificationRequests::where('user_id', $userId)->first();
+
+            if (! $verificationRequest) {
+                throw new Exception('Verification request not found', 404);
+            }
+
+            $statusMapping = [
+                'initial' => 'Очередь',
+                'approved' => 'Проверка прошла',
+                'rejected' => 'Проверка не прошла'
+            ];
+
+            $russianStatus = $statusMapping[$verificationRequest->status] ?? 'Очередь';
+
+            return [
+                'status' => $russianStatus,
+                'rejection_reason' => $verificationRequest->rejection_reason,
+            ];
+
+        } catch (Exception $e) {
+            Log::error('Error getting verification status', [
+                'user_id' => $userId,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new Exception($e->getMessage(), $e->getCode());
+        }
+    }
 }
