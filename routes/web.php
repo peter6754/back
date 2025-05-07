@@ -154,6 +154,9 @@ Route::prefix('users')->middleware('auth')->group(function () {
     // User info in registration
     Route::post('infoRegistration', [UsersController::class, 'updateUserInfoRegistration']);
 
+    // User status verification
+    Route::get('verification-status', [UsersController::class, 'getVerificationStatus']);
+
     Route::get('packagesInfo', [UsersController::class, 'getUserPackages']);
 
     // User transactions

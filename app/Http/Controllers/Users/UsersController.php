@@ -1206,4 +1206,65 @@ class UsersController extends Controller
             );
         }
     }
+
+    /**
+     * @OA\Get(
+     *     path="/users/verification-status",
+     *     tags={"User Verification"},
+     *     summary="Get verification status",
+     *     description="Returns user verification status and moderator comment if available",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *
+     *                 @OA\Property(property="status", type="string", example="Очередь", description="Verification status: Очередь, Проверка прошла, Проверка не прошла"),
+     *                 @OA\Property(property="rejection_reason", type="string", nullable=true, example="Photo is not clear", description="Moderator comment if rejected"),
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *
+     *         @OA\JsonContent(ref="#/components/schemas/Unauthorized")
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=404,
+     *         description="Verification request not found",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(property="message", type="string", example="Verification request not found")
+     *         )
+     *     )
+     * )
+     */
+    public function getVerificationStatus(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+
+            $verificationStatus = $this->userService->getVerificationStatus($user->id);
+
+            return $this->successResponse($verificationStatus);
+
+        } catch (Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage(),
+                (int) $e->getCode() ?: 500
+            );
+        }
+    }
 }
