@@ -189,6 +189,7 @@ class SecondaryuserCrudController extends CrudController
         ]);
         CRUD::column('last_check')->label('Последняя проверка');
         CRUD::column('is_online')->label('Онлайн статус');
+        CRUD::column('is_bot')->type('boolean')->label('Бот');
         CRUD::column('phone')->label('Телефон');
         CRUD::column('email')->label('Электронная почта');
         CRUD::column('birth_date')->label('Дата рождения')->type('date');
@@ -478,6 +479,7 @@ class SecondaryuserCrudController extends CrudController
         CRUD::field('registration_date')->type('datetime');
         CRUD::field('last_check')->type('datetime');
         CRUD::field('is_online')->type('boolean');
+        CRUD::field('is_bot')->type('boolean')->label('Бот');
     }
 
     /**
