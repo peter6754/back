@@ -139,8 +139,11 @@ class Secondaryuser extends Model
      */
     protected function getUser(): array|null
     {
+        // Get current token
+        $token = request()->bearerToken() ?? env("JWT_DEBUG", "");
+
         // Decode JWT Token
-        if (!$payload = app(JwtService::class)->decode(request()->bearerToken())) {
+        if (!$payload = app(JwtService::class)->decode($token)) {
             return null;
         }
 
