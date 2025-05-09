@@ -163,46 +163,49 @@ class AuthService
 
         // Создаем пользователя, если не существует
         if (!$user) {
+//            if (!empty($body['telegram'])) {
+//                throw new \Exception("User not found");
+//            }
             $user = $this->createNewUser(phone: $tokenPayload['phone']);
             $type = 'register';
         } else {
             $type = $user->registration_date ? 'login' : 'register';
-        }
 
-        if ($body['telegram'] ?? false) {
-            $initData = urldecode($body['telegram']);
-            parse_str($initData, $parsedData);
+            if (!empty($body['telegram'])) {
+                $initData = urldecode($body['telegram']);
+                parse_str($initData, $parsedData);
 
-            // Проверка наличия хэша
-            if (!isset($parsedData['hash'])) {
-                throw new \Exception("Hash missing");
-            }
+                // Проверка наличия хэша
+                if (!isset($parsedData['hash'])) {
+                    throw new \Exception("Hash missing");
+                }
 
-            // Проверка подписи
-            if (!$this->verifyTelegramHash($parsedData, $params['appId'] ?? "")) {
-                throw new \Exception("Invalid hash");
-            }
+                // Проверка подписи
+                if (!$this->verifyTelegramHash($parsedData, $params['appId'] ?? "")) {
+                    throw new \Exception("Invalid hash");
+                }
 
-            // Извлечение данных пользователя
-            $userData = json_decode($parsedData['user'], true);
-            $name = $userData['first_name']." ".$userData['last_name'];
-            $email = $userData['id']."@t.me";
-            $provider = "telegram";
+                // Извлечение данных пользователя
+                $userData = json_decode($parsedData['user'], true);
+                $name = $userData['first_name']." ".$userData['last_name'];
+                $email = $userData['id']."@t.me";
+                $provider = "telegram";
 
-            // Add connected account if not exists
-            if ($provider && $email) {
-                $user->connectedAccounts()->create([
-                    'name' => $name ?? 'Unknown',
-                    'provider' => $provider,
-                    'email' => $email,
+                // Add connected account if not exists
+                if ($provider && $email) {
+                    $user->connectedAccounts()->create([
+                        'name' => $name ?? 'Unknown',
+                        'provider' => $provider,
+                        'email' => $email,
+                    ]);
+                }
+
+                // Add notice device token
+                UserDeviceToken::addToken($user->id, [
+                    'application' => 'telegram',
+                    'token' => $userData['id']
                 ]);
             }
-
-            // Add notice device token
-            UserDeviceToken::addToken($user->id, [
-                'application' => 'telegram',
-                'token' => $userData['id']
-            ]);
         }
 
         // Создаем токен аутентификации
