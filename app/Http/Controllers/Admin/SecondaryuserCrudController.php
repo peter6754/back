@@ -657,6 +657,7 @@ class SecondaryuserCrudController extends CrudController
             CASE
                 WHEN udt.application LIKE '%market: google-play%' THEN 'Google'
                 WHEN udt.application LIKE '%market: ru-store%' THEN 'RuStore'
+                WHEN udt.application LIKE '%market: web%' THEN 'Web'
                 ELSE 'Другие'
             END as store,
             COUNT(DISTINCT u.id) as count
@@ -668,6 +669,7 @@ class SecondaryuserCrudController extends CrudController
         return array_merge([
             'Google' => 0,
             'RuStore' => 0,
+            'Web' => 0,
             'Другие' => 0
         ], $result);
     }

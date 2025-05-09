@@ -121,6 +121,7 @@
         ->progressClass('progressbar')
         ->value("Google Play: {$usersByStore['today']['Google']}<br>
                  RuStore: {$usersByStore['today']['RuStore']}<br>
+                 Web: {$usersByStore['today']['Web']}<br>
                  Другие: {$usersByStore['today']['Другие']}")
         ->description("Сегодня: {$usersByStore['today_total']} новых пользователей"),
 
@@ -132,6 +133,7 @@
         ->progressClass('progressbar')
         ->value("Google Play: {$usersByStore['yesterday']['Google']}<br>
                  RuStore: {$usersByStore['yesterday']['RuStore']}<br>
+                 Web: {$usersByStore['yesterday']['Web']}<br>
                  Другие: {$usersByStore['yesterday']['Другие']}")
         ->description("Вчера: {$usersByStore['yesterday_total']} новых пользователей")
 
