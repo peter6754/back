@@ -92,6 +92,7 @@ class AuthController extends Controller
         try {
             $validatedData = $request->validate([
                 'device_token' => 'string|nullable',
+                'telegram' => 'string|nullable',
                 'phone' => 'string|required'
             ]);
 

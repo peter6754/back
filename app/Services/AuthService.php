@@ -88,6 +88,10 @@ class AuthService
             }
             $type = 'login';
         } else {
+            if (!empty($params['telegram'])) {
+                throw new \Exception('User not found');
+            }
+
             // Отправка push-уведомления новому пользователю
             Log::channel("authservice")->info("[Register], send code {$code}, new user: ".$userPhone);
             if ($userToken === "huawei-device-token") {
