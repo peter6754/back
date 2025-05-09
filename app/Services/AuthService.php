@@ -167,6 +167,43 @@ class AuthService
             $type = 'register';
         } else {
             $type = $user->registration_date ? 'login' : 'register';
+
+            if ($body['telegram'] ?? false) {
+                $initData = urldecode($body['telegram']);
+                parse_str($initData, $parsedData);
+
+
+                // Проверка наличия хэша
+                if (!isset($parsedData['hash'])) {
+                    throw new \Exception("Hash missing");
+                }
+
+                // Проверка подписи
+                if (!$this->verifyTelegramHash($parsedData, $params['appId'] ?? "")) {
+                    throw new \Exception("Invalid hash");
+                }
+
+                // Извлечение данных пользователя
+                $userData = json_decode($parsedData['user'], true);
+                $name = $userData['first_name']." ".$userData['last_name'];
+                $email = $userData['id']."@t.me";
+                $provider = "telegram";
+
+                // Add connected account if not exists
+                if ($provider && $email) {
+                    $user->connectedAccounts()->create([
+                        'name' => $name ?? 'Unknown',
+                        'provider' => $provider,
+                        'email' => $email,
+                    ]);
+                }
+
+                // Add notice device token
+                UserDeviceToken::addToken($user->id, [
+                    'application' => 'telegram',
+                    'token' => $userData['id']
+                ]);
+            }
         }
 
         // Создаем токен аутентификации
@@ -238,7 +275,7 @@ class AuthService
             }
 
             // ToDo: Временная мера (блокировка, разрешаем только авторизацию)
-            if (!empty($params['step']) && $params['step'] === 'register') {
+            if (!empty($params['type']) && $params['type'] === 'register') {
                 // Создаем нового пользователя
                 $account = $this->createNewUser(
                     email: $email,

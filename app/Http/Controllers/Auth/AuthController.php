@@ -160,6 +160,7 @@ class AuthController extends Controller
     {
         $validatedData = $request->validate([
             'code' => 'required|string|digits:4',
+            'telegram' => 'string|nullable',
             'language' => 'string'
         ]);
 
@@ -204,7 +205,7 @@ class AuthController extends Controller
             $validatedData = $request->validate([
                 'initData' => 'required|string',
                 'appId' => 'string',
-                'step' => 'string'
+                'type' => 'string'
             ]);
 
             return $this->successResponse(
