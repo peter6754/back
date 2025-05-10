@@ -7,14 +7,18 @@ use Illuminate\Support\Facades\Log;
 class NotificationService
 {
     /**
-     * @param mixed $tokens
-     * @param string $message
-     * @param string $title
-     * @param array $additionalData
+     * @param  mixed  $tokens
+     * @param  string  $message
+     * @param  string  $title
+     * @param  array  $additionalData
      * @return bool
      */
-    public function sendPushNotification(mixed $tokens, string $message, string $title = "", array $additionalData = []): bool
-    {
+    public function sendPushNotification(
+        mixed $tokens,
+        string $message,
+        string $title = "",
+        array $additionalData = []
+    ): bool {
 //        $notifyChannel = config('logging.default');
         if (!empty($additionalData['channel'])) {
 //            $notifyChannel = $additionalData['channel'];
@@ -84,10 +88,14 @@ class NotificationService
     {
         if (preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i', $token)) {
             return 'onesignal';
-        } else if (preg_match('/^ExponentPushToken\[[a-zA-Z0-9_-]+\]$/', $token)) {
-            return 'expo';
-        } else if (is_numeric($token)) {
-            return 'telegram';
+        } else {
+            if (preg_match('/^ExponentPushToken\[[a-zA-Z0-9_-]+\]$/', $token)) {
+                return 'expo';
+            } else {
+                if (is_numeric($token)) {
+                    return 'telegram';
+                }
+            }
         }
 
         return 'unknown';
