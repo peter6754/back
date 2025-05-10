@@ -15,6 +15,8 @@ use App\Http\Controllers\Users\SettingsController;
 use App\Http\Controllers\Users\TransactionsController;
 use App\Http\Controllers\Users\UserPhotosController;
 use App\Http\Controllers\Users\UsersController;
+use App\Services\Notifications\NotificationService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
 use OpenApi\Generator;
@@ -135,8 +137,8 @@ Route::prefix('auth')->group(function () {
     Route::any('social/{provider}/callback', [AuthController::class, 'socialCallback']);
     Route::get('social/{provider}', function ($provider) {
         if (
-            ! empty(config("services.{$provider}.client_id")) ||
-            ! empty(config("services.{$provider}.redirect"))
+            !empty(config("services.{$provider}.client_id")) ||
+            !empty(config("services.{$provider}.redirect"))
         ) {
             return Socialite::driver($provider)->redirectUrl(
                 url(config("services.{$provider}.redirect"))
