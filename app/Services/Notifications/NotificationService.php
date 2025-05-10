@@ -13,7 +13,7 @@ class NotificationService
      * @param array $additionalData
      * @return bool
      */
-    public function sendPushNotification(mixed $tokens, string $message, string $title, array $additionalData = []): bool
+    public function sendPushNotification(mixed $tokens, string $message, string $title = "", array $additionalData = []): bool
     {
 //        $notifyChannel = config('logging.default');
         if (!empty($additionalData['channel'])) {

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 
 class OneSignalProvider
 {
-    protected string $apiUrl = 'https://api.onesignal.com/notifications';
+    protected string $apiUrl = 'https://api.onesignal.com/notifications?c=push';
     protected string $restApiKey;
     protected Client $client;
     protected string $appId;
@@ -36,31 +36,50 @@ class OneSignalProvider
     public function sendMessageAsync(array $params): Promise\PromiseInterface
     {
         $requestParams = [
-            'target_channel' => 'push',
             'app_id' => $this->appId,
             'contents' => [
                 "en" => $params['body']
             ],
-            'headings' => [
-                "en" => $params['title']
-            ],
+            'target_channel' => "push",
+
             'include_aliases' => [
-                'onesignal_id' => [$params['to']]
+                'onesignal_id' => [
+                    $params['to']
+                ]
             ],
-            'android_sound' => $params['sound'] ?? 'default',
-            'ios_sound' => $params['sound'] ?? 'default',
-            'priority' => $params['priority'] ?? 10,
-            'data' => $params['data'] ?? [],
-            'url' => $params['url'] ?? null
+
+            "small_icon" => "ic_stat_onesignal_default",
+            "android_sound" => "default",
+            "ios_sound" => "default",
         ];
+
+        if (!empty($params['title'])) {
+            $requestParams['headings'] = [
+                "en" => $params['title']
+            ];
+        }
+
+        if (!empty($params['android_sound'])) {
+            $requestParams['android_sound'] = $params['android_sound'];
+        }
+        if (!empty($params['ios_sound'])) {
+            $requestParams['ios_sound'] = $params['ios_sound'];
+        }
+        if (!empty($params['url'])) {
+            $requestParams['url'] = $params['url'];
+        }
+
+//        echo "JSON body: ".json_encode($requestParams, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE).PHP_EOL;
 
         return $this->client->postAsync($this->apiUrl, [
             'json' => $requestParams
         ])->then(
             function ($response) use ($params) {
+//                echo "Success: ".$response->getBody().PHP_EOL.PHP_EOL;
                 return $this->handleSuccessResponse($response, $params);
             },
             function ($exception) use ($params) {
+//                echo "Error: ".$exception->getMessage().PHP_EOL.PHP_EOL;
                 return $this->handleError($exception, $params);
             }
         );
