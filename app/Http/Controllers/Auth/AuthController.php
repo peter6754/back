@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use Illuminate\Support\Facades\Cache;
 use Laravel\Socialite\Two\InvalidStateException;
 use Symfony\Component\HttpFoundation\Response;
 use GuzzleHttp\Exception\GuzzleException;
@@ -227,10 +228,23 @@ class AuthController extends Controller
      */
     public function socialLinks(): JsonResponse
     {
+        // Draw from cache
+        if (Cache::has('socialLinks')) {
+            return $this->successResponse(
+                Cache::get('socialLinks')
+            );
+        }
+
         // Add dynamic links
         foreach ($this->socialProviders as &$val) {
             $val['link'] = url('/auth/social/' . $val['provider']);
         }
+
+        Cache::put(
+            'socialLinks',
+            $this->socialProviders,
+            now()->addMinutes(15)
+        );
 
         // Response
         return $this->successResponse(
@@ -239,8 +253,9 @@ class AuthController extends Controller
     }
 
     /**
-     * @param Request $request
+     * @param  Request  $request
      * @return RedirectResponse|void
+     * @throws \Throwable
      */
     public function socialCallback(Request $request)
     {
