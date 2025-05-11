@@ -7,3 +7,5 @@
 <x-backpack::menu-item title="Подписки" icon="la la-question" :link="backpack_url('bought-subscriptions')" />
 
 <x-backpack::menu-item title="Запросы верификации" icon="la la-question" :link="backpack_url('verification-requests')" />
+
+<x-backpack::menu-item title="Очередь на удаление" icon="la la-question" :link="backpack_url('in-queue-for-delete-user')" />
