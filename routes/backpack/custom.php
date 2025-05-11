@@ -20,6 +20,7 @@ Route::group([
     Route::crud('user', 'UserCrudController');
     Route::crud('bought-subscriptions', 'BoughtSubscriptionsCrudController');
     Route::crud('verification-requests', 'VerificationRequestsCrudController');
+    Route::crud('in-queue-for-delete-user', 'InQueueForDeleteUserCrudController');
 }); // this should be the absolute last line of this file
 
 /**
