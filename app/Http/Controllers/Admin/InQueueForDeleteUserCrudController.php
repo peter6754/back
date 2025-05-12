@@ -43,14 +43,6 @@ class InQueueForDeleteUserCrudController extends CrudController
         ]);
 
         CRUD::addColumn([
-            'name' => 'user_id',
-            'label' => 'ID пользователя',
-            'type' => 'text',
-            'searchLogic' => function ($query, $column, $searchTerm) {
-                $query->orWhere('user_id', 'like', '%' . $searchTerm . '%');
-            },
-        ]);
-        CRUD::addColumn([
             'name' => 'email',
             'label' => 'Email',
             'type' => 'closure',
@@ -95,17 +87,64 @@ class InQueueForDeleteUserCrudController extends CrudController
          * Columns can be defined using the fluent syntax:
          * - CRUD::column('price')->type('number');
          */
+        $this->crud->removeAllColumns();
+        CRUD::addColumn([
+            'name' => 'user_profile',
+            'label' => 'Профиль пользователя',
+            'type' => 'custom_html',
+            'escaped' => false,
+            'value' => function($entry) {
+                $url = url('/admin/secondaryuser/' . $entry->user_id . '/show');
+                return '<a href="' . $url . '" target="_blank">Профиль</a>';
+            },
+        ]);
+
+        CRUD::column('user_id')
+            ->label('ID пользователя')
+            ->type('text')
+            ->visibleInTable(false)
+            ->visibleInShow(false)
+            ->visibleInExport(false)
+            ->visibleInModal(false)
+            ->searchLogic(function ($query, $column, $searchTerm) {
+                $query->orWhere('user_id', 'like', '%' . $searchTerm . '%');
+            });
 
         CRUD::addColumn([
-            'name' => 'user_id',
-            'label' => 'ID пользователя',
-            'type' => 'text',
-            'searchLogic' => function ($query, $column, $searchTerm) {
-                $query->orWhere('user_id', 'like', '%' . $searchTerm . '%');
+            'name' => 'email',
+            'label' => 'Email',
+            'type' => 'closure',
+            'function' => function ($entry) {
+                return optional($entry->user)->email ?: '—';
             },
+            'searchLogic' => function ($query, $column, $searchTerm) {
+                $query->orWhereHas('user', function ($q) use ($searchTerm) {
+                    $q->where('email', 'like', '%' . $searchTerm . '%');
+                });
+            },
+        ]);
+        CRUD::addColumn([
+            'name' => 'user_phone',
+            'label' => 'Телефон',
+            'type' => 'closure',
+            'function' => function ($entry) {
+                return $entry->user->phone;
+            }
+        ]);
+        CRUD::addColumn([
+            'name' => 'time_when_delete',
+            'label' => 'Заказал удаление',
+            'type' => 'model_function',
+            'function_name' => 'getDateQueuedForDeletion',
         ]);
         CRUD::column('date')->label('Дата удаления');
         $this->crud->query->orderBy('date', 'desc');
+        CRUD::addColumn([
+            'name' => 'time_left_to_delete',
+            'label' => 'Осталось до удаления',
+            'type' => 'model_function',
+            'function_name' => 'getTimeLeftToDelete',
+        ]);
 
     }
 
