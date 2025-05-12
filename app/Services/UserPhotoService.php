@@ -51,11 +51,20 @@ class UserPhotoService
                 $photosFids[] = [
                     'image' => $fid,
                     'user_id' => $user->id,
-                    'is_main' => $isFirstPhoto && $index === 0, // Первое фото первой загрузки = главное
+                    'is_main' => false, // Все фото сначала не главные
                 ];
             }
 
             UserImage::insert($photosFids);
+
+            if ($isFirstPhoto) {
+                $firstImage = UserImage::where('user_id', $user->id)
+                    ->where('image', $photosFids[0]['image'])
+                    ->first();
+                if ($firstImage) {
+                    $firstImage->setAsMain();
+                }
+            }
 
             // Устанавливаем дату регистрации, если она еще не установлена
             if ($shouldSetRegistrationDate) {
@@ -141,7 +150,7 @@ class UserPhotoService
             ->where('image', $fid)
             ->first();
 
-        if (!$userImage) {
+        if (! $userImage) {
             return false;
         }
 
@@ -172,7 +181,7 @@ class UserPhotoService
     {
         $mainImage = $user->mainImage();
 
-        if (!$mainImage) {
+        if (! $mainImage) {
             return null;
         }
 
@@ -210,7 +219,7 @@ class UserPhotoService
             ->where('image', $fid)
             ->first();
 
-        if (!$userImage) {
+        if (! $userImage) {
             return false;
         }
 
