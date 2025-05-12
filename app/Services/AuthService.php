@@ -253,7 +253,7 @@ class AuthService
         // Извлечение данных пользователя
         $userData = json_decode($parsedData['user'], true);
         $name = $userData['first_name']." ".$userData['last_name'];
-        $email = $userData['id']."@t.me";
+        $email = $userData['id']."@telegram.social";
         $provider = "telegram";
 
         DB::beginTransaction();
