@@ -20,7 +20,9 @@ class AdvertisementCrudController extends CrudController
     {
         CRUD::setModel(Advertisement::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/advertisement');
-        CRUD::setEntityNameStrings('реклама', 'реклама');
+        CRUD::setEntityNameStrings('рекламу', 'реклама');
+
+        $this->crud->denyAccess('delete');
 
         CRUD::addButtonFromView('line', 'manage_photos', 'advertisement_manage_photos', 'beginning');
     }
