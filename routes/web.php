@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Advertisment\AdvertisementController;
 use App\Http\Controllers\Application\PricesController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Chat\ChatController;
@@ -276,6 +277,12 @@ Route::prefix('reels')->middleware('auth')->group(function () {
 
     // Unlike a reel (remove like)
     Route::delete('{id}/likes', [ReelsController::class, 'dislikeTheReel']);
+});
+
+Route::prefix('advertisements')->middleware('auth')->group(function () {
+
+    Route::get('active', [AdvertisementController::class, 'getActive']);
+
 });
 
 // Image admin view and edit

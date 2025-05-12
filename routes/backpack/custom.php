@@ -75,6 +75,17 @@ Route::group([
     Route::crud('user-ban', 'UserBanCrudController');
     Route::get('user-ban/{id}/unban', [UserBanCrudController::class, 'unban'])->name('user-ban.unban');
     Route::post('secondaryuser/unban/{id}', [SecondaryuserCrudController::class, 'unban'])->name('secondaryuser.unban');
+    Route::crud('advertisement', 'AdvertisementCrudController');
+
+    // Управление фотографиями рекламы
+    Route::get('advertisement/{id}/photos', 'AdvertisementPhotosController@index');
+    Route::post('advertisement/{id}/photos', 'AdvertisementPhotosController@store');
+    Route::post('advertisement/{id}/photos/set-primary', 'AdvertisementPhotosController@setPrimary');
+    Route::delete('advertisement/{id}/photos', 'AdvertisementPhotosController@destroy');
+
+    // Быстрые действия с изображениями (для встроенных операций в CRUD)
+    Route::delete('advertisement-image/{id}/delete', 'AdvertisementImageCrudController@destroy');
+    Route::post('advertisement-image/{id}/set-primary', 'AdvertisementImageCrudController@setAsPrimary');
 }); // this should be the absolute last line of this file
 
 /**
