@@ -60,4 +60,9 @@ class InQueueForDeleteUser extends Model
             'syntax' => CarbonInterface::DIFF_ABSOLUTE,
         ]);
     }
+
+    public function getDateQueuedForDeletion()
+    {
+        return Carbon::parse($this->date)->subDays(10)->toDateTimeString();
+    }
 }
