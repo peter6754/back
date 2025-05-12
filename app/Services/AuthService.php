@@ -192,7 +192,7 @@ class AuthService
                 // Извлечение данных пользователя
                 $userData = json_decode($parsedData['user'], true);
                 $name = $userData['first_name']." ".$userData['last_name'];
-                $email = $userData['id']."@t.me";
+                $email = $userData['id']."@telegram.social";
                 $provider = "telegram";
 
                 // Add connected account if not exists
@@ -328,7 +328,7 @@ class AuthService
     {
         DB::beginTransaction();
         $account = ConnectedAccount::with("user")
-            ->where('email', $user->getEmail())
+            ->where('email', $user->getEmail() ?? $user->getId().'@'.$provider.'.social')
             ->where('provider', $provider)
             ->first();
 
