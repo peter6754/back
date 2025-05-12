@@ -140,6 +140,19 @@ Route::prefix('auth')->group(function () {
             !empty(config("services.{$provider}.client_id")) ||
             !empty(config("services.{$provider}.redirect"))
         ) {
+//            var_dump($provider);
+//            exit;
+            if ($provider === "telegram") {
+                $telegramBot = config("services.{$provider}.client_secret");
+                $redirectUri = url(config("services.{$provider}.redirect"));
+                $botId = explode(":", $telegramBot)[0];
+
+                $telegramLoginUrl = "https://oauth.telegram.org/auth?bot_id={$botId}&origin=".urlencode(url('/')).
+                    "&return_to=".urlencode($redirectUri)."&request_access=write";
+
+                return redirect($telegramLoginUrl);
+            }
+
             return Socialite::driver($provider)->redirectUrl(
                 url(config("services.{$provider}.redirect"))
             )->redirect();
