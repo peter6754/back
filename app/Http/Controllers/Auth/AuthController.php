@@ -26,11 +26,6 @@ class AuthController extends Controller
      * @var array|array[]
      */
     private array $socialProviders = [
-//        [
-//            'icon' => 'fab fa-telegram',
-//            'provider' => 'telegram',
-//            'title' => 'Telegram'
-//        ],
         [
             'icon' => 'fab fa-google',
             'provider' => 'google',
@@ -40,7 +35,12 @@ class AuthController extends Controller
             'icon' => 'fab fa-apple',
             'provider' => 'apple',
             'title' => 'Apple'
-        ]
+        ],
+//        [
+//            'icon' => 'fab fa-telegram',
+//            'provider' => 'telegram',
+//            'title' => 'Telegram'
+//        ],
     ];
 
     /**
@@ -49,7 +49,7 @@ class AuthController extends Controller
     protected AuthService $authService;
 
     /**
-     * @param AuthService $authService
+     * @param  AuthService  $authService
      */
     public function __construct(AuthService $authService)
     {
@@ -57,7 +57,7 @@ class AuthController extends Controller
     }
 
     /**
-     * @param Request $request
+     * @param  Request  $request
      * @OA\Post(
      *      tags={"Customer Authorization"},
      *      path="/auth/login",
@@ -119,8 +119,8 @@ class AuthController extends Controller
     }
 
     /**
-     *  @param Request $request
-     *  @OA\Post(
+     * @param  Request  $request
+     * @OA\Post(
      *      tags={"Customer Authorization"},
      *      path="/auth/verify-login",
      *      summary="Verify user by code (Don't forget to add the token from the login)",
@@ -156,7 +156,7 @@ class AuthController extends Controller
      *          @OA\JsonContent(ref="#/components/schemas/SuccessResponse")
      *      )
      *  )
-     *  @return JsonResponse
+     * @return JsonResponse
      */
     public function verify(Request $request): JsonResponse
     {
@@ -197,7 +197,7 @@ class AuthController extends Controller
     }
 
     /**
-     * @param Request $request
+     * @param  Request  $request
      * @return JsonResponse
      * @throws \Throwable
      */
@@ -226,18 +226,22 @@ class AuthController extends Controller
     /**
      * @return JsonResponse
      */
-    public function socialLinks(): JsonResponse
+    public function socialLinks(Request $request): JsonResponse
     {
+        // Get platform
+        $platform = $request->get('platform');
+
         // Draw from cache
-        if (Cache::has('socialLinks')) {
+        if (Cache::has('socialLinks:'.$platform)) {
             return $this->successResponse(
                 Cache::get('socialLinks')
             );
         }
 
         // Add dynamic links
+        $platformString = ($platform ? "?platform=".$platform : "");
         foreach ($this->socialProviders as &$val) {
-            $val['link'] = url('/auth/social/' . $val['provider']);
+            $val['link'] = url('/auth/social/'.$val['provider'].$platformString);
         }
 
         Cache::put(
@@ -281,13 +285,13 @@ class AuthController extends Controller
                 $redirectUrl = 'tinderone://';
             }
 
-            return redirect()->away($redirectUrl . "oauth/" . implode("/", [
+            return redirect()->away($redirectUrl."oauth/".implode("/", [
                     $data['type'],
                     $data['token']
                 ])
             );
         } catch (Exception $e) {
-            Log::error("Social authentication failed: " . $e->getMessage(), [
+            Log::error("Social authentication failed: ".$e->getMessage(), [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
