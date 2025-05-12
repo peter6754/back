@@ -99,6 +99,77 @@ class InQueueForDeleteUserCrudController extends CrudController
             },
         ]);
 
+        $this->crud->addColumn([
+            'name' => 'random_image',
+            'label' => 'Фотография',
+            'type' => 'custom_html',
+            'escaped' => false,
+            'value' => function ($entry) {
+                $images = $entry->images;
+                if ($images->isNotEmpty()) {
+                    $image = $images->first();
+                    $imageUrl = $image->image_url;
+
+                    $imageHtml = '
+                <img src="' . $imageUrl . '" height="80px" width="60px" style="cursor: pointer;" onclick="openGlobalModal(\'' . $imageUrl . '\')">
+                <script>
+                    function openGlobalModal(imageUrl) {
+                        const modal = document.createElement("div");
+                        modal.id = "globalImageModal";
+                        modal.style.position = "fixed";
+                        modal.style.top = 0;
+                        modal.style.left = 0;
+                        modal.style.width = "100%";
+                        modal.style.height = "100%";
+                        modal.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
+                        modal.style.display = "flex";
+                        modal.style.justifyContent = "center";
+                        modal.style.alignItems = "center";
+                        modal.style.zIndex = 99999;
+
+                        const closeButton = document.createElement("span");
+                        closeButton.innerHTML = "&times;";
+                        closeButton.style.position = "absolute";
+                        closeButton.style.top = "20px";
+                        closeButton.style.right = "30px";
+                        closeButton.style.fontSize = "30px";
+                        closeButton.style.color = "white";
+                        closeButton.style.cursor = "pointer";
+                        closeButton.onclick = function() {
+                            closeGlobalModal();
+                        };
+
+                        const img = document.createElement("img");
+                        img.src = imageUrl;
+                        img.style.maxWidth = "90%";
+                        img.style.maxHeight = "90%";
+                        img.style.borderRadius = "5px";
+
+                        modal.appendChild(closeButton);
+                        modal.appendChild(img);
+                        modal.onclick = function(e) {
+                            if (e.target === modal) {
+                                closeGlobalModal();
+                            }
+                        };
+
+                        document.body.appendChild(modal);
+                    }
+
+                    function closeGlobalModal() {
+                        const modal = document.getElementById("globalImageModal");
+                        if (modal) {
+                            document.body.removeChild(modal);
+                        }
+                    }
+                </script>
+            ';
+                    return $imageHtml;
+                }
+                return 'Нет фото';
+            },
+        ]);
+
         CRUD::column('user_id')
             ->label('ID пользователя')
             ->type('text')
