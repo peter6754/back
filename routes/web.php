@@ -147,8 +147,12 @@ Route::prefix('auth')->group(function () {
 
             $platformString = ($provider !== 'google' && $platform ? "/".$platform : "");
 
+            config([
+                "services.{$provider}.redirect" => config("services.{$provider}.redirect".$platformString)
+            ]);
+
             $socialProvider = Socialite::driver($provider)->redirectUrl(
-                url(config("services.{$provider}.redirect").$platformString)
+                url(config("services.{$provider}.redirect"))
             );
 
             if ($provider === "telegram") {
