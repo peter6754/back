@@ -36,11 +36,11 @@ class AuthController extends Controller
             'provider' => 'apple',
             'title' => 'Apple'
         ],
-//        [
-//            'icon' => 'fab fa-telegram',
-//            'provider' => 'telegram',
-//            'title' => 'Telegram'
-//        ],
+        [
+            'icon' => 'fab fa-telegram',
+            'provider' => 'telegram',
+            'title' => 'Telegram'
+        ],
     ];
 
     /**
@@ -233,14 +233,20 @@ class AuthController extends Controller
 
         // Draw from cache
         if (Cache::has('socialLinks:'.$platform)) {
-            return $this->successResponse(
-                Cache::get('socialLinks')
-            );
+//            return $this->successResponse(
+//                Cache::get('socialLinks')
+//            );
         }
 
         // Add dynamic links
         $platformString = ($platform ? "?platform=".$platform : "");
-        foreach ($this->socialProviders as &$val) {
+        foreach ($this->socialProviders as $key => &$val) {
+            // Отключаем платформу для native приложений
+            if ($platform !== "web" && $val['provider'] === 'telegram') {
+                unset($this->socialProviders[$key]);
+            }
+
+            // Обновляем ссылку
             $val['link'] = url('/auth/social/'.$val['provider'].$platformString);
         }
 
