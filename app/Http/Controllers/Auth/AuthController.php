@@ -269,6 +269,11 @@ class AuthController extends Controller
         $browser = new MobileDetect();
 
         try {
+            // Config updater
+            config([
+                "services.{$provider}.redirect" => config("services.{$provider}.redirect").($platform ? "/".$platform : "")
+            ]);
+
             try {
                 $profile = Socialite::driver($provider)->user();
             } catch (InvalidStateException $e) {

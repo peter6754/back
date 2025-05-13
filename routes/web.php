@@ -145,11 +145,12 @@ Route::prefix('auth')->group(function () {
             // Get current platform
             $platform = $request->get('platform');
 
-            $platformString = ($provider !== 'google' && $platform ? "/".$platform : "");
+            // Config updater
+            config([
+                "services.{$provider}.redirect" => config("services.{$provider}.redirect").($provider !== 'google' && $platform ? "/".$platform : "")
+            ]);
 
-            $socialProvider = Socialite::driver($provider)->redirectUrl(
-                url(config("services.{$provider}.redirect").$platformString)
-            );
+            $socialProvider = Socialite::driver($provider);
 
             if ($provider === "telegram") {
                 return view('socialite/telegram');
