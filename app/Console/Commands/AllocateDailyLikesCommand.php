@@ -20,7 +20,7 @@ class AllocateDailyLikesCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Allocate likes (30) every 1 day (24 hours) for male users without active subscription';
+    protected $description = 'Allocate likes (30) every 1 day (24 hours) for male, m_m, m_f users without active subscription';
 
     /**
      * Execute the console command.
@@ -54,7 +54,7 @@ class AllocateDailyLikesCommand extends Command
             SET
                 ui.daily_likes = 30,
                 ui.daily_likes_last_reset = ?
-            WHERE u.gender = 'male'
+            WHERE u.gender IN ('male', 'm_m', 'm_f')
               AND u.mode = 'authenticated'
               AND active_subs.user_id IS NULL
               AND {$dateCondition}
@@ -76,7 +76,7 @@ class AllocateDailyLikesCommand extends Command
                 WHERE t.status = 'succeeded' AND bs.due_date > ?
                 GROUP BY t.user_id
             ) active_subs ON active_subs.user_id = u.id
-            WHERE u.gender = 'male'
+            WHERE u.gender IN ('male', 'm_m', 'm_f')
               AND u.mode = 'authenticated'
               AND ui.user_id IS NULL
               AND active_subs.user_id IS NULL
