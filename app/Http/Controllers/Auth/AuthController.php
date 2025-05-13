@@ -262,8 +262,9 @@ class AuthController extends Controller
      * @return RedirectResponse|void
      * @throws \Throwable
      */
-    public function socialCallback(Request $request, $platform = null)
+    public function socialCallback(Request $request)
     {
+        $platform = $request->route('platform');
         $provider = $request->route('provider');
         $browser = new MobileDetect();
 
