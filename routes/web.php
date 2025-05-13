@@ -145,7 +145,7 @@ Route::prefix('auth')->group(function () {
             // Get current platform
             $platform = $request->get('platform');
 
-            $platformString = ($provider !== 'google' && $platform ? "?platform=".$platform : "");
+            $platformString = ($provider !== 'google' && $platform ? "/".$platform : "");
 
             $socialProvider = Socialite::driver($provider)->redirectUrl(
                 url(config("services.{$provider}.redirect").$platformString)
