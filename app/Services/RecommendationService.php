@@ -260,13 +260,13 @@ class RecommendationService
             ->findOrFail($userId);
 
         // Check if user is male without active subscription
-        $isMale = $user->gender === 'male';
+        $isValidGender = $user->gender === 'male' || $user->gender === 'm_f' || $user->gender === 'm_m';
         $hasActiveSubscription = $user->activeSubscription()->exists();
 
-        if ($isMale && !$hasActiveSubscription) {
+        if ($isValidGender && ! $hasActiveSubscription) {
             // Get or create user information
             $userInfo = $user->userInformation;
-            if (!$userInfo) {
+            if (! $userInfo) {
                 $userInfo = UserInformation::create([
                     'user_id' => $userId,
                     'daily_likes' => 30,
@@ -285,7 +285,7 @@ class RecommendationService
             }
 
             // Use one like
-            if (!$userInfo->useLike()) {
+            if (! $userInfo->useLike()) {
                 throw new \Exception('Failed to deduct like');
             }
         }
