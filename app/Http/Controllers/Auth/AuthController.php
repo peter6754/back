@@ -233,9 +233,9 @@ class AuthController extends Controller
 
         // Draw from cache
         if (Cache::has('socialLinks:'.$platform)) {
-//            return $this->successResponse(
-//                Cache::get('socialLinks')
-//            );
+            return $this->successResponse(
+                Cache::get('socialLinks')
+            );
         }
 
         // Add dynamic links
