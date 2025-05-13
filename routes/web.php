@@ -17,6 +17,7 @@ use App\Http\Controllers\Users\TransactionsController;
 use App\Http\Controllers\Users\UserPhotosController;
 use App\Http\Controllers\Users\UsersController;
 use App\Services\Notifications\NotificationService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
@@ -135,19 +136,26 @@ Route::prefix('auth')->group(function () {
 
     // Social
     Route::get('social/list', [AuthController::class, 'socialLinks'])->name('auth.social.list');
-    Route::any('social/{provider}/callback', [AuthController::class, 'socialCallback']);
-    Route::get('social/{provider}', function ($provider) {
+    Route::any('social/{provider}/callback/{platform?}', [AuthController::class, 'socialCallback']);
+    Route::get('social/{provider}', function (Request $request, $provider) {
         if (
             !empty(config("services.{$provider}.client_id")) ||
             !empty(config("services.{$provider}.redirect"))
         ) {
+            // Get current platform
+            $platform = $request->get('platform');
+
+            $platformString = ($provider !== 'google' && $platform ? "?platform=".$platform : "");
+
+            $socialProvider = Socialite::driver($provider)->redirectUrl(
+                url(config("services.{$provider}.redirect").$platformString)
+            );
+
             if ($provider === "telegram") {
                 return view('socialite/telegram');
             }
 
-            return Socialite::driver($provider)->redirectUrl(
-                url(config("services.{$provider}.redirect"))
-            )->redirect();
+            return $socialProvider->redirect();
         }
         abort(404);
     });

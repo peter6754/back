@@ -258,10 +258,11 @@ class AuthController extends Controller
 
     /**
      * @param  Request  $request
+     * @param $platform
      * @return RedirectResponse|void
      * @throws \Throwable
      */
-    public function socialCallback(Request $request)
+    public function socialCallback(Request $request, $platform = null)
     {
         $provider = $request->route('provider');
         $browser = new MobileDetect();
@@ -281,7 +282,7 @@ class AuthController extends Controller
 
             // Set redirect url
             $redirectUrl = 'https://web.tinderone.ru/';
-            if ($browser->isMobile()) {
+            if ($browser->isMobile() && $platform !== 'web') {
                 $redirectUrl = 'tinderone://';
             }
 
