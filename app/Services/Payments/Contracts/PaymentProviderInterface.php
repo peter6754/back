@@ -6,7 +6,7 @@ interface PaymentProviderInterface
 {
     public function getProviderName(): string;
 
-    public function pay(array $params): array;
+    public function payment(array $params): array;
 
     public function validate(array $params): bool;
 
