@@ -319,11 +319,10 @@ class UserService
 
                     $key = 'interests_' . $userInterest['interest']['id'];
                     $translated = trans('interests.' . $key);
-
-                    return [
+                    return TranslateResponseHelper::response([
                         'name' => $translated !== 'interests.' . $key ? $translated : $userInterest['interest']['name'],
                         'id' => $userInterest['interest']['id'],
-                    ];
+                    ]);
                 }),
                 'relationship_preference' => !empty($user['final_preference']) ? [
                     'preference' => trans('relationship_preferences.relationship_preferences_' . $user['final_preference']['id'])
