@@ -15,7 +15,7 @@ class TranslateResponseHelper
     {
         if (!request()->user()->language) {
             $data['translation_ru'] = $data['name'];
-            unset($data['name']);
+//            unset($data['name']);
         }
         return $data;
     }
