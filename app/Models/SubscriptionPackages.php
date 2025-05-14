@@ -25,6 +25,11 @@ class SubscriptionPackages extends Model
         return $this->subscription->type . ' (' . $term . ')';
     }
 
+    public function price()
+    {
+        return $this->hasOne(SubscriptionPackagePrices::class, 'package_id');
+    }
+
     public function subscription()
     {
         return $this->belongsTo(Subscriptions::class, 'subscription_id', 'id'); // Указываем явное соответствие ключей
