@@ -13,10 +13,10 @@ class TranslateResponseHelper
      */
     public static function response(array $data = []): array
     {
-        if (!request()->user()->language) {
+//        if (!request()->user()->language) {
             $data['translation_ru'] = $data['name'];
 //            unset($data['name']);
-        }
+//        }
         return $data;
     }
 }
