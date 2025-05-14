@@ -30,36 +30,41 @@ class PaymentsController extends Controller
         $this->transactions = new Transactions();
     }
 
-    public function servicePackage()
-    {
-        // Checking auth user
-        $this->checkingAuth();
-
-    }
-
-
-    public function unsubscription(Request $request, string $provider = "robokassa")
+    /**
+     * @param Request $request
+     * @param string $provider
+     * @return JsonResponse
+     * @throws Exception
+     */
+    public function servicePackage(Request $request, string $provider = "robokassa")
     {
         // Checking auth user
         $customer = $this->checkingAuth();
 
         // Logic
         try {
-            $from_banner = !empty($request->input("from_banner"));
-            $package_id = $request->input("package_id") ?? 2;
+            $package_id = $request->input("service_package_id") ?? 99;
 
-            $getTransaction = $this->payments->buySubscription($provider, [
-                "from_banner" => $from_banner,
+            $getTransaction = $this->payments->buyServicePackage($provider, [
                 "package_id" => $package_id,
                 "customer" => $customer
             ]);
 
             return $this->successResponse($getTransaction, Response::HTTP_CREATED);
-        } catch (Exception $exception) {
-
+        } catch (Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage(),
+                $e->getCode()
+            );
         }
     }
 
+    /**
+     * @param Request $request
+     * @param string $provider
+     * @return JsonResponse
+     * @throws Exception
+     */
     public function subscription(Request $request, string $provider = "robokassa")
     {
         // Checking auth user
@@ -68,7 +73,7 @@ class PaymentsController extends Controller
         // Logic
         try {
             $from_banner = !empty($request->input("from_banner"));
-            $package_id = $request->input("package_id") ?? 2;
+            $package_id = $request->input("package_id") ?? 99;
 
             $getTransaction = $this->payments->buySubscription($provider, [
                 "from_banner" => $from_banner,
@@ -77,16 +82,43 @@ class PaymentsController extends Controller
             ]);
 
             return $this->successResponse($getTransaction, Response::HTTP_CREATED);
-        } catch (Exception $exception) {
-
+        } catch (Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage(),
+                $e->getCode()
+            );
         }
     }
 
-    public function gift()
+    /**
+     * @param Request $request
+     * @param string $provider
+     * @return JsonResponse
+     * @throws Exception
+     */
+    public function gift(Request $request, string $provider = "robokassa")
     {
         // Checking auth user
-        $this->checkingAuth();
+        $customer = $this->checkingAuth();
 
+        // Logic
+        try {
+            $user_jd = $request->input("user_id") ?? 99;
+            $gift_id = $request->input("gift_id") ?? 99;
+
+            $getTransaction = $this->payments->buyGift($provider, [
+                "customer" => $customer,
+                "user_id" => $user_jd,
+                "gift_id" => $gift_id
+            ]);
+
+            return $this->successResponse($getTransaction, Response::HTTP_CREATED);
+        } catch (Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage(),
+                $e->getCode()
+            );
+        }
     }
 
     /**

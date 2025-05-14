@@ -70,7 +70,8 @@ class RobokassaProvider implements PaymentProviderInterface
         return [
             "confirmation_url" => $baseUrl . '?' . http_build_query($baseParams),
             "created_at" => (new \DateTime())->format('Y-m-d H:i:s'),
-            "payment_id" => $getData['id'],
+            "invoice_id" => $getData['invId'],
+            "payment_id" => $getData['id']
         ];
     }
 
@@ -124,6 +125,7 @@ class RobokassaProvider implements PaymentProviderInterface
         return [
             "confirmation_url" => $baseUrl . '?' . http_build_query($queryParams),
             "created_at" => (new \DateTime())->format('Y-m-d H:i:s'),
+            "invoice_id" => $getData['invId'],
             "payment_id" => $getData['id'],
         ];
     }

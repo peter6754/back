@@ -2,11 +2,16 @@
 
 namespace App\Services\Payments;
 
+use App\Models\Gifts;
+use App\Models\Secondaryuser;
+use App\Models\ServicePackages;
 use Illuminate\Config\Repository;
+use Illuminate\Support\Facades\DB;
 use App\Models\SubscriptionPackages;
 use Illuminate\Support\Manager;
 use App\Models\Transactions;
 use Illuminate\Foundation\Application;
+use function Symfony\Component\String\b;
 
 class PaymentsService extends Manager
 {
@@ -74,41 +79,62 @@ class PaymentsService extends Manager
     }
 
     /**
-     * Покупка разных опций (superlike, superboom)
      * @param string $provider
      * @param array $params
      * @return array
+     * @throws \Exception
      */
     public function buyServicePackage(string $provider, array $params): array
     {
+        // Default variables
+        $gender = self::$genders[$params["customer"]["gender"]];
+
+        // Get price
+        $package = ServicePackages::with('price')
+            ->find((int)$params["package_id"]);
+        if (!$package) {
+            throw new \Exception("Item not found", 4040);
+        }
+
+        $package->toArray();
+
+        // Create payment
+        return $this->createPayment($provider, [
+            "product" => PaymentsService::ORDER_PRODUCT_SERVICE,
+            "price" => (float)$package['price'][$gender],
+            "product_id" => $params["package_id"],
+            "customer" => $params["customer"],
+            "action" => "payment",
+        ]);
 
     }
 
     /**
-     * Оформление подписки
      * @param string $provider
      * @param array $params
      * @return array
+     * @throws \Exception
      */
     public function buySubscription(string $provider, array $params): array
     {
         // Default variables
         $gender = self::$genders[$params["customer"]["gender"]];
         $currentAction = "payment";
-        $price = null;
 
-        // Calculate price
-        if ($package = SubscriptionPackages::with('price')->find((int)$params["package_id"])) {
-            $package = $package->toArray();
-
-            $price = (float)$package['price'][$gender];
-
-            if ($params["from_banner"]) {
-                $price *= 0.7;
-            }
-
-            $price = round($price, 2);
+        // Get price
+        $package = SubscriptionPackages::with('price')
+            ->find((int)$params["package_id"]);
+        if (!$package) {
+            throw new \Exception("Item not found", 4040);
         }
+        $package->toArray();
+
+        $price = (float)$package['price'][$gender];
+        if ($params["from_banner"]) {
+            $price *= 0.7;
+        }
+
+        $price = round($price, 2);
 
         if (isset(self::$subscriptions[$params["package_id"]][$gender])) {
             $price = self::$subscriptions[$params["package_id"]][$gender];
@@ -116,22 +142,44 @@ class PaymentsService extends Manager
         }
 
         return $this->createPayment($provider, [
-            "customer" => [
-                "full_name" => $params["customer"]["name"],
-                "email" => $params["customer"]["email"],
-                "phone" => $params["customer"]["phone"],
-                "id" => $params["customer"]["id"]
-            ],
             "product" => PaymentsService::ORDER_PRODUCT_SUBSCRIPTION,
+            "product_id" => $params["package_id"],
+            "customer" => $params["customer"],
             "action" => $currentAction,
             "price" => $price
         ]);
 
     }
 
+    /**
+     * @param string $provider
+     * @param array $params
+     * @return array
+     * @throws \Exception
+     */
     public function buyGift(string $provider, array $params): array
     {
+        // Default variables
+        $gender = self::$genders[$params["customer"]["gender"]];
 
+        // Get price
+        $gift = Gifts::with('price')->find((int)$params["gift_id"]);
+        $user = Secondaryuser::find((int)$params["user_id"]);
+        if (!$user || !$gift) {
+            throw new \Exception("Gift/User doesn't exist", 4060);
+        }
+
+        $gift = $gift->toArray();
+        $user = $user->toArray();
+
+        return $this->createPayment($provider, [
+            "product" => PaymentsService::ORDER_PRODUCT_GIFT,
+            "price" => (float)$gift['price'][$gender],
+            "product_id" => $params["gift_id"],
+            "customer" => $params["customer"],
+            "receiver_id" => $user['id'],
+            "action" => "payment",
+        ]);
     }
 
     /**
@@ -144,27 +192,47 @@ class PaymentsService extends Manager
         $paymentData = call_user_func([$this->driver($provider), $params['action']], [
             "description" => self::$titleProducts[$params['product']],
             "email" => $params['customer']['email'],
-            "amount" => $params['price'] ?? null
+            "amount" => $params['price']
         ]);
 
         // Create transaction
-//        try {
-//            Transactions::create([
-//                "id" => $paymentData['id'],
-//                "purchased_at" => $paymentData['created_at'],
-//                "price" => $params['price'],
-//                "type" => $params['product'],
-//                "user_id" => $params['customer']['id'],
-//                "status" => self::ORDER_STATUS_PENDING,
-//            ]);
-//        } catch (\Exception $exception) {
-//            echo $exception->getMessage();
-//        }
+        $transaction = Transactions::create([
+            "id" => $paymentData['payment_id'],
+            "purchased_at" => $paymentData['created_at'],
+            "price" => ($params['action'] != "recurrent" ? $params['price'] : 0.00),
+            "type" => $params['product'],
+            "user_id" => $params['customer']['id'],
+            "status" => self::ORDER_STATUS_PENDING,
+        ])->toArray();
+
+        // Increment data
+        switch ($params['product']) {
+            case self::ORDER_PRODUCT_SUBSCRIPTION:
+                DB::table("bought_subscriptions")->insert([
+                    "transaction_id" => $transaction['id'],
+                    "package_id" => $params['product_id'],
+                ]);
+                break;
+            case self::ORDER_PRODUCT_SERVICE:
+                DB::table("bought_service_packages")->insert([
+                    "transaction_id" => $transaction['id'],
+                    "package_id" => $params['product_id'],
+                ]);
+                break;
+            case self::ORDER_PRODUCT_GIFT:
+                DB::table("user_gifts")->insert([
+                    "sender_id" => $params['customer']['id'],
+                    "receiver_id" => $params['receiver_id'],
+                    "transaction_id" => $transaction['id'],
+                    "gift_id" => $params['product_id'],
+                ]);
+                break;
+        }
+
 
         return [
             "confirmation_url" => $paymentData["confirmation_url"],
-            "payment_id" => $paymentData["payment_id"],
-            "discounted_price" => $params['price']
+            "payment_id" => $paymentData["payment_id"]
         ];
     }
 }
