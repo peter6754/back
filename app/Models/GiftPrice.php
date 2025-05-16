@@ -13,10 +13,6 @@ class GiftPrice extends Model
 
     protected $table = 'gift_prices';
 
-    protected $primaryKey = 'gift_id';
-
-    public $incrementing = false;
-
     protected $fillable = [
         'gift_id',
         'male',
@@ -25,8 +21,6 @@ class GiftPrice extends Model
         'm_m',
         'f_f'
     ];
-
-    public $timestamps = false;
 
     protected $casts = [
         'male' => 'decimal:8',
