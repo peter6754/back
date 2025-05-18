@@ -9,3 +9,8 @@
 <x-backpack::menu-item title="Запросы верификации" icon="la la-question" :link="backpack_url('verification-requests')" />
 
 <x-backpack::menu-item title="Очередь на удаление" icon="la la-question" :link="backpack_url('in-queue-for-delete-user')" />
+<x-backpack::menu-dropdown title="Управление доступом" icon="la la-lock">
+    <x-backpack::menu-dropdown-item title="Пользователи" icon="la la-user" :link="backpack_url('user')" />
+    <x-backpack::menu-dropdown-item title="Роли" icon="la la-group" :link="backpack_url('role')" />
+    <x-backpack::menu-dropdown-item title="Права" icon="la la-key" :link="backpack_url('permission')" />
+</x-backpack::menu-dropdown>
