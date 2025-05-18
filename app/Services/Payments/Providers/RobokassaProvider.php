@@ -106,6 +106,7 @@ class RobokassaProvider implements PaymentProviderInterface
             "provider" => $this->getProviderName(),
             "transaction_id" => $getRobo['id'],
             "user_id" => $params['user_id'],
+            "price" => $params['amount'],
             "email" => $params['email'],
             "id" => $getRobo['invId'],
         ])->toArray();
