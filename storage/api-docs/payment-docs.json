@@ -1,0 +1,282 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "TinderOne API",
+        "description": "Payment service documentaion",
+        "contact": {
+            "email": "enternetacum@yandex.ru"
+        },
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/payment/service-package": {
+            "post": {
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Create service package payment",
+                "operationId": "createServicePackagePayment",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "service_package_id"
+                                ],
+                                "properties": {
+                                    "service_package_id": {
+                                        "description": "ID of the package",
+                                        "type": "integer",
+                                        "example": 4
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Unauthorized"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/payment/subscription": {
+            "post": {
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Create subscription payment",
+                "operationId": "createSubscriptionPayment",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "package_id"
+                                ],
+                                "properties": {
+                                    "package_id": {
+                                        "description": "ID of the subscription package",
+                                        "type": "integer",
+                                        "example": 4
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Unauthorized"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/payment/gift": {
+            "post": {
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Create gift payment",
+                "operationId": "createGiftPayment",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "user_id",
+                                    "gift_id"
+                                ],
+                                "properties": {
+                                    "user_id": {
+                                        "description": "User id",
+                                        "type": "string",
+                                        "example": "0b18a55c-e44e-4f72-9829-6d143878ce35"
+                                    },
+                                    "gift_id": {
+                                        "description": "Gift id",
+                                        "type": "integer",
+                                        "example": 4
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Unauthorized"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Unauthorized": {
+                "title": "Error Unauthorized Structure",
+                "description": "Standard Unauthorized response format",
+                "properties": {
+                    "meta": {
+                        "properties": {
+                            "error": {
+                                "properties": {
+                                    "code": {
+                                        "description": "Application-specific error code",
+                                        "type": "integer",
+                                        "example": 4010
+                                    },
+                                    "message": {
+                                        "description": "Human-readable error message",
+                                        "type": "string",
+                                        "example": "Unauthorized"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "status": {
+                                "description": "HTTP status code",
+                                "type": "integer",
+                                "example": 401
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "data": {
+                        "description": "Empty data payload for error responses",
+                        "type": "null",
+                        "example": null
+                    }
+                },
+                "type": "object"
+            },
+            "SuccessResponse": {
+                "title": "Success Response Structure",
+                "description": "Standard success response format",
+                "properties": {
+                    "meta": {
+                        "properties": {
+                            "error": {
+                                "description": "Error information (null if no error)",
+                                "type": "null",
+                                "example": null
+                            },
+                            "status": {
+                                "description": "HTTP status code",
+                                "type": "integer",
+                                "example": 201
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "data": {
+                        "description": "Response data payload",
+                        "properties": {
+                            "confirmation_url": {
+                                "description": "URL for payment confirmation",
+                                "type": "string",
+                                "format": "url",
+                                "example": "https://auth.robokassa.ru/RecurringSubscriptionPage/Subscription/Subscribe?subscriberId=e5e44d67-0691-4432-8f03-6bab9424f552&subscriptionId=545a01b4-7de7-4063-93f4-4572d0036d29"
+                            },
+                            "payment_id": {
+                                "description": "Unique payment identifier",
+                                "type": "string",
+                                "format": "uuid",
+                                "example": "4d448cac-8222-4ca2-85f7-f0fccf5d5bf1"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "securityScheme": "bearerAuth",
+                "bearerFormat": "JWT",
+                "scheme": "bearer",
+                "type": "http"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Payment",
+            "description": "Payment"
+        }
+    ]
+}

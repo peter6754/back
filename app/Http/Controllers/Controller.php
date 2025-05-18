@@ -11,13 +11,6 @@ namespace App\Http\Controllers;
  *          email="enternetacum@yandex.ru"
  *      ),
  * )
- *
- * @OA\SecurityScheme(
- *     securityScheme="bearerAuth",
- *     bearerFormat="JWT",
- *     scheme="bearer",
- *     type="http"
- * )
  */
 abstract class Controller
 {
