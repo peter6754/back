@@ -4,6 +4,7 @@ namespace App\Services\Payments\Providers;
 
 use GuzzleHttp\Client;
 use mysql_xdevapi\Exception;
+use App\Models\TransactionProcess;
 use GuzzleHttp\Exception\GuzzleException;
 use App\Services\Payments\Contracts\PaymentProviderInterface;
 use Illuminate\Validation\ValidationException;
@@ -41,15 +42,25 @@ class RobokassaProvider implements PaymentProviderInterface
      */
     public function recurrent(array $params): array
     {
-        $getData = TransactionRobokassa::create([])->toArray();
-        $params['invoiceId'] = $getData['invId'];
-
         $required = ['amount', 'email'];
         if (count(array_intersect_key(array_flip($required), $params)) !== count($required)) {
             throw ValidationException::withMessages([
                 'payment' => 'Missing required payment parameters'
             ]);
         }
+
+        // ToDo: Временный затык позже его убьем нафиг
+        $getRobo = TransactionRobokassa::create([])->toArray();
+
+        // ToDo: при удалении ID не забудь убрать из модели
+        $getData = TransactionProcess::create([
+            "provider" => $this->getProviderName(),
+            "subscription_id" => $params['amount'],
+            "transaction_id" => $getRobo['id'],
+            "user_id" => $params['user_id'],
+            "id" => (int)$getRobo['invId'],
+            "email" => $params['email'],
+        ])->toArray();
 
         $recurrentUrl = "https://auth.robokassa.ru/RecurringSubscriptionPage/Subscription/SubscriberGetOrCreate";
         $recurrentParams = [
@@ -68,8 +79,8 @@ class RobokassaProvider implements PaymentProviderInterface
         return [
             "confirmation_url" => $baseUrl . '?' . http_build_query($baseParams),
             "created_at" => (new \DateTime())->format('Y-m-d H:i:s'),
-            "invoice_id" => $getData['invId'],
-            "payment_id" => $getData['id']
+            "payment_id" => $getData['transaction_id'],
+            "invoice_id" => $getData['id'],
         ];
     }
 
@@ -80,21 +91,30 @@ class RobokassaProvider implements PaymentProviderInterface
      */
     public function payment(array $params): array
     {
-        $getData = TransactionRobokassa::create([])->toArray();
-        $params['invoiceId'] = $getData['invId'];
-
-        $required = ['invoiceId', 'amount', 'description', 'email'];
+        $required = ['amount', 'description', 'email'];
         if (count(array_intersect_key(array_flip($required), $params)) !== count($required)) {
             throw ValidationException::withMessages([
                 'payment' => 'Missing required payment parameters'
             ]);
         }
 
+        // ToDo: Временный затык позже его убьем нафиг
+        $getRobo = TransactionRobokassa::create([])->toArray();
+
+        // ToDo: при удалении ID не забудь убрать из модели
+        $getData = TransactionProcess::create([
+            "provider" => $this->getProviderName(),
+            "transaction_id" => $getRobo['id'],
+            "user_id" => $params['user_id'],
+            "email" => $params['email'],
+            "id" => $getRobo['invId'],
+        ])->toArray();
+
         $baseUrl = 'https://auth.robokassa.ru/Merchant/Index.aspx';
 
         $signature = $this->signatureOrder(
             $params['amount'],
-            $params['invoiceId'],
+            $getData['id'],
             $this->password1
         );
 
@@ -104,7 +124,7 @@ class RobokassaProvider implements PaymentProviderInterface
         $queryParams = [
             'MerchantLogin' => $this->merchantLogin,
             'OutSum' => $params['amount'],
-            'InvId' => $params['invoiceId'],
+            'InvId' => $getData['id'],
             'Description' => $params['description'],
             'SignatureValue' => $signature,
             'Email' => $params['email'],
@@ -122,8 +142,8 @@ class RobokassaProvider implements PaymentProviderInterface
         return [
             "confirmation_url" => $baseUrl . '?' . http_build_query($queryParams),
             "created_at" => (new \DateTime())->format('Y-m-d H:i:s'),
-            "invoice_id" => $getData['invId'],
-            "payment_id" => $getData['id'],
+            "payment_id" => $getData['transaction_id'],
+            "invoice_id" => $getData['id'],
         ];
     }
 
