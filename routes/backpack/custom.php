@@ -7,6 +7,14 @@ use Illuminate\Support\Facades\Route;
 // --------------------------
 // This route file is loaded automatically by Backpack\CRUD.
 // Routes you generate using Backpack\Generators will be placed here.
+Route::group([
+    'prefix'     => config('backpack.base.route_prefix', 'admin'),
+    'middleware' => ['web', backpack_middleware()],
+    'namespace'  => 'Backpack\PermissionManager\app\Http\Controllers',
+], function () {
+    Route::crud('permission', 'PermissionCrudController');
+    Route::crud('role', 'RoleCrudController');
+});
 
 Route::group([
     'prefix' => config('backpack.base.route_prefix', 'admin'),
