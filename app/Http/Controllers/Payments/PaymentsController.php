@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers\Payments;
 
-use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\Payments\PaymentsService;
 use App\Http\Traits\ApiResponseTrait;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
-use App\Models\Secondaryuser;
+use Illuminate\Http\Request;
 use App\Models\Transactions;
 use Exception;
 
@@ -33,8 +32,6 @@ class PaymentsController extends Controller
     /**
      * @param Request $request
      * @param string $provider
-     * @return JsonResponse
-     * @throws Exception
      * @OA\Post(
      *     path="/payment/service-package",
      *     tags={"Payment"},
@@ -67,6 +64,8 @@ class PaymentsController extends Controller
      *         response=401
      *     )
      * )
+     * @return JsonResponse
+     * @throws Exception
      */
     public function servicePackage(Request $request, string $provider = "robokassa")
     {
@@ -94,8 +93,6 @@ class PaymentsController extends Controller
     /**
      * @param Request $request
      * @param string $provider
-     * @return JsonResponse
-     * @throws Exception
      * @OA\Post(
      *     path="/payment/subscription",
      *     tags={"Payment"},
@@ -128,6 +125,8 @@ class PaymentsController extends Controller
      *         response=401
      *     )
      * )
+     * @return JsonResponse
+     * @throws Exception
      */
     public function subscription(Request $request, string $provider = "robokassa")
     {
@@ -156,8 +155,6 @@ class PaymentsController extends Controller
     /**
      * @param Request $request
      * @param string $provider
-     * @return JsonResponse
-     * @throws Exception
      * @OA\Post(
      *      path="/payment/gift",
      *      tags={"Payment"},
@@ -196,7 +193,8 @@ class PaymentsController extends Controller
      *          response=401
      *      )
      *  )
-     * /
+     * @return JsonResponse
+     * @throws Exception
      */
     public function gift(Request $request, string $provider = "robokassa")
     {
@@ -225,6 +223,64 @@ class PaymentsController extends Controller
 
     /**
      * @param $id
+     * @OA\Get(
+     *     path="/payment/status/{id}",
+     *     tags={"Payment"},
+     *     summary="Get payment status by ID",
+     *     operationId="getPaymentStatus",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *          name="id",
+     *          in="path",
+     *          required=true,
+     *          description="Payment ID (UUID)",
+     *          @OA\Schema(
+     *              type="string",
+     *              format="uuid",
+     *              example="000558ed-d557-4fc0-99da-b23dec6be0bf"
+     *          )
+     *     ),
+     *     @OA\Response(
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                  property="meta",
+     *                  type="object",
+     *                  @OA\Property(
+     *                      property="error",
+     *                      type="null",
+     *                      example=null,
+     *                      description="Error information (null if no error)"
+     *                  ),
+     *                  @OA\Property(
+     *                      property="status",
+     *                      type="integer",
+     *                      example=200,
+     *                      description="HTTP status code"
+     *                  )
+     *              ),
+     *              @OA\Property(
+     *                  property="data",
+     *                  type="object",
+     *                  description="Payment status data",
+     *                  @OA\Property(
+     *                      property="status",
+     *                      type="string",
+     *                      enum={"completed", "pending", "failed", "canceled"},
+     *                      example="canceled",
+     *                      description="Current payment status"
+     *                  )
+     *              )
+     *         ),
+     *         description="Successful operation",
+     *         response=200,
+     *     ),
+     *
+     *     @OA\Response(
+     *         @OA\JsonContent(ref="#/components/schemas/Unauthorized"),
+     *         description="Unauthorized",
+     *         response=401
+     *     )
+     * )
      * @return JsonResponse
      * @throws Exception
      */
@@ -240,7 +296,7 @@ class PaymentsController extends Controller
         // Get transaction
         if (!$transaction = Transactions::select('status')->find($id)) {
             return $this->errorResponse(
-                Response::$statusTexts[Response::HTTP_UNAUTHORIZED],
+                Response::$statusTexts[Response::HTTP_NOT_FOUND],
                 4042,
                 Response::HTTP_NOT_FOUND
             );
@@ -250,61 +306,5 @@ class PaymentsController extends Controller
         return $this->successResponse([
             'status' => $transaction->status
         ]);
-    }
-
-    /**
-     * @return array|JsonResponse
-     * @throws Exception
-
-     * @OA\Schema(
-     *     schema="Unauthorized",
-     *     title="Error Unauthorized Structure",
-     *     description="Standard Unauthorized response format",
-     *     @OA\Property(
-     *         property="meta",
-     *         type="object",
-     *         @OA\Property(
-     *             property="error",
-     *             type="object",
-     *             @OA\Property(
-     *                 property="code",
-     *                 type="integer",
-     *                 example=4010,
-     *                 description="Application-specific error code"
-     *             ),
-     *             @OA\Property(
-     *                 property="message",
-     *                 type="string",
-     *                 example="Unauthorized",
-     *                 description="Human-readable error message"
-     *             )
-     *         ),
-     *         @OA\Property(
-     *             property="status",
-     *             type="integer",
-     *             example=401,
-     *             description="HTTP status code"
-     *         )
-     *     ),
-     *     @OA\Property(
-     *         property="data",
-     *         type="null",
-     *         example=null,
-     *         description="Empty data payload for error responses"
-     *     )
-     * )
-     */
-    private function checkingAuth(): JsonResponse|array
-    {
-        $getUser = Secondaryuser::getUser();
-        if (empty($getUser)) {
-            $this->errorResponse(
-                Response::$statusTexts[Response::HTTP_UNAUTHORIZED],
-                4010,
-                Response::HTTP_UNAUTHORIZED
-            )->send();
-            die();
-        }
-        return $getUser;
     }
 }
