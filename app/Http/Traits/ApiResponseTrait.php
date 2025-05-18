@@ -5,6 +5,7 @@ namespace App\Http\Traits;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Http\JsonResponse;
 use App\Models\Secondaryuser;
+use Exception;
 
 trait ApiResponseTrait
 {
@@ -12,10 +13,9 @@ trait ApiResponseTrait
      * Успешный ответ
      * @param mixed|null $data
      * @param int $httpCode
-     * @return JsonResponse
      * @OA\Schema(
      *     schema="SuccessResponse",
-     *     title="Success Response Structure",
+     *     title="[Success] Success Response (all ok)",
      *     description="Standard success response format",
      *     @OA\Property(
      *         property="meta",
@@ -53,6 +53,7 @@ trait ApiResponseTrait
      *         )
      *     )
      * )
+     * @return JsonResponse
      */
     protected function successResponse(
         mixed $data = null,
@@ -94,12 +95,9 @@ trait ApiResponseTrait
     }
 
     /**
-     * @return array|JsonResponse
-     * @throws Exception
-
      * @OA\Schema(
      *     schema="Unauthorized",
-     *     title="Error Unauthorized Structure",
+     *     title="[Error] Unauthorized",
      *     description="Standard Unauthorized response format",
      *     @OA\Property(
      *         property="meta",
@@ -134,6 +132,8 @@ trait ApiResponseTrait
      *         description="Empty data payload for error responses"
      *     )
      * )
+     * @return array|JsonResponse
+     * @throws Exception
      */
     protected function checkingAuth(): JsonResponse|array
     {

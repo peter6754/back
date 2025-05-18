@@ -270,7 +270,7 @@
     "components": {
         "schemas": {
             "SuccessResponse": {
-                "title": "Success Response Structure",
+                "title": "[Success] Success Response (all ok)",
                 "description": "Standard success response format",
                 "properties": {
                     "meta": {
@@ -310,7 +310,7 @@
                 "type": "object"
             },
             "Unauthorized": {
-                "title": "Error Unauthorized Structure",
+                "title": "[Error] Unauthorized",
                 "description": "Standard Unauthorized response format",
                 "properties": {
                     "meta": {
