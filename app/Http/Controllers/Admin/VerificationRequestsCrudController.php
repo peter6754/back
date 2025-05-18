@@ -27,6 +27,11 @@ class VerificationRequestsCrudController extends CrudController
      */
     public function setup()
     {
+
+        if (!backpack_user()->can('access verification-requests')) {
+            abort(403);
+        }
+
         CRUD::setModel(\App\Models\VerificationRequests::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/verification-requests');
         CRUD::setEntityNameStrings('Запрос на верификацию', 'Запросы на верификацию');

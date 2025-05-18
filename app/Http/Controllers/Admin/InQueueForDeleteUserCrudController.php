@@ -27,6 +27,11 @@ class InQueueForDeleteUserCrudController extends CrudController
      */
     public function setup()
     {
+
+        if (!backpack_user()->can('access queue-for-delete-user')) {
+            abort(403);
+        }
+
         CRUD::setModel(\App\Models\InQueueForDeleteUser::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/in-queue-for-delete-user');
         CRUD::setEntityNameStrings('Очередь на удаление', 'Очередь на удаление');

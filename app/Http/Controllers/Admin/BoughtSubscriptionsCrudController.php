@@ -33,6 +33,11 @@ class BoughtSubscriptionsCrudController extends CrudController
      */
     public function setup()
     {
+
+        if (!backpack_user()->can('access bought-subscriptions')) {
+            abort(403);
+        }
+
         CRUD::setModel(\App\Models\BoughtSubscriptions::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/bought-subscriptions');
         CRUD::setEntityNameStrings('Подписку', 'Подписки');
