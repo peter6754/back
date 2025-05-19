@@ -37,29 +37,21 @@ class StatusesController extends Controller
     /**
      * @param Request $request
      * @param string $provider
-     * @return Factory|View|Application|RedirectResponse|object
+     * @return object|RedirectResponse
      */
     public function success(Request $request, string $provider)
     {
-        // Проверяем, что InvId корректен
-        try {
-            $request->validate([
-                'InvId' => 'required|numeric',
+        // Get current order
+        $getOrder = $this->payments->driver($provider)->successPage($request->all());
+        if (!empty($getOrder)) {
+            return view('payment.success', [
+                'orderId' => $getOrder['id'] ?? null
             ]);
-
-            $orderId = $request->input('InvId');
-
-            return view('payment.success', ['orderId' => $orderId]);
-
-        } catch (\Exception $e) {
-            // Логируем ошибку
-            Log::error('Robokassa Success Error: ' . $e->getMessage(), $request->all());
-
-            // Перенаправляем на страницу ошибки с сообщением
-            return redirect()
-                ->route('robokassa.fail')
-                ->with('error', 'Неверные данные платежа.');
         }
+
+        // Redirect to fail
+        return redirect()->route('statuses.fail', ['provider' => $provider])
+            ->with('error', 'Неверные данные платежа.');
     }
 
     /**
@@ -72,11 +64,9 @@ class StatusesController extends Controller
         // Получаем сообщение об ошибке (если было)
         $errorMessage = session('error') ?? 'Платеж не был завершен.';
 
-        // Проверяем InvId, если он есть
-        $orderId = null;
-        if ($request->has('InvId') && is_numeric($request->input('InvId'))) {
-            $orderId = $request->input('InvId');
-        }
+        // Проверяем Order, если он есть
+        $getOrder = $this->payments->driver($provider)->errorPage($request->all());
+        $orderId = $getOrder['id'] ?? null;
 
         return view('payment.fail', [
             'errorMessage' => $errorMessage,

@@ -2,13 +2,12 @@
 
 namespace App\Services\Payments\Providers;
 
-use GuzzleHttp\Client;
-use mysql_xdevapi\Exception;
-use App\Models\TransactionProcess;
-use GuzzleHttp\Exception\GuzzleException;
 use App\Services\Payments\Contracts\PaymentProviderInterface;
 use Illuminate\Validation\ValidationException;
+use GuzzleHttp\Exception\GuzzleException;
 use App\Models\TransactionRobokassa;
+use App\Models\TransactionProcess;
+use GuzzleHttp\Client;
 
 class RobokassaProvider implements PaymentProviderInterface
 {
@@ -42,7 +41,7 @@ class RobokassaProvider implements PaymentProviderInterface
      */
     public function recurrent(array $params): array
     {
-        $required = ['amount', 'email'];
+        $required = ['price'];
         if (count(array_intersect_key(array_flip($required), $params)) !== count($required)) {
             throw ValidationException::withMessages([
                 'payment' => 'Missing required payment parameters'
@@ -54,18 +53,19 @@ class RobokassaProvider implements PaymentProviderInterface
 
         // ToDo: при удалении ID не забудь убрать из модели
         $getData = TransactionProcess::create([
+            "email" => $params['customer']['email'],
+            "user_id" => $params['customer']['id'],
+
             "provider" => $this->getProviderName(),
-            "subscription_id" => $params['amount'],
+            "subscription_id" => $params['price'],
             "transaction_id" => $getRobo['id'],
-            "user_id" => $params['user_id'],
             "id" => (int)$getRobo['invId'],
-            "email" => $params['email'],
         ])->toArray();
 
         $recurrentUrl = "https://auth.robokassa.ru/RecurringSubscriptionPage/Subscription/SubscriberGetOrCreate";
         $recurrentParams = [
-            'subscriptionId' => $params['amount'],
-            'email' => $params['email']
+            'subscriptionId' => $params['price'],
+            'email' => $params['customer']['email']
         ];
         $response = (new Client())->request('POST', $recurrentUrl . '?' . http_build_query($recurrentParams));
         $queryParams = json_decode($response->getBody(), true);
@@ -73,8 +73,13 @@ class RobokassaProvider implements PaymentProviderInterface
         $baseUrl = 'https://auth.robokassa.ru/RecurringSubscriptionPage/Subscription/Subscribe';
         $baseParams = [
             'subscriberId' => $queryParams['subscriberId'],
-            'subscriptionId' => $params['amount']
+            'subscriptionId' => $params['price']
         ];
+
+        // Update subscriber id
+        TransactionProcess::where('transaction_id', $getData['transaction_id'])->update([
+            'subscriber_id' => $queryParams['subscriberId']
+        ]);
 
         return [
             "confirmation_url" => $baseUrl . '?' . http_build_query($baseParams),
@@ -91,8 +96,9 @@ class RobokassaProvider implements PaymentProviderInterface
      */
     public function payment(array $params): array
     {
-        $required = ['amount', 'description', 'email'];
+        $required = ['price', 'description'];
         if (count(array_intersect_key(array_flip($required), $params)) !== count($required)) {
+            print_r($params);
             throw ValidationException::withMessages([
                 'payment' => 'Missing required payment parameters'
             ]);
@@ -103,38 +109,32 @@ class RobokassaProvider implements PaymentProviderInterface
 
         // ToDo: при удалении ID не забудь убрать из модели
         $getData = TransactionProcess::create([
+            "email" => $params['customer']['email'],
+            "user_id" => $params['customer']['id'],
+
             "provider" => $this->getProviderName(),
             "transaction_id" => $getRobo['id'],
-            "user_id" => $params['user_id'],
-            "price" => $params['amount'],
-            "email" => $params['email'],
+            "price" => $params['price'],
             "id" => $getRobo['invId'],
         ])->toArray();
 
+        $expirationDate = (new \DateTime())->setTimestamp(strtotime("+1 day"));
         $baseUrl = 'https://auth.robokassa.ru/Merchant/Index.aspx';
-
-        $signature = $this->signatureOrder(
-            $params['amount'],
-            $getData['id'],
-            $this->password1
-        );
-
-        $expirationDate = new \DateTime();
-        $expirationDate->setTimestamp(strtotime("+1 day"));
-
         $queryParams = [
             'MerchantLogin' => $this->merchantLogin,
-            'OutSum' => $params['amount'],
+            'OutSum' => $params['price'],
             'InvId' => $getData['id'],
             'Description' => $params['description'],
-            'SignatureValue' => $signature,
-            'Email' => $params['email'],
-            'ExpirationDate' => $expirationDate->format('c')
+            'Email' => $params['customer']['email'],
+            'ExpirationDate' => $expirationDate->format('c'),
+            'Shp_product' => $params['product'],
+            'SignatureValue' => $this->signatureMerchant([
+                $params['price'],
+                $getData['id'],
+                $this->password1,
+                "Shp_product=" . $params['product'],
+            ])
         ];
-
-        if (isset($params['currency'])) {
-            $queryParams['OutSumCurrency'] = $params['currency'];
-        }
 
         if (isset($params['recurring'])) {
             $queryParams['Recurring'] = "true";
@@ -155,29 +155,49 @@ class RobokassaProvider implements PaymentProviderInterface
             return false;
         }
 
-        $signature = $this->signatureResult(
+        $signature = $this->signatureResult([
             $params['OutSum'],
             $params['InvId'],
             $this->password2
-        );
+        ]);
 
         return strtolower($params['SignatureValue']) === strtolower($signature);
     }
 
-    public function success(array $params): bool
+    /**
+     * @param array $params
+     * @return array|null[]
+     */
+    public function successPage(array $params): array
     {
-        $required = ['InvId', 'OutSum', 'SignatureValue'];
-        if (count(array_intersect_key(array_flip($required), $params)) !== count($required)) {
-            return false;
+        try {
+            if (!$this->validate($params)) {
+                throw new \Exception('Invalid signature');
+            }
+            return [
+                "id" => $params['InvId'] ?? null,
+            ];
+        } catch (\Exception $e) {
+            return [];
         }
+    }
 
-        $signature = $this->signatureOrder(
-            $params['OutSum'],
-            $params['InvId'],
-            $this->password1
-        );
-
-        return strtolower($params['SignatureValue']) === strtolower($signature);
+    /**
+     * @param array $params
+     * @return array|null[]
+     */
+    public function errorPage(array $params): array
+    {
+        try {
+            if (!$this->validate($params)) {
+                throw new \Exception('Invalid signature');
+            }
+            return [
+                "id" => $params['InvId'] ?? null,
+            ];
+        } catch (\Exception $e) {
+            return [];
+        }
     }
 
     public function checkOrderStatus(string $invoiceId): array
@@ -186,57 +206,39 @@ class RobokassaProvider implements PaymentProviderInterface
         $queryParams = [
             'MerchantLogin' => $this->merchantLogin,
             'InvoiceID' => $invoiceId,
-            'Signature' => $this->signatureState(
+            'Signature' => $this->signatureResult([
                 $invoiceId,
                 $this->password2
-            )
+            ])
         ];
 
         $response = (new Client())->request('GET', $requestUrl . '?' . http_build_query($queryParams));
         $response = simplexml_load_string($response->getBody());
-        return json_decode(json_encode((array)$response, JSON_NUMERIC_CHECK), true);
+        $orderData = json_decode(
+            json_encode((array)$response, JSON_NUMERIC_CHECK),
+            true
+        );
+        return $orderData;
     }
 
-    private function signatureResult(string $amount, string $invoiceId, string $password): string
+    /**
+     * @param array $params
+     * @return string
+     */
+    private function signatureMerchant(array $params): string
     {
-        $signatureStr = implode(':', [
-            $amount,
-            $invoiceId,
-            $password,
-        ]);
-
+        array_unshift($params, $this->merchantLogin);
+        $signatureStr = implode(':', $params);
         return md5($signatureStr);
     }
 
-    private function signatureOrder(string $amount, string $invoiceId, string $password): string
+    /**
+     * @param array $params
+     * @return string
+     */
+    private function signatureResult(array $params): string
     {
-        $signatureStr = implode(':', [
-            $this->merchantLogin,
-            $amount,
-            $invoiceId,
-            $password,
-        ]);
-
+        $signatureStr = implode(':', $params);
         return md5($signatureStr);
-    }
-
-    private function signatureState(string $invoiceId, string $password): string
-    {
-        $signatureStr = implode(':', [
-            $this->merchantLogin,
-            $invoiceId,
-            $password
-        ]);
-
-        return md5($signatureStr);
-    }
-
-    private function validateParams(array $params, array $required): void
-    {
-        if (count(array_intersect_key(array_flip($required), $params)) !== count($required)) {
-            throw ValidationException::withMessages([
-                'payment' => 'Missing required payment parameters: ' . implode(', ', $required)
-            ]);
-        }
     }
 }

@@ -130,6 +130,20 @@ class PaymentsService extends Manager
         }
         $package->toArray();
 
+//        $getSubscriptions = DB::connection('mysql_secondary')
+//            ->table('bought_subscriptions')
+//            ->select([
+//                'bought_subscriptions.*',
+//                'transactions.user_id',
+//                'transactions.price'
+//            ])
+//            ->leftJoin('transactions', 'bought_subscriptions.transaction_id', '=', 'transactions.id')
+//            ->where('bought_subscriptions.due_date', '>', now())
+//            ->where('transactions.user_id', $params["customer"]["id"])
+//            ->get();
+//        print_r($getSubscriptions);
+//        exit;
+
         $price = (float)$package['price'][$gender];
         if ($params["from_banner"]) {
             $price *= 0.7;
@@ -149,7 +163,6 @@ class PaymentsService extends Manager
             "action" => $currentAction,
             "price" => $price
         ]);
-
     }
 
     /**
@@ -183,8 +196,23 @@ class PaymentsService extends Manager
         ]);
     }
 
+    protected function checkPendingPayments(string $invoiceId = null): array
+    {
+        if (is_null($invoiceId)) {
+            TransactionProcess::find(["invoice_id" => $invoiceId]);
+        }
 
-    protected function checkPendingPayments(): array
+    }
+
+    protected function completePayment(array $params): array
+    {
+        TransactionProcess::update([
+
+        ]);
+
+    }
+
+    protected function cancelPayment(array $params): array
     {
 
     }
@@ -196,13 +224,17 @@ class PaymentsService extends Manager
      */
     private function createPayment(string $provider, array $params): array
     {
-        $paymentData = call_user_func([$this->driver($provider), $params['action']], [
-            "description" => self::$titleProducts[$params['product']],
-            "email" => $params['customer']['email'],
-            "user_id" => $params['customer']['id'],
-            "product_id" => $params['product_id'],
-            "amount" => $params['price']
-        ]);
+        $paymentData = call_user_func([$this->driver($provider), $params['action']], array_merge($params, [
+            "description" => self::$titleProducts[$params['product']]
+        ]));
+
+//        $paymentData = call_user_func([$this->driver($provider), $params['action']], [
+//            "description" => self::$titleProducts[$params['product']],
+//            "email" => $params['customer']['email'],
+//            "user_id" => $params['customer']['id'],
+//            "product_id" => $params['product_id'],
+//            "amount" => $params['price']
+//        ]);
 
         // Create transaction
         Transactions::create([
