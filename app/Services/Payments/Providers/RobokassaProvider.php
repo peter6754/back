@@ -165,6 +165,18 @@ class RobokassaProvider implements PaymentProviderInterface
     }
 
     /**
+     * @throws \Exception
+     */
+    public function callbackResult(array $params): array
+    {
+        if (!$this->validate($params)) {
+            throw new \Exception('Invalid signature');
+        }
+
+        return $this->checkOrderStatus($params['InvId']);
+    }
+
+    /**
      * @param array $params
      * @return array|null[]
      */
@@ -200,25 +212,39 @@ class RobokassaProvider implements PaymentProviderInterface
         }
     }
 
+    /**
+     * @param string $invoiceId
+     * @return array
+     * @throws GuzzleException
+     * @throws \Exception
+     */
     public function checkOrderStatus(string $invoiceId): array
     {
-        $requestUrl = "https://auth.robokassa.ru/Merchant/WebService/Service.asmx/OpStateExt";
-        $queryParams = [
-            'MerchantLogin' => $this->merchantLogin,
-            'InvoiceID' => $invoiceId,
-            'Signature' => $this->signatureResult([
-                $invoiceId,
-                $this->password2
-            ])
-        ];
-
-        $response = (new Client())->request('GET', $requestUrl . '?' . http_build_query($queryParams));
+        // Ger order data
+        $requestUrl = "https://auth.robokassa.ru/Merchant/WebService/Service.asmx/OpStateExt?" .
+            http_build_query([
+                'MerchantLogin' => $this->merchantLogin,
+                'InvoiceID' => $invoiceId,
+                'Signature' => $this->signatureMerchant([
+                    $invoiceId,
+                    $this->password2
+                ])
+            ]);
+        $response = (new Client())->request('GET', $requestUrl);
         $response = simplexml_load_string($response->getBody());
         $orderData = json_decode(
             json_encode((array)$response, JSON_NUMERIC_CHECK),
             true
         );
-        return $orderData;
+
+        // Get state
+        if (empty($orderData['Info']['OpKey'])) {
+            throw new \Exception("Order not found");
+        }
+
+        $requestUrl = 'https://auth.robokassa.ru/Merchant/Payment/GetOpState?opKey=' . $orderData['Info']['OpKey'];
+        $response = (new Client())->request('GET', $requestUrl);
+        return json_decode($response->getBody(), true);
     }
 
     /**
