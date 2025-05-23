@@ -204,19 +204,6 @@ class PaymentsService extends Manager
 
     }
 
-    protected function completePayment(array $params): array
-    {
-        TransactionProcess::update([
-
-        ]);
-
-    }
-
-    protected function cancelPayment(array $params): array
-    {
-
-    }
-
     /**
      * @param string $provider
      * @param array $params
