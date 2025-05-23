@@ -48,6 +48,7 @@ class StatusesController extends Controller
     {
         // Get current order
         $getOrder = $this->payments->driver($provider)->successPage($request->all());
+
         if (!empty($getOrder)) {
             return view('payment.success', [
                 'orderId' => $getOrder['id'] ?? null
