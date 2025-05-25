@@ -220,7 +220,7 @@ class RobokassaProvider implements PaymentProviderInterface
     {
         Log::channel($this->getProviderName())->info('[REQUEST] Result request: ', $params);
         try {
-            if (!$this->validate($params)) {
+            if (!$this->validate($params, true)) {
                 throw new \Exception('Invalid signature!');
             }
 
