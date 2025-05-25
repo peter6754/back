@@ -127,9 +127,16 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
-        'robokassa' => [
+        'payments' => [
+            'path' => storage_path('logs/payments/application-service.log'),
             'driver' => 'daily',
-            'path' => storage_path('logs/robokassa.log'),
+            'level' => 'info',
+            'days' => 14,
+        ],
+
+        'robokassa' => [
+            'path' => storage_path('logs/payments/robokassa.log'),
+            'driver' => 'daily',
             'level' => 'info',
             'days' => 14,
         ],
