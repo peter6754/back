@@ -231,6 +231,11 @@ class RobokassaProvider implements PaymentProviderInterface
                 // Get Transaction
                 $transaction = $getTransaction->toArray();
 
+                // Если мы уже обработали платеж
+                if ($transaction['status'] === PaymentsService::ORDER_STATUS_COMPLETE) {
+                    return "OK" . $params['InvId'];
+                }
+
                 // Update status
                 PaymentsService::updateTransaction([
                     'transaction_id' => $transaction['transaction_id'],
