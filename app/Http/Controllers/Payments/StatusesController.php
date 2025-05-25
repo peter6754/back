@@ -22,7 +22,7 @@ class StatusesController extends Controller
     /**
      * @param Request $request
      * @param string $provider
-     * @return JsonResponse|void
+     * @return string
      */
     public function resultCallback(Request $request, string $provider)
     {
@@ -37,6 +37,11 @@ class StatusesController extends Controller
                 'data' => 'Invalid signature'
             ]);
         }
+
+        if (is_string($getResults)) {
+            return $getResults;
+        }
+        return response()->json($getResults);
     }
 
     /**
