@@ -249,7 +249,7 @@ class RobokassaProvider implements PaymentProviderInterface
                 null
             );
 
-            switch ($params['Shp_product'] ?? null) {
+            switch ($transaction['type'] ?? null) {
                 case PaymentsService::ORDER_PRODUCT_SERVICE:
                     $this->payments->sendServicePackage($transaction);
                     break;
