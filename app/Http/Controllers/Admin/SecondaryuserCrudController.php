@@ -147,20 +147,28 @@ class SecondaryuserCrudController extends CrudController
             'label' => 'Верификация',
             'type' => 'custom_html',
             'escaped' => false,
-            'value' => function($entry) {
+            'value' => function ($entry) {
                 $verification = $entry->verificationRequest;
+
                 if ($verification) {
+                    $url = url('admin/verification-requests/' . $verification->user_id . '/edit');
                     switch ($verification->status) {
                         case 'initial':
-                            return '<span style="color: orange;">На проверке</span>';
+                            $label = '<span style="color: orange;">На проверке</span>';
+                            break;
                         case 'approved':
-                            return '<span style="color: green;">Одобрено</span>';
+                            $label = '<span style="color: green;">Одобрено</span>';
+                            break;
                         case 'rejected':
-                            return '<span style="color: red;">Отклонено</span>';
+                            $label = '<span style="color: red;">Отклонено</span>';
+                            break;
                         default:
-                            return ucfirst($verification->status);
+                            $label = '<span>' . ucfirst($verification->status) . '</span>';
                     }
+
+                    return '<a href="' . $url . '">' . $label . '</a>';
                 }
+
                 return 'Нет заявки';
             },
         ]);
