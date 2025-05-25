@@ -9,8 +9,6 @@ class ServicePackagePrice extends Model
 {
     use HasFactory;
 
-    protected $connection = 'mysql_secondary';
-
     protected $table = 'service_package_prices';
 
     protected $primaryKey = 'package_id';

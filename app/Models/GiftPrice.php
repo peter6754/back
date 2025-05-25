@@ -9,7 +9,6 @@ class GiftPrice extends Model
 {
     use HasFactory;
 
-    protected $connection = 'mysql_secondary';
 
     protected $table = 'gift_prices';
 

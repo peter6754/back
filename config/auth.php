@@ -61,8 +61,8 @@ return [
 
     'providers' => [
         'users' => [
+            'model' => env('AUTH_MODEL', App\Models\BackpackUser::class),
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\User::class),
         ],
 
         // 'users' => [

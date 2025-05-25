@@ -11,7 +11,7 @@ class UserImage extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(BackpackUser::class, 'user_id');
     }
 
     public function getImageUrlAttribute()

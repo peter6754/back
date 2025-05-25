@@ -11,7 +11,6 @@ class InQueueForDeleteUser extends Model
 {
     use CrudTrait;
 
-    protected $connection = 'mysql_secondary';
     protected $table = 'in_queue_for_delete_user';
     protected $keyType = 'string';
     protected $primaryKey = 'user_id';

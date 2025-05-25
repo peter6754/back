@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class UserActivity extends Model
 {
-    protected $connection = 'mysql_secondary';
     protected $table = 'user_activity';
     public $timestamps = false;
     protected $fillable = [
@@ -20,7 +19,7 @@ class UserActivity extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(BackpackUser::class);
     }
 
     public static function getTodayOnlineMen()

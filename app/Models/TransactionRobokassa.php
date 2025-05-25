@@ -10,8 +10,6 @@ class TransactionRobokassa extends Model
 {
     use HasFactory;
 
-    protected $connection = 'mysql_secondary';
-
     /**
      * Название таблицы в базе данных
      */
