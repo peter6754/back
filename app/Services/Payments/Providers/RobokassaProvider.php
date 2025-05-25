@@ -218,11 +218,10 @@ class RobokassaProvider implements PaymentProviderInterface
      */
     public function callbackResult(array $params): array
     {
-
         Log::channel($this->getProviderName())->info('[REQUEST] Result request: ', $params);
         try {
             if (!$this->validate($params)) {
-                throw new \Exception('Invalid signature');
+                throw new \Exception('Invalid signature!');
             }
 
             // Checking transaction
@@ -249,7 +248,8 @@ class RobokassaProvider implements PaymentProviderInterface
                     break;
             }
 
-            return $this->checkOrderStatus($params['InvId']);
+//            return $this->checkOrderStatus($params['InvId']);
+            return [];
         } catch (\Exception $e) {
             Log::channel($this->getProviderName())->info('[ERROR] ' . __METHOD__ . ': ' . $e->getMessage());
             return [];
