@@ -2,13 +2,13 @@
 
 namespace App\Services\Payments\Providers;
 
-use App\Models\Transactions;
-use Illuminate\Support\Facades\Log;
-use App\Services\Payments\PaymentsService;
+use App\Services\ChatService;
 use App\Services\Payments\Contracts\PaymentProviderInterface;
 use Illuminate\Validation\ValidationException;
+use App\Services\Payments\PaymentsService;
 use GuzzleHttp\Exception\GuzzleException;
 use App\Models\TransactionRobokassa;
+use Illuminate\Support\Facades\Log;
 use App\Models\TransactionProcess;
 use GuzzleHttp\Client;
 
@@ -72,6 +72,7 @@ class RobokassaProvider implements PaymentProviderInterface
             "subscription_id" => $params['price'],
             "transaction_id" => $getRobo['id'],
             "id" => (int)$getRobo['invId'],
+            "type" => $params['product'],
         ])->toArray();
 
         $recurrentUrl = "https://auth.robokassa.ru/RecurringSubscriptionPage/Subscription/SubscriberGetOrCreate";
@@ -126,6 +127,7 @@ class RobokassaProvider implements PaymentProviderInterface
 
             "provider" => $this->getProviderName(),
             "transaction_id" => $getRobo['id'],
+            "type" => $params['product'],
             "price" => $params['price'],
             "id" => $getRobo['invId'],
         ])->toArray();
@@ -331,7 +333,6 @@ class RobokassaProvider implements PaymentProviderInterface
             true
         );
 
-        var_dump($orderData);
         // Get state
         if (empty($orderData['Info']['OpKey'])) {
             throw new \Exception("Order not found");
