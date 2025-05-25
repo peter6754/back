@@ -2,7 +2,6 @@
 
 namespace App\Services\Payments\Providers;
 
-use App\Services\ChatService;
 use App\Services\Payments\Contracts\PaymentProviderInterface;
 use Illuminate\Validation\ValidationException;
 use App\Services\Payments\PaymentsService;
@@ -17,8 +16,8 @@ class RobokassaProvider implements PaymentProviderInterface
     private string $merchantLogin;
     private string $password1;
     private string $password2;
+    private  $payments;
     private $isTest;
-
     /**
      *
      */
@@ -35,6 +34,8 @@ class RobokassaProvider implements PaymentProviderInterface
             config('payments.robokassa.password2');
 
         $this->isTest = config('payments.robokassa.isTest');
+
+        $this->payments = app(PaymentsService::class);
     }
 
     /**
@@ -222,7 +223,7 @@ class RobokassaProvider implements PaymentProviderInterface
         Log::channel($this->getProviderName())->info('[REQUEST] Result request: ', $params);
         try {
             if (!$this->validate($params, true)) {
-                throw new \Exception('Invalid signature!');
+//                throw new \Exception('Invalid signature');
             }
 
             // Checking transaction
@@ -237,15 +238,23 @@ class RobokassaProvider implements PaymentProviderInterface
                 ]);
             }
 
+            $transaction = (array)(new \App\Models\TransactionProcess)->transactionInfo(
+                $transaction['transaction_id'] ??
+                (int)$params['InvId'] ??
+                null
+            );
+
             switch ($params['Shp_product'] ?? null) {
                 case PaymentsService::ORDER_PRODUCT_SERVICE:
-
+                    $this->payments->sendServicePackage($transaction);
                     break;
+
                 case PaymentsService::ORDER_PRODUCT_GIFT:
-
+                    $this->payments->sendGift($transaction);
                     break;
-                default:
 
+                default:
+                    $this->payments->sendSubscription($transaction);
                     break;
             }
 

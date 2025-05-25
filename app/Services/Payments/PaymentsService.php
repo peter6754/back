@@ -109,8 +109,14 @@ class PaymentsService extends Manager
             "customer" => $params["customer"],
             "action" => "payment",
         ]);
+    }
+
+
+    public function sendServicePackage(array $params): array
+    {
 
     }
+
 
     /**
      * @param string $provider
@@ -167,6 +173,12 @@ class PaymentsService extends Manager
         ]);
     }
 
+
+    public function sendSubscription(array $params): array
+    {
+
+    }
+
     /**
      * @param string $provider
      * @param array $params
@@ -196,6 +208,13 @@ class PaymentsService extends Manager
             "receiver_id" => $user['id'],
             "action" => "payment",
         ]);
+    }
+
+    public function sendGift(array $params)
+    {
+
+        var_dump($params);
+        exit;
     }
 
     /**

@@ -26,6 +26,7 @@ class StatusesController extends Controller
     {
         $getResults = $this->payments->driver($provider)->callbackResult($request->all());
 
+        var_dump($getResults);
         if (empty($getResults)) {
             return response()->json([
                 'meta' => [

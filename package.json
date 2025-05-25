@@ -6,8 +6,11 @@
         "build": "vite build"
     },
     "devDependencies": {
-        "axios": "^1.7.4",
         "laravel-vite-plugin": "^1.0",
+        "@soketi/soketi": "^1.6",
+        "laravel-echo": "^2.1",
+        "pusher-js": "^8.4",
+        "axios": "^1.7",
         "vite": "^5.0"
     }
 }
