@@ -181,7 +181,7 @@ class RobokassaProvider implements PaymentProviderInterface
         }
 
         return [
-            "confirmation_url" => $baseUrl . '?' . http_build_query($queryParams, '', '&', PHP_QUERY_RFC3986),
+            "confirmation_url" => $baseUrl . '?' . http_build_query($queryParams),
             "created_at" => (new \DateTime())->format('Y-m-d H:i:s'),
             "payment_id" => $getData['transaction_id'],
             "invoice_id" => $getData['id'],
@@ -288,10 +288,12 @@ class RobokassaProvider implements PaymentProviderInterface
                     // Default variable
                     $updateParams = [];
 
-                    // Calculate current options
+                    Log::channel($this->getProviderName())->log(__METHOD__ . ':' . __LINE__, [$transaction]);                    // Calculate current options
                     if (!empty($transaction['package_type']) && !empty($transaction['package_count'])) {
                         $updateParams[$transaction['package_type']] = $transaction['package_count'];
                         $updateParams['user_id'] = $transaction['user_id'];
+
+                        Log::channel($this->getProviderName())->log(__METHOD__ . ':' . __LINE__, [$updateParams]);
 
                         // Update params
                         $this->payments->sendServicePackage($updateParams);
