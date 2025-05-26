@@ -218,11 +218,11 @@ class PaymentsService extends Manager
             $updateParams = [];
 
             if (!empty($params['superlike'])) {
-                $updateParams['superlikes'] = DB::raw('superlikes + ' . $params['superlikes']);
+                $updateParams['superlikes'] = DB::raw('superlikes + ' . $params['superlike']);
             }
 
             if (!empty($params['superboom'])) {
-                $updateParams['superbooms'] = DB::raw('superbooms + ' . $params['superbooms']);
+                $updateParams['superbooms'] = DB::raw('superbooms + ' . $params['superboom']);
             }
 
             Log::channel('payments')->log(__METHOD__ . ': ', [$updateParams, $params]);
