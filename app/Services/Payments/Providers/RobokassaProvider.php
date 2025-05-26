@@ -286,7 +286,15 @@ class RobokassaProvider implements PaymentProviderInterface
 
             switch ($params['Shp_product'] ?? $transaction['type'] ?? null) {
                 case PaymentsService::ORDER_PRODUCT_SERVICE:
-                    $this->payments->sendServicePackage($transaction);
+                    // Default variable
+                    $updateParams = [];
+
+                    // Calculate current options
+                    $updateParams[$transaction['package_type']] = $transaction['package_count'];
+                    $updateParams['user_id'] = $transaction['user_id'];
+
+                    // Update params
+                    $this->payments->sendServicePackage($updateParams);
                     break;
 
                 case PaymentsService::ORDER_PRODUCT_GIFT:
