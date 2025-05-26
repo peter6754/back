@@ -28,7 +28,6 @@ class BoughtSubscriptionsCrudController extends CrudController
 
     /**
      * Configure the CrudPanel object. Apply settings to all operations.
-     *
      * @return void
      */
     public function setup()
@@ -45,7 +44,6 @@ class BoughtSubscriptionsCrudController extends CrudController
 
     /**
      * Define what happens when the List operation is loaded.
-     *
      * @see  https://backpackforlaravel.com/docs/crud-operation-list-entries
      * @return void
      */
@@ -141,7 +139,6 @@ class BoughtSubscriptionsCrudController extends CrudController
 
     /**
      * Define what happens when the Create operation is loaded.
-     *
      * @see https://backpackforlaravel.com/docs/crud-operation-create
      * @return void
      */
@@ -167,7 +164,7 @@ class BoughtSubscriptionsCrudController extends CrudController
             'name' => 'user_info',
             'type' => 'custom_html',
             'value' => '<div class="alert alert-info mb-0">
-            Выдаётся пользователю: <strong>'.Secondaryuser::find($user_id)->email.'</strong>
+            Выдаётся пользователю: <strong>' . Secondaryuser::find($user_id)?->email . '</strong>
         </div>'
         ]);
 
@@ -202,7 +199,7 @@ class BoughtSubscriptionsCrudController extends CrudController
             \DB::beginTransaction();
 
             // Генерация UUID
-            $transactionId = (string) Str::uuid();
+            $transactionId = (string)Str::uuid();
 
             // 1. Создаем транзакцию
             $transaction = Transactions::create([
@@ -239,7 +236,6 @@ class BoughtSubscriptionsCrudController extends CrudController
 
     /**
      * Define what happens when the Update operation is loaded.
-     *
      * @see https://backpackforlaravel.com/docs/crud-operation-update
      * @return void
      */
