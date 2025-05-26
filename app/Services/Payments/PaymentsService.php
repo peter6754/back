@@ -243,7 +243,7 @@ class PaymentsService extends Manager
             });
             return true;
         } catch (\Exception $e) {
-            Log::channel('payments')->info('[ERROR] ' . __METHOD__ . ': ' . $e->getMessage());
+            Log::channel('payments')->error(__METHOD__ . ': ' . $e->getMessage());
             return false;
         }
     }
@@ -281,7 +281,7 @@ class PaymentsService extends Manager
 
             return true;
         } catch (\Exception $e) {
-            Log::channel('payments')->info('[ERROR] ' . __METHOD__ . ': ' . $e->getMessage());
+            Log::channel('payments')->error(__METHOD__ . ': ' . $e->getMessage());
             return false;
         }
     }
@@ -361,7 +361,7 @@ class PaymentsService extends Manager
                 return $updatedProcess > 0 && $updatedTransaction > 0;
             });
         } catch (\Exception $e) {
-            Log::channel('payments')->info('[ERROR] ' . __METHOD__ . ': ' . $e->getMessage());
+            Log::channel('payments')->error('[ERROR] ' . __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
     }

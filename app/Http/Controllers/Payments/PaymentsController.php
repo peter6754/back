@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Payments;
 
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\Payments\PaymentsService;
 use App\Http\Traits\ApiResponseTrait;
@@ -74,6 +75,7 @@ class PaymentsController extends Controller
 
         // Logic
         try {
+            Log::channel('payments')->info(__METHOD__ . ': ', $request->all());
             $package_id = $request->input("service_package_id") ?? 99;
 
             $getTransaction = $this->payments->buyServicePackage($provider, [
