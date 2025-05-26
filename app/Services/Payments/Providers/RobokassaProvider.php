@@ -290,11 +290,13 @@ class RobokassaProvider implements PaymentProviderInterface
                     $updateParams = [];
 
                     // Calculate current options
-                    $updateParams[$transaction['package_type']] = $transaction['package_count'];
-                    $updateParams['user_id'] = $transaction['user_id'];
+                    if (!empty($transaction['package_type']) && !empty($transaction['package_count'])) {
+                        $updateParams[$transaction['package_type']] = $transaction['package_count'];
+                        $updateParams['user_id'] = $transaction['user_id'];
 
-                    // Update params
-                    $this->payments->sendServicePackage($updateParams);
+                        // Update params
+                        $this->payments->sendServicePackage($updateParams);
+                    }
                     break;
 
                 case PaymentsService::ORDER_PRODUCT_GIFT:
