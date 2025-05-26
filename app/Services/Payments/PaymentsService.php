@@ -211,18 +211,17 @@ class PaymentsService extends Manager
     /**
      * @param array $params
      * @return bool
-     * @throws GuzzleException
      */
-    public function sendServicePackage(array $params)
+    public function sendServicePackage(array $params): bool
     {
         try {
             $updateParams = [];
 
-            if (!empty($params['superlikes'])) {
+            if (!empty($params['superlike'])) {
                 $updateParams['superlikes'] = DB::raw('superlikes + ' . $params['superlikes']);
             }
 
-            if (!empty($params['superbooms'])) {
+            if (!empty($params['superboom'])) {
                 $updateParams['superbooms'] = DB::raw('superbooms + ' . $params['superbooms']);
             }
 
@@ -241,7 +240,6 @@ class PaymentsService extends Manager
     /**
      * @param array $params
      * @return bool
-     * @throws GuzzleException
      */
     public function sendSubscription(array $params): bool
     {
@@ -267,8 +265,8 @@ class PaymentsService extends Manager
                 if ($params['subscription_id'] > 1) {
                     $this->sendServicePackage([
                         'user_id' => $params['user_id'],
-                        'superlikes' => 5,
-                        'superbooms' => 1,
+                        'superlike' => 5,
+                        'superboom' => 1,
                     ]);
                 }
             });
