@@ -10,9 +10,6 @@ class TransactionProcess extends Model
 {
     use HasFactory;
 
-    // Указываем соединение с базой данных
-    protected $connection = 'mysql_secondary';
-
     // Указываем таблицу
     protected $table = 'transactions_process';
 
@@ -45,9 +42,9 @@ class TransactionProcess extends Model
 
     public function transactionInfo($transactionId)
     {
-        return DB::connection('mysql_secondary')
-            ->table('transactions_process as t')
+        return DB::table('transactions_process as t')
             ->select([
+                't.transaction_id as transaction_id',
                 't.type',
                 't.user_id',
                 't.email as user_email',
@@ -66,7 +63,7 @@ class TransactionProcess extends Model
                 'g.gift_id',
 
                 // Токены устройства получателя подарка (подзапрос)
-                DB::connection('mysql_secondary')->raw('(
+                DB::raw('(
                         SELECT JSON_ARRAYAGG(dt.token)
                         FROM user_device_tokens dt
                         WHERE dt.user_id = g.receiver_id
@@ -94,7 +91,7 @@ class TransactionProcess extends Model
             \App\Models\Secondaryuser::class,
             'user_id',
             'id'
-        )->setConnection('mysql_secondary');
+        );
     }
 
     /**

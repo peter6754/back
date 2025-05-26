@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class SubscriptionPackages extends Model
 {
     use HasFactory;
-    protected $connection = 'mysql_secondary';
     protected $table = 'subscription_packages';
 
     protected $fillable = ['id', 'subscription_id', 'term'];

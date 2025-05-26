@@ -14,7 +14,6 @@ class Transactions extends Model
     use HasFactory;
     use HasUuids;
 
-    protected $connection = 'mysql_secondary';
     protected $table = 'transactions';
     public $timestamps = false;
     protected $fillable = [

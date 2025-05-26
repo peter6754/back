@@ -10,7 +10,6 @@ class VerificationRequests extends Model
 {
     use CrudTrait;
     use HasFactory;
-    protected $connection = 'mysql_secondary';
     protected $table = 'verification_requests';
     protected $keyType = 'string';
     protected $primaryKey = 'user_id';
@@ -22,7 +21,7 @@ class VerificationRequests extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(Secondaryuser::class, 'user_id');
     }
 
     public function images()
