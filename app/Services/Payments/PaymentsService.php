@@ -107,12 +107,15 @@ class PaymentsService extends Manager
             throw new \Exception("Item not found", 4040);
         }
 
-        $package->toArray();
+        $package = $package->toArray();
+
+        $price = $package['price'][$gender] * $package['count'];
+        $discount = ((100 - $package['stock']) / 100);
 
         // Create payment
         return $this->createPayment($provider, [
+            "price" => round($price * $discount, 2),
             "product" => PaymentsService::ORDER_PRODUCT_SERVICE,
-            "price" => (float)$package['price'][$gender],
             "product_id" => $params["package_id"],
             "customer" => $params["customer"],
             "action" => "payment",
