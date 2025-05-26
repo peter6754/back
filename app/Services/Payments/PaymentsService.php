@@ -225,7 +225,6 @@ class PaymentsService extends Manager
                 $updateParams['superbooms'] = DB::raw("`superbooms` + '{$params['superboom']}'");
             }
 
-            Log::channel('payments')->info(__METHOD__ . ': ', [$updateParams, $params]);
             if (!empty($updateParams)) {
                 DB::table('user_information')
                     ->where('user_id', $params['user_id'])
