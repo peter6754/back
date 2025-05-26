@@ -232,7 +232,12 @@ class PaymentsService extends Manager
             }
             return true;
         } catch (\Exception $e) {
-            Log::channel('payments')->error(__METHOD__ . ': ' . $e->getMessage());
+            Log::channel('payments')->error('Sending service failed: ' . $e->getMessage(), [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return false;
         }
     }
@@ -272,7 +277,12 @@ class PaymentsService extends Manager
             });
             return true;
         } catch (\Exception $e) {
-            Log::channel('payments')->error(__METHOD__ . ': ' . $e->getMessage());
+            Log::channel('payments')->error('Sending subscription failed: ' . $e->getMessage(), [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return false;
         }
     }
@@ -310,7 +320,12 @@ class PaymentsService extends Manager
 
             return true;
         } catch (\Exception $e) {
-            Log::channel('payments')->error(__METHOD__ . ': ' . $e->getMessage());
+            Log::channel('payments')->error("Sending gift failed: " . $e->getMessage(), [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return false;
         }
     }
@@ -390,7 +405,12 @@ class PaymentsService extends Manager
                 return $updatedProcess > 0 && $updatedTransaction > 0;
             });
         } catch (\Exception $e) {
-            Log::channel('payments')->error('[ERROR] ' . __METHOD__ . ': ' . $e->getMessage());
+            Log::channel('payments')->error('Error updating transaction: ' . $e->getMessage(), [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return false;
         }
     }
