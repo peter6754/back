@@ -288,12 +288,14 @@ class RobokassaProvider implements PaymentProviderInterface
                     // Default variable
                     $updateParams = [];
 
-                    Log::channel($this->getProviderName())->log(__METHOD__ . ':' . __LINE__, [$transaction]);                    // Calculate current options
+                    Log::channel($this->getProviderName())->info(__METHOD__ . ':' . __LINE__, [$transaction]);
+
+                    // Calculate current options
                     if (!empty($transaction['package_type']) && !empty($transaction['package_count'])) {
                         $updateParams[$transaction['package_type']] = $transaction['package_count'];
                         $updateParams['user_id'] = $transaction['user_id'];
 
-                        Log::channel($this->getProviderName())->log(__METHOD__ . ':' . __LINE__, [$updateParams]);
+                        Log::channel($this->getProviderName())->info(__METHOD__ . ':' . __LINE__, [$updateParams]);
 
                         // Update params
                         $this->payments->sendServicePackage($updateParams);
