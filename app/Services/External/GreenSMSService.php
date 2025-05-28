@@ -16,8 +16,10 @@ class GreenSMSService
      */
     public function __construct()
     {
-        // Config initialize from .env
-        $this->client = new GreenSMS();
+        $this->client = new GreenSMS([
+            config('greensms.sms_user'),
+            config('greensms.sms_pass')
+        ]);
     }
 
     /**
