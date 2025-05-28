@@ -49,7 +49,12 @@ class GreenSMSService
 
             return (!empty($response->request_id));
         } catch (\Exception $e) {
-            Log::error("GreenSMSService::sendSMS(): {$e->getMessage()}", $e);
+            Log::error("GreenSMSService::sendSMS(): {$e->getMessage()}", [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return false;
         }
     }
