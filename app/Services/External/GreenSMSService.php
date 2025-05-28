@@ -17,8 +17,8 @@ class GreenSMSService
     public function __construct()
     {
         $this->client = new GreenSMS([
-            config('greensms.sms_user'),
-            config('greensms.sms_pass')
+            'user' => config('greensms.sms_user'),
+            'pass' => config('greensms.sms_pass')
         ]);
     }
 
