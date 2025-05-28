@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Payments;
 
-use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\Payments\PaymentsService;
 use App\Http\Traits\ApiResponseTrait;
@@ -37,7 +36,6 @@ class PaymentsController extends Controller
      *     path="/payment/service-package",
      *     tags={"Payment"},
      *     summary="Create service package payment",
-     *     operationId="createServicePackagePayment",
      *     security={{"bearerAuth":{}}},
      *
      *     @OA\RequestBody(
@@ -98,7 +96,6 @@ class PaymentsController extends Controller
      *     path="/payment/subscription",
      *     tags={"Payment"},
      *     summary="Create subscription payment",
-     *     operationId="createSubscriptionPayment",
      *     security={{"bearerAuth":{}}},
      *
      *     @OA\RequestBody(
@@ -160,7 +157,6 @@ class PaymentsController extends Controller
      *      path="/payment/gift",
      *      tags={"Payment"},
      *      summary="Create gift payment",
-     *      operationId="createGiftPayment",
      *      security={{"bearerAuth":{}}},
      *
      *      @OA\RequestBody(
@@ -228,7 +224,6 @@ class PaymentsController extends Controller
      *     path="/payment/status/{id}",
      *     tags={"Payment"},
      *     summary="Get payment status by ID",
-     *     operationId="getPaymentStatus",
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
      *          name="id",

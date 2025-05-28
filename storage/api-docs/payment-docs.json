@@ -9,13 +9,104 @@
         "version": "1.0.0"
     },
     "paths": {
+        "/auth/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Request user authorization",
+                "operationId": "a5385ffca73f113abef00ea604d1ca58",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "phone"
+                                ],
+                                "properties": {
+                                    "device_token": {
+                                        "description": "Device Token",
+                                        "type": "string",
+                                        "example": "20bdb8fb3bdadc1bef037eefcaeb56ad6e57f3241c99e734062b6ee829271b71"
+                                    },
+                                    "phone": {
+                                        "description": "Phone Number",
+                                        "type": "string",
+                                        "example": "+79851234567"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/verify-login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Verify user by code (Don't forget to add the token from the login)",
+                "operationId": "1d15db25b746a28f7c34f0b4bf153890",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "code"
+                                ],
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "example": "7878"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/payment/service-package": {
             "post": {
                 "tags": [
                     "Payment"
                 ],
                 "summary": "Create service package payment",
-                "operationId": "createServicePackagePayment",
+                "operationId": "72b2a08f2ac2a087b58035affbd3d25c",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -71,7 +162,7 @@
                     "Payment"
                 ],
                 "summary": "Create subscription payment",
-                "operationId": "createSubscriptionPayment",
+                "operationId": "4668c7fe0308a8269e801f5d698a66ea",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -127,7 +218,7 @@
                     "Payment"
                 ],
                 "summary": "Create gift payment",
-                "operationId": "createGiftPayment",
+                "operationId": "188ba99f97935ce4934b166b8529baf5",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -189,7 +280,7 @@
                     "Payment"
                 ],
                 "summary": "Get payment status by ID",
-                "operationId": "getPaymentStatus",
+                "operationId": "9b4a64e8a17a2f4f9f3067a0fed12637",
                 "parameters": [
                     {
                         "name": "id",
@@ -290,20 +381,6 @@
                     },
                     "data": {
                         "description": "Response data payload",
-                        "properties": {
-                            "confirmation_url": {
-                                "description": "URL for payment confirmation",
-                                "type": "string",
-                                "format": "url",
-                                "example": "https://auth.robokassa.ru/RecurringSubscriptionPage/Subscription/Subscribe?subscriberId=e5e44d67-0691-4432-8f03-6bab9424f552&subscriptionId=545a01b4-7de7-4063-93f4-4572d0036d29"
-                            },
-                            "payment_id": {
-                                "description": "Unique payment identifier",
-                                "type": "string",
-                                "format": "uuid",
-                                "example": "4d448cac-8222-4ca2-85f7-f0fccf5d5bf1"
-                            }
-                        },
                         "type": "object"
                     }
                 },
@@ -358,8 +435,12 @@
     },
     "tags": [
         {
+            "name": "Auth",
+            "description": "Модуль авторизации в приложении"
+        },
+        {
             "name": "Payment",
-            "description": "Payment"
+            "description": "Модуль платежек"
         }
     ]
 }

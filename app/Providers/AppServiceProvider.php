@@ -2,10 +2,12 @@
 
 namespace App\Providers;
 
-use App\Services\Payments\PaymentsService;
-use App\Services\ExpoNotificationService;
-use Illuminate\Support\ServiceProvider;
 use App\Services\JwtService;
+use App\Services\AuthService;
+use Illuminate\Support\ServiceProvider;
+use App\Services\Payments\PaymentsService;
+use App\Services\External\GreenSMSService;
+use App\Services\External\ExpoNotificationService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,12 +21,28 @@ class AppServiceProvider extends ServiceProvider
             $this->app->register(TelescopeServiceProvider::class);
         }
 
-        $this->app->singleton(ExpoNotificationService::class, function () {
-            return new ExpoNotificationService();
-        });
+        // Payment service
         $this->app->singleton(PaymentsService::class, function ($app) {
             return new PaymentsService($app);
         });
+
+        // Auth service
+        $this->app->bind(ExpoNotificationService::class, function ($app) {
+            return new ExpoNotificationService();
+        });
+
+        $this->app->bind(GreenSMSService::class, function ($app) {
+            return new GreenSMSService();
+        });
+
+        $this->app->bind(AuthService::class, function ($app) {
+            return new AuthService(
+                $app->make(ExpoNotificationService::class),
+                $app->make(GreenSMSService::class)
+            );
+        });
+
+        // Default service
         $this->app->singleton(JwtService::class, function () {
             return new JwtService();
         });
