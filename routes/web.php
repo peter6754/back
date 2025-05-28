@@ -1,5 +1,6 @@
 <?php
 
+use Laravel\Socialite\Facades\Socialite;
 use App\Http\Controllers\Payments\StatusesController;
 use App\Http\Controllers\Payments\PaymentsController;
 use App\Http\Controllers\Auth\AuthController;
@@ -28,6 +29,13 @@ Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login'])->name('auth.verify');
     Route::post('verify-login', [AuthController::class, 'verify'])->name('auth.login');
 
+    Route::post('social/{provider}/callback', [AuthController::class, 'socialCallback']);
+    Route::get('social/{provider}', function ($provider) {
+        if (!empty(config("services.{$provider}.client_id"))) {
+            return Socialite::driver($provider)->redirect();
+        }
+        abort(404);
+    });
 });
 
 // Default routes

@@ -128,4 +128,8 @@ class AuthController extends Controller
         }
     }
 
+    public function socialCallback(Request $request)
+    {
+
+    }
 }
