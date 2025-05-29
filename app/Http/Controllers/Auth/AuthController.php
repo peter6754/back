@@ -150,6 +150,12 @@ class AuthController extends Controller
 
             abort(403, 'Invalid account data');
         } catch (Exception $e) {
+            Log::error("Social authentication failed: " . $e->getMessage(), [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             abort(401, 'Invalid account data');
         }
     }
