@@ -240,7 +240,7 @@ class Secondaryuser extends Model
      */
     public function settings()
     {
-        return $this->hasOne(UserSetting::class, 'user_id', 'id');
+        return $this->hasOne(UserSettings::class, 'user_id', 'id');
     }
 
     /**
