@@ -156,7 +156,12 @@ class AuthService
         ];
     }
 
-    public function loginBySocial(string $provider, array $user = [])
+    /**
+     * @param string $provider
+     * @param array $user
+     * @return string
+     */
+    public function loginBySocial(string $provider, array $user = []): string
     {
         try {
             DB::beginTransaction();
@@ -167,7 +172,7 @@ class AuthService
 
             // Проверяем, не удален ли пользователь
             if ($account && $account->user->mode === 'deleted') {
-                Log::warning("verifyLogin is FORBIDDEN", [
+                Log::warning("loginBySocial is FORBIDDEN", [
                     'user' => $account
                 ]);
 
@@ -197,18 +202,13 @@ class AuthService
             DB::commit();
 
             // Создаем токен аутентификации
-            $token = app(JwtService::class)->encode([
+            return app(JwtService::class)->encode([
                 'id' => $account->user->id
             ]);
 
-            return [
-                'token' => $token,
-                'type' => $type
-            ];
-
         } catch (\Exception $e) {
             Log::error($e);
-            return false;
+            return "";
         }
     }
 

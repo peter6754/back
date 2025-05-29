@@ -144,7 +144,11 @@ class AuthController extends Controller
                 (array)$socialUser
             );
 
-            return redirect()->away('tinderone://auth?' . http_build_query($data));
+            if (empty($data)) {
+                return redirect()->away('tinderone://oauth/' . url($data));
+            }
+
+            abort(401, 'Invalid account data');
         } catch (Exception $e) {
             abort(401, 'Invalid account data');
         }
