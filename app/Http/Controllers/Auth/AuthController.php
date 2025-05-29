@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use App\Services\AuthService;
 use Illuminate\Http\Request;
 use Exception;
+use Laravel\Socialite\Two\InvalidStateException;
 
 class AuthController extends Controller
 {
@@ -138,8 +139,13 @@ class AuthController extends Controller
     {
         $provider = $request->route('provider');
 
+//        try {
         try {
-            $profile = Socialite::driver($provider)->stateless(false)->user();
+            $profile = Socialite::driver($provider)->user();
+        } catch (InvalidStateException $e) {
+            $profile = Socialite::driver($provider)->stateless()->user();
+        }
+
             $data = $this->authService->loginBySocial(
                 $provider,
                 $profile
@@ -149,15 +155,15 @@ class AuthController extends Controller
                 return redirect()->away('tinderone://oauth/' . urlencode($data));
             }
 
-            abort(403, 'Invalid account data');
-        } catch (Exception $e) {
-            Log::error("Social authentication failed: " . $e->getMessage(), [
-                'error' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            abort(401, 'Invalid account data');
-        }
+//            abort(403, 'Invalid account data');
+//        } catch (Exception $e) {
+//            Log::error("Social authentication failed: " . $e->getMessage(), [
+//                'error' => $e->getMessage(),
+//                'file' => $e->getFile(),
+//                'line' => $e->getLine(),
+//                'trace' => $e->getTraceAsString()
+//            ]);
+//            abort(401, 'Invalid account data');
+//        }
     }
 }
