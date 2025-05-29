@@ -161,12 +161,12 @@ class AuthService
      * @param array $user
      * @return string
      */
-    public function loginBySocial(string $provider, array $user = []): string
+    public function loginBySocial(string $provider, object $user): string
     {
         try {
             DB::beginTransaction();
             $account = ConnectedAccount::with("user")
-                ->where('email', $user['email'])
+                ->where('email', $user->email)
                 ->where('provider', $provider)
                 ->first();
 
@@ -185,15 +185,12 @@ class AuthService
             }
             if (!$account) {
                 // Создаем нового пользователя
-                $user = $this->createNewUser(
-                    email: $user['email'],
+                $account = $this->createNewUser(
+                    email: $user->email,
                     provider: $provider,
-                    name: $user['name']
+                    name: $user->name
                 );
-                $type = 'register';
             } else {
-                $type = $account->user->registration_date ? 'login' : 'register';
-
                 // Если это первая регистрация, обновляем дату
                 if (!$account->user->registration_date) {
                     $account->user->update(['registration_date' => now()]);
