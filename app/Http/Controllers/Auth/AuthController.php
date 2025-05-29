@@ -139,12 +139,13 @@ class AuthController extends Controller
         $provider = $request->route('provider');
 
         try {
-            $socialUser = Socialite::driver($provider)->stateless()->user();
-            $data = $this->authService->loginBySocial($provider,
-                $socialUser
+            $profile = Socialite::driver($provider)->stateless(false)->user();
+            $data = $this->authService->loginBySocial(
+                $provider,
+                $profile
             );
 
-            if (empty($data)) {
+            if (!empty($data)) {
                 return redirect()->away('tinderone://oauth/' . urlencode($data));
             }
 
