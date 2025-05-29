@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use Firebase\JWT\JWT;
 use App\Models\Secondaryuser;
+use App\Models\ConnectedAccount;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
@@ -132,7 +134,7 @@ class AuthService
 
         // Создаем пользователя, если не существует
         if (!$user) {
-            $user = $this->createNewUser($tokenPayload->phone);
+            $this->createNewUser(phone: $tokenPayload->phone);
             $type = 'register';
         } else {
             $type = $user->registration_date ? 'login' : 'register';
@@ -154,20 +156,133 @@ class AuthService
         ];
     }
 
-    protected function createNewUser(string $phone): Secondaryuser
+    public function loginBySocial(string $provider, array $user = [])
     {
-        return DB::transaction(function () use ($phone) {
-            $user = Secondaryuser::create([
-                'phone' => $phone,
-                'registration_date' => now(),
+        try {
+            DB::beginTransaction();
+            $account = ConnectedAccount::with("user")
+                ->where('email', $user['email'])
+                ->where('provider', $provider)
+                ->first();
+
+            // Проверяем, не удален ли пользователь
+            if ($account && $account->user->mode === 'deleted') {
+                Log::warning("verifyLogin is FORBIDDEN", [
+                    'user' => $account
+                ]);
+
+                throw new HttpResponseException(
+                    response()->json([
+                        'code' => 403,
+                        'message' => 'User is deactivated'
+                    ], 403)
+                );
+            }
+            if (!$account) {
+                // Создаем нового пользователя
+                $user = $this->createNewUser(
+                    email: $user['email'],
+                    provider: $provider,
+                    name: $user['name']
+                );
+                $type = 'register';
+            } else {
+                $type = $account->user->registration_date ? 'login' : 'register';
+
+                // Если это первая регистрация, обновляем дату
+                if (!$account->user->registration_date) {
+                    $account->user->update(['registration_date' => now()]);
+                }
+            }
+            DB::commit();
+
+            // Создаем токен аутентификации
+            $token = app(JwtService::class)->encode([
+                'id' => $account->user->id
             ]);
+
+            return [
+                'token' => $token,
+                'type' => $type
+            ];
+
+        } catch (\Exception $e) {
+            Log::error($e);
+            return false;
+        }
+    }
+
+    /**
+     * Создает нового пользователя с базовой информацией и связанными записями
+     * @param string|null $phone Номер телефона (null для социальной аутентификации)
+     * @param string|null $email Email (для социальной аутентификации)
+     * @param string|null $provider Провайдер (apple/google)
+     * @param string|null $name Имя пользователя
+     * @param bool $withSocialSettings Создавать ли настройки для социального входа
+     * @return Secondaryuser
+     */
+    protected function createNewUser(
+        ?string $phone = null,
+        ?string $email = null,
+        ?string $provider = null,
+        ?string $name = null,
+        bool    $withSocialSettings = false
+    ): Secondaryuser
+    {
+        return DB::transaction(function () use ($phone, $email, $provider, $name, $withSocialSettings) {
+            // Создаем основную запись пользователя
+            $userData = [
+                'registration_date' => now(),
+            ];
+
+            if ($phone) {
+                $userData['phone'] = $phone;
+            }
+
+            if ($email) {
+                $userData['email'] = $email;
+            }
+
+            $user = Secondaryuser::create($userData);
 
             // Создаем связанные записи
             $user->settings()->create([]);
             $user->information()->create([]);
             $user->likeSettings()->create([]);
 
+            // Если это социальная аутентификация, добавляем connected account
+            if ($provider && $email) {
+                $user->connectedAccounts()->create([
+                    'name' => $name ?? 'Unknown',
+                    'provider' => $provider,
+                    'email' => $email,
+                ]);
+            }
+
             return $user;
         });
+    }
+
+    /**
+     * @return string
+     */
+    public static function generateAppleSecret(): string
+    {
+        $now = time();
+
+        $payload = [
+            'iss' => config("services.apple.team_id"),
+            'iat' => $now,
+            'exp' => $now + 86400 * 180,
+            'aud' => 'https://appleid.apple.com',
+            'sub' => config("services.apple.client_id"),
+        ];
+
+        return JWT::encode(
+            $payload,
+            config("services.apple.private_key"),
+            'ES256',
+            config("services.apple.key_id")
+        );
     }
 }

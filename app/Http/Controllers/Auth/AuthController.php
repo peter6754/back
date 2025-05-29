@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Services\JwtService;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Http\RedirectResponse;
 use Laravel\Socialite\Facades\Socialite;
 use Symfony\Component\HttpFoundation\Response;
 use GuzzleHttp\Exception\GuzzleException;
@@ -108,7 +109,7 @@ class AuthController extends Controller
      *     )
      * )
      */
-    public function verify(Request $request)
+    public function verify(Request $request): JsonResponse
     {
         $validatedData = $request->validate([
             'code' => 'required|string|digits:4'
@@ -129,16 +130,23 @@ class AuthController extends Controller
         }
     }
 
+    /**
+     * @param Request $request
+     * @return RedirectResponse|void
+     */
     public function socialCallback(Request $request)
     {
         $provider = $request->route('provider');
 
-//        try {
+        try {
             $socialUser = Socialite::driver($provider)->user();
+            $data = $this->authService->loginBySocial($provider,
+                (array)$socialUser
+            );
 
-            var_dump($socialUser);
-//        } catch (\Exception $e) {
-//            return redirect('/login')->with('error', 'Ошибка авторизации');
-//        }
+            return redirect()->away('tinderone://auth?' . http_build_query($data));
+        } catch (Exception $e) {
+            abort(401, 'Invalid account data');
+        }
     }
 }
