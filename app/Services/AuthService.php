@@ -166,7 +166,7 @@ class AuthService
         try {
             DB::beginTransaction();
             $account = ConnectedAccount::with("user")
-                ->where('email', $user->email)
+                ->where('email', $user->getEmail())
                 ->where('provider', $provider)
                 ->first();
 
@@ -186,9 +186,9 @@ class AuthService
             if (!$account) {
                 // Создаем нового пользователя
                 $account = $this->createNewUser(
-                    email: $user->email,
+                    email: $user->getEmail(),
                     provider: $provider,
-                    name: $user->name
+                    name: $user->getName(),
                 );
             } else {
                 // Если это первая регистрация, обновляем дату
