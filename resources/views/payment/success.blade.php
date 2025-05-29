@@ -50,7 +50,7 @@
 {{--    <p class="text-muted mb-4">--}}
 {{--        Чек отправлен на вашу почту.--}}
 {{--    </p>--}}
-    <a href="tinderone://payment" class="btn btn-success">
+    <a href="tinderone://home" class="btn btn-success">
         Вернуться
     </a>
 </div>

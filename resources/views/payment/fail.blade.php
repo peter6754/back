@@ -63,7 +63,7 @@
         </p>
     @endif
 
-    <a href="tinderone://payment" class="btn btn-danger">
+    <a href="tinderone://home" class="btn btn-danger">
         Вернуться
     </a>
 </div>
