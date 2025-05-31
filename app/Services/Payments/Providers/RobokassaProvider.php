@@ -289,8 +289,8 @@ class RobokassaProvider implements PaymentProviderInterface
 
                         $getData = $this->payments->createPayment($this->getProviderName(), [
                             "product_id" => $transaction["subscription_id"] ?? null,
+                            "product" => $transaction['type'] ?? null,
                             "subscribeInfo" => $getTransaction,
-                            "product" => $transaction['type'],
                             "price" => $params['OutSum'],
                             "invoice_id" => (int)$params['InvId'],
                             "customer" => [
