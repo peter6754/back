@@ -25,7 +25,6 @@ class GreenSMSService
         } else {
             // Login / Password auth
             $this->client = new GreenSMS([
-                // Login / Password auth
                 'user' => config('greensms.sms_user'),
                 'pass' => config('greensms.sms_pass')
             ]);
