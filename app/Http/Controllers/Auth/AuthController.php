@@ -139,35 +139,31 @@ class AuthController extends Controller
     {
         $provider = $request->route('provider');
 
-//        try {
         try {
-            $profile = Socialite::driver($provider)->user();
-        } catch (InvalidStateException $e) {
-            $profile = Socialite::driver($provider)->stateless()->user();
-        }
+            try {
+                $profile = Socialite::driver($provider)->user();
+            } catch (InvalidStateException $e) {
+                $profile = Socialite::driver($provider)->stateless()->user();
+            }
 
-        $data = $this->authService->loginBySocial(
-            $provider,
-            $profile
-        );
+            $data = $this->authService->loginBySocial(
+                $provider,
+                $profile
+            );
 
-        if (!empty($data)) {
             return redirect()->away('tinderone://oauth/' . implode("/", [
                     $data['type'],
                     $data['token']
                 ])
             );
+        } catch (Exception $e) {
+            Log::error("Social authentication failed: " . $e->getMessage(), [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            abort(401, 'Invalid account data');
         }
-
-        abort(403, 'Invalid account data');
-//        } catch (Exception $e) {
-//            Log::error("Social authentication failed: " . $e->getMessage(), [
-//                'error' => $e->getMessage(),
-//                'file' => $e->getFile(),
-//                'line' => $e->getLine(),
-//                'trace' => $e->getTraceAsString()
-//            ]);
-//            abort(401, 'Invalid account data');
-//        }
     }
 }
