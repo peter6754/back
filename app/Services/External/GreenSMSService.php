@@ -17,19 +17,18 @@ class GreenSMSService
      */
     public function __construct()
     {
+        // Login / Password default auth
+        $authData = [
+            'user' => config('greensms.sms_user'),
+            'pass' => config('greensms.sms_pass')
+        ];
+
+        // GreenSMS token auth
         if (!empty(config('greensms.token'))) {
-            // GreenSMS token auth
-            $this->client = new GreenSMS([
-                'token' => config('greensms.token'),
-            ]);
-        } else {
-            // Login / Password auth
-            $this->client = new GreenSMS([
-                'user' => config('greensms.sms_user'),
-                'pass' => config('greensms.sms_pass')
-            ]);
+            $authData['token'] = config('greensms.token');
         }
 
+        $this->client = new GreenSMS($authData);
     }
 
     /**

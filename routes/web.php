@@ -1,11 +1,36 @@
 <?php
 
-use Laravel\Socialite\Facades\Socialite;
+use App\Http\Controllers\Recommendations\RecommendationsController;
 use App\Http\Controllers\Payments\StatusesController;
 use App\Http\Controllers\Payments\PaymentsController;
 use App\Http\Controllers\Auth\AuthController;
+use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Route;
 use OpenApi\Generator;
+
+// Recommendations routes
+Route::prefix('recommendations')->group(function () {
+    // Get recommendations
+    Route::get('/', [RecommendationsController::class, 'getRecommendations']);
+
+    // Get top profiles
+    Route::get('top-profiles', [RecommendationsController::class, 'getTopProfiles']);
+
+    // Delete matched user
+    Route::delete('match/{id}', [RecommendationsController::class, 'deleteMatchedUser']);
+
+    // Like action
+    Route::post('like', [RecommendationsController::class, 'like']);
+
+    // Dislike action
+    Route::post('dislike', [RecommendationsController::class, 'dislike']);
+
+    // Rollback action
+    Route::post('rollback', [RecommendationsController::class, 'rollback']);
+
+    // Superlike action
+    Route::post('superlike', [RecommendationsController::class, 'superlike']);
+});
 
 // Payments system routes
 Route::prefix('payment')->group(function () {
@@ -18,7 +43,7 @@ Route::prefix('payment')->group(function () {
     // Service checking
     Route::get('status/{id}', [PaymentsController::class, 'status'])->name('payment.status');
 
-    // Statuses\
+    // Statuses
     Route::get('{provider}/result/{event?}', [StatusesController::class, 'resultCallback'])->name('statuses.callback');
     Route::get('{provider}/success', [StatusesController::class, 'success'])->name('statuses.success');
     Route::get('{provider}/fail', [StatusesController::class, 'fail'])->name('statuses.fail');
