@@ -251,8 +251,8 @@ class AuthService
 
             // Создаем связанные записи
             $user->settings()->create([]);
-            $user->information()->create([]);
-            $user->likeSettings()->create([]);
+            $user->userInformation()->create([]);
+//            $user->likeSettings()->create([]);
 
             // Если это социальная аутентификация, добавляем connected account
             if ($provider && $email) {
