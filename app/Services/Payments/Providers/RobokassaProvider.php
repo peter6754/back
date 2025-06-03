@@ -294,7 +294,7 @@ class RobokassaProvider implements PaymentProviderInterface
                             "price" => $params['OutSum'],
                             "invoice_id" => (int)$params['InvId'],
                             "customer" => [
-                                "email" => $transaction['user_email'],
+                                "email" => $transaction['user_email'] ?? null,
                                 "id" => $transaction['user_id'],
                             ],
                             "action" => "subscription",
