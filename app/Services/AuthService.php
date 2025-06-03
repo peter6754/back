@@ -250,8 +250,8 @@ class AuthService
             $user = Secondaryuser::create($userData);
 
             // Создаем связанные записи
-            $user->settings()->create([]);
             $user->userInformation()->create([]);
+            $user->settings()->create([]);
 //            $user->likeSettings()->create([]);
 
             // Если это социальная аутентификация, добавляем connected account
