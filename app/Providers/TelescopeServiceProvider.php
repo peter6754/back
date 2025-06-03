@@ -27,16 +27,19 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
         $this->hideSensitiveRequestDetails();
 
         Telescope::filterBatch(function (Collection $entries) {
-            if ($this->app->environment('local')) {
+            if (
+                $this->app->environment('production') ||
+                $this->app->environment('local')) {
                 return true;
             }
 
+            // Temperary not working
             return $entries->contains(function (IncomingEntry $entry) {
                 return $entry->isReportableException() ||
-                    $entry->isClientRequest() ||
                     $entry->isScheduledTask() ||
                     $entry->isFailedJob() ||
-                    $entry->isSlowQuery();
+                    $entry->isSlowQuery() ||
+                    $entry->isRequest();
             });
         });
     }
