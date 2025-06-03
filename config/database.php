@@ -170,4 +170,9 @@ return [
 
     ],
 
+    'dump' => [
+        'dump_binary_path' => storage_path('backups'),
+        'use_single_transaction',
+        'timeout' => 60 * 5
+    ]
 ];

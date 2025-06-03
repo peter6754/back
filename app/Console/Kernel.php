@@ -20,6 +20,10 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+        // Создание резервной копии проекта
+        $schedule->command('backup:clean')->daily()->at('04:00');
+        $schedule->command('backup:run')->daily()->at('05:00');
+
         // Проверка статусов платежей каждые 5 минут
         $schedule->command('payments:check-status')
             ->everyFiveMinutes()

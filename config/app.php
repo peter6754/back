@@ -54,6 +54,7 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone
@@ -123,4 +124,5 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'log' => env('APP_LOG', 'daily'),
 ];
