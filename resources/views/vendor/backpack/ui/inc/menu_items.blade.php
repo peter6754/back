@@ -38,3 +38,17 @@
 @endif
 
 <x-backpack::menu-item title="Статистика(временно)" icon="la la-question" :link="backpack_url('statistics')"/>
+
+<span class="nav-separator">Утилиты</span>
+<li class="nav-item">
+    <a class="nav-link" href="/admin/telescope" target="_blank">
+        <i class="nav-icon la la-terminal d-block d-lg-none d-xl-block"></i>
+        <span>Telescope</span>
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="/api/docs" target="_blank">
+        <i class="nav-icon la la-code d-block d-lg-none d-xl-block"></i>
+        <span>Swagger</span>
+    </a>
+</li>
