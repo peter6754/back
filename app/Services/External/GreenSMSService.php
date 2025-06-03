@@ -61,4 +61,10 @@ class GreenSMSService
             return false;
         }
     }
+
+    public function getBalance()
+    {
+        $response = $this->client->account->balance();
+        return $response->balance;
+    }
 }
