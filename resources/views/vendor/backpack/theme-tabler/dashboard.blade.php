@@ -47,6 +47,9 @@
         $yesterdayOnlineTotal = UserActivity::getYesterdayTotalOnline();
         $stats = Secondaryuser::getGenderStats();
 
+        $smsBalance = (new \App\Services\External\GreenSMSService)->getBalance();
+        $smsBalance = "<br>$smsBalance<br>";
+
 
         Widget::add()
         ->to('after_content')
@@ -62,7 +65,7 @@
             ->accentColor('red')
             ->ribbon(['top', 'la-sms'])
             ->progressClass('progressbar')
-            ->value((new \App\Services\External\GreenSMSService)->getBalance())
+            ->value($smsBalance)
             ->description('Баланс SMS'),
 
             Widget::make()
@@ -104,7 +107,7 @@
             ->accentColor('green')
             ->ribbon(['top', 'la-user'])
             ->progressClass('progressbar')
-            ->value($stats['total'])
+            ->value("<br>{$stats['total']}<br>")
             ->description('всего пользователей'),
         ]);
 
