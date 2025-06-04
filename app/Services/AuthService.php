@@ -247,12 +247,15 @@ class AuthService
                 $userData['email'] = $email;
             }
 
+            if ($name) {
+                $userData['name'] = $name;
+            }
+
             $user = Secondaryuser::create($userData);
 
             // Создаем связанные записи
             $user->userInformation()->create([]);
             $user->settings()->create([]);
-//            $user->likeSettings()->create([]);
 
             // Если это социальная аутентификация, добавляем connected account
             if ($provider && $email) {
