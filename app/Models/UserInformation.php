@@ -8,10 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 class UserInformation extends Model
 {
     use HasFactory;
+
     protected $table = 'user_information';
+
+    public $incrementing = false;
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id', 'id');
+        return $this->belongsTo(Secondaryuser::class, 'user_id', 'id');
     }
 }

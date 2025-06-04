@@ -35,7 +35,7 @@ services:
         volumes:
             - 'sail-redis:/data'
         networks:
-            prometheus_default:  
+            prometheus_default:
         healthcheck:
             test:
                 - CMD
@@ -53,7 +53,7 @@ services:
         volumes:
             - 'sail-meilisearch:/meili_data'
         networks:
-            prometheus_default:  
+            prometheus_default:
         healthcheck:
             test:
                 - CMD
