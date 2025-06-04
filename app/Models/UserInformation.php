@@ -16,6 +16,7 @@ class UserInformation extends Model
 
     public function user()
     {
-        return $this->belongsTo(Secondaryuser::class, 'user_id', 'id');
+        return $this->belongsTo(Secondaryuser::class, 'id', 'user_id');
     }
 }
+
