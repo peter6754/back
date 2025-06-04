@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use Detection\MobileDetect;
 use App\Services\JwtService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\RedirectResponse;
@@ -138,6 +139,7 @@ class AuthController extends Controller
     public function socialCallback(Request $request)
     {
         $provider = $request->route('provider');
+        $browser = new MobileDetect();
 
         try {
             try {
@@ -151,7 +153,13 @@ class AuthController extends Controller
                 $profile
             );
 
-            return redirect()->away('tinderone://oauth/' . implode("/", [
+            // Set redirect url
+            $redirectUrl = 'tinderone://oauth/';
+            if (!$browser->isMobile()) {
+                $redirectUrl = url('oauth');
+            }
+
+            return redirect()->away($redirectUrl . implode("/", [
                     $data['type'],
                     $data['token']
                 ])
