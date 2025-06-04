@@ -154,12 +154,12 @@ class AuthController extends Controller
             );
 
             // Set redirect url
-            $redirectUrl = 'tinderone://';
-            if (!$browser->isMobile()) {
-                $redirectUrl = url();
+            $redirectUrl = 'https://web.tinderone.ru';
+            if ($browser->isMobile()) {
+                $redirectUrl = 'tinderone://';
             }
 
-            return redirect()->away($redirectUrl . "/oauth/" . implode("/", [
+            return redirect()->away($redirectUrl . "oauth/" . implode("/", [
                     $data['type'],
                     $data['token']
                 ])
