@@ -12,6 +12,7 @@ class UserInformation extends Model
     protected $table = 'user_information';
 
     public $incrementing = false;
+    public $timestamps = false;
 
     public function user()
     {
