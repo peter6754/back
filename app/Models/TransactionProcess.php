@@ -83,7 +83,7 @@ class TransactionProcess extends Model
                 ->leftJoin('bought_subscriptions as sub', 'sub.transaction_id', '=', 't.transaction_id')
                 ->leftJoin('subscription_packages as sp', 'sub.package_id', '=', 'sp.id')
                 ->leftJoin('user_gifts as g', 'g.transaction_id', '=', 't.transaction_id')
-                ->orderBy('t.id', 'desc');
+                ->orderBy('t.created_at', 'desc');
 
             if ($recurrent === true) {
                 $getTransaction->where(function ($query) use ($idWhere) {

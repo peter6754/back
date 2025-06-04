@@ -20,7 +20,7 @@
         "greensms/greensms": "^4.2",
         "laravel-notification-channels/expo": "^1.3",
         "laravel-notification-channels/onesignal": "^2.8",
-        "laravel/framework": "^11.9",
+        "laravel/framework": "^11.45",
         "laravel/socialite": "^5.21",
         "laravel/telescope": "^5.7",
         "laravel/tinker": "^2.9",
