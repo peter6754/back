@@ -154,7 +154,7 @@ class AuthController extends Controller
             );
 
             // Set redirect url
-            $redirectUrl = 'https://web.tinderone.ru';
+            $redirectUrl = 'https://web.tinderone.ru/';
             if ($browser->isMobile()) {
                 $redirectUrl = 'tinderone://';
             }
