@@ -191,7 +191,6 @@ class AuthService
                     name: $user->getName(),
                 );
 
-                $account->user = $user;
                 $type = 'register';
             } else {
                 $type = $account->user->registration_date ? 'login' : 'register';
@@ -204,9 +203,10 @@ class AuthService
             DB::commit();
 
             // Создаем токен аутентификации
+            $userId = $account->user->id ?? $account->id ?? null;
             return [
                 'token' => app(JwtService::class)->encode([
-                    'id' => $account->user->id
+                    'id' => $userId
                 ]),
                 'type' => $type
             ];
