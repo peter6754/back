@@ -152,9 +152,6 @@ class AuthController extends Controller
                 $provider,
                 $profile
             );
-            if (empty($data)) {
-
-            }
 
             // Set redirect url
             $redirectUrl = 'https://web.tinderone.ru/';
