@@ -192,7 +192,6 @@ class AuthService
                     ], 403);
                 }
 
-                if (Secondaryuser::find(""))
                 // Создаем нового пользователя
                 $account = $this->createNewUser(
                     email: $user->getEmail(),
