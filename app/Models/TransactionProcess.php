@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use App\Services\Payments\PaymentsService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Services\Payments\PaymentsService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
@@ -56,6 +56,10 @@ class TransactionProcess extends Model
                     't.type',
                     't.user_id',
                     't.email as user_email',
+
+                    // Данные або (если есть)
+                    't.subscription_id as service_subscription_id',
+                    't.subscriber_id as service_subscriber_id',
 
                     // Данные о сервисном пакете
                     'p.type as package_type',
