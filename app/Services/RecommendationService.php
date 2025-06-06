@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\DB;
 
 class RecommendationService
 {
-    public static function getPotentialMatchesOptimized(array $customer)
+    public static function getTopProfiles(array $customer): \Illuminate\Support\Collection
     {
         $twoDaysAgo = now()->subDays(2)->toDateTimeString();
 

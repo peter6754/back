@@ -47,7 +47,7 @@ class RecommendationsController extends Controller
 
         // Cache not exist? run request!!!
         if (is_null($getData)) {
-            $getData = RecommendationService::getPotentialMatchesOptimized($customer)->toArray();
+            $getData = RecommendationService::getTopProfiles($customer)->toArray();
             foreach ($getData as &$row) {
                 $row->blocked_me = (bool)$row->blocked_me;
             }
