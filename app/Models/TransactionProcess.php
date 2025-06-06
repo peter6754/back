@@ -93,7 +93,7 @@ class TransactionProcess extends Model
             if ($recurrent === true) {
                 $getTransaction->where(function ($query) use ($idWhere) {
                     $query->where('t.type', PaymentsService::ORDER_PRODUCT_SUBSCRIPTION)
-                        ->where('t.status', PaymentsService::ORDER_STATUS_COMPLETE)
+//                        ->where('t.status', PaymentsService::ORDER_STATUS_COMPLETE)
                         ->where('t.email', $idWhere);
                 });
             } else {
