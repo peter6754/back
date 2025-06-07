@@ -37,7 +37,7 @@ class AuthController extends Controller
     /**
      * @param Request $request
      * @OA\Post(
-     *      tags={"Авторизация / Регистрация"},
+     *      tags={"User Authorization"},
      *      path="/auth/login",
      *      summary="Request user authorization",
      *      @OA\RequestBody(
@@ -89,7 +89,7 @@ class AuthController extends Controller
 
     /**
      * @OA\Post(
-     *     tags={"Авторизация / Регистрация"},
+     *     tags={"User Authorization"},
      *     path="/auth/verify-login",
      *     summary="Verify user by code (Don't forget to add the token from the login)",
      *     security={{"bearerAuth":{}}},
