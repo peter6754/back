@@ -35,6 +35,7 @@
 @endif
 
 <x-backpack::menu-item title="Статистика(временно)" icon="la la-question" :link="backpack_url('statistics')"/>
+<x-backpack::menu-item title="Транзакции" icon="la la-question" :link="backpack_url('transaction-process')" />
 
 <span class="nav-separator">Утилиты</span>
 <x-backpack::menu-item title='Log Manager' icon='la la-terminal' :link="backpack_url('log')" />
@@ -53,3 +54,4 @@
         <span>Swagger</span>
     </a>
 </li>
+

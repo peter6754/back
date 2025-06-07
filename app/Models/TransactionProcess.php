@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Services\Payments\PaymentsService;
 use Illuminate\Database\Eloquent\Model;
@@ -9,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 class TransactionProcess extends Model
 {
+    use CrudTrait;
     use HasFactory;
 
     // Указываем таблицу
