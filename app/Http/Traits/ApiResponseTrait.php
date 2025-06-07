@@ -82,56 +82,50 @@ trait ApiResponseTrait
 
     /**
      * @OA\Schema(
-     *     schema="Unauthorized",
-     *     title="[Error] Unauthorized",
-     *     description="Standard Unauthorized response format",
-     *     @OA\Property(
-     *         property="meta",
-     *         type="object",
-     *         @OA\Property(
-     *             property="error",
-     *             type="object",
-     *             @OA\Property(
-     *                 property="code",
-     *                 type="integer",
-     *                 example=4010,
-     *                 description="Application-specific error code"
-     *             ),
-     *             @OA\Property(
-     *                 property="message",
-     *                 type="string",
-     *                 example="Unauthorized",
-     *                 description="Human-readable error message"
-     *             )
-     *         ),
-     *         @OA\Property(
-     *             property="status",
-     *             type="integer",
-     *             example=401,
-     *             description="HTTP status code"
-     *         )
-     *     ),
-     *     @OA\Property(
-     *         property="data",
-     *         type="null",
-     *         example=null,
-     *         description="Empty data payload for error responses"
-     *     )
+     *       schema="Unauthorized",
+     *       title="[Error] Unauthorized",
+     *       description="Standard Unauthorized response format",
+     *       @OA\Property(
+     *           property="meta",
+     *           type="object",
+     *           @OA\Property(
+     *               property="error",
+     *               type="object",
+     *               @OA\Property(
+     *                   property="code",
+     *                   type="integer",
+     *                   example=4010,
+     *                   description="Application-specific error code"
+     *               ),
+     *               @OA\Property(
+     *                   property="message",
+     *                   type="string",
+     *                   example="Unauthorized",
+     *                   description="Human-readable error message"
+     *               )
+     *           ),
+     *           @OA\Property(
+     *               property="status",
+     *               type="integer",
+     *               example=401,
+     *               description="HTTP status code"
+     *           )
+     *       ),
+     *       @OA\Property(
+     *           property="data",
+     *           type="null",
+     *           example=null,
+     *           description="Empty data payload for error responses"
+     *       )
      * )
-     * @return array|JsonResponse
-     * @throws Exception
+     * @return JsonResponse
      */
-    protected function checkingAuth(): JsonResponse|array
+    protected function errorUnauthorized(): JsonResponse
     {
-        $getUser = Secondaryuser::getUser();
-        if (empty($getUser)) {
-            $this->errorResponse(
-                Response::$statusTexts[Response::HTTP_UNAUTHORIZED],
-                4010,
-                Response::HTTP_UNAUTHORIZED
-            )->send();
-            die();
-        }
-        return $getUser;
+        return $this->errorResponse(
+            Response::$statusTexts[Response::HTTP_UNAUTHORIZED],
+            4010,
+            Response::HTTP_UNAUTHORIZED
+        );
     }
 }

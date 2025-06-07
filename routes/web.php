@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 use OpenApi\Generator;
 
 // Recommendations routes
-Route::prefix('recommendations')->group(function () {
+Route::prefix('recommendations')->middleware('auth')->group(function () {
     // Get recommendations
     Route::get('/', [RecommendationsController::class, 'getRecommendations']);
 
@@ -36,21 +36,32 @@ Route::prefix('recommendations')->group(function () {
 Route::prefix('payment')->group(function () {
 
     // Services init payment
-    Route::post('service-package', [PaymentsController::class, 'servicePackage'])->name('payment.service-package');
-    Route::post('subscription', [PaymentsController::class, 'subscription'])->name('payment.subscription');
-    Route::post('gift', [PaymentsController::class, 'gift'])->name('payment.gift');
+    Route::post('service-package', [PaymentsController::class, 'servicePackage'])
+        ->name('payment.service-package')
+        ->middleware('auth');
+    Route::post('subscription', [PaymentsController::class, 'subscription'])
+        ->name('payment.subscription')
+        ->middleware('auth');
+    Route::post('gift', [PaymentsController::class, 'gift'])
+        ->name('payment.userGift')
+        ->middleware('auth');
 
     // Service checking
-    Route::get('status/{id}', [PaymentsController::class, 'status'])->name('payment.status');
+    Route::get('status/{id}', [PaymentsController::class, 'status'])
+        ->name('payment.checkStatus')
+        ->middleware('auth');
 
     // Statuses
-    Route::get('{provider}/result/{event?}', [StatusesController::class, 'resultCallback'])->name('statuses.callback');
-    Route::get('{provider}/success', [StatusesController::class, 'success'])->name('statuses.success');
-    Route::get('{provider}/fail', [StatusesController::class, 'fail'])->name('statuses.fail');
+    Route::get('{provider}/result/{event?}', [StatusesController::class, 'resultCallback'])
+        ->name('statuses.callback');
+    Route::get('{provider}/success', [StatusesController::class, 'success'])
+        ->name('statuses.success');
+    Route::get('{provider}/fail', [StatusesController::class, 'fail'])
+        ->name('statuses.fail');
 });
 
 // Auth routes
-Route::prefix('auth')->group(function () {
+Route::prefix('auth')->middleware('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login'])->name('auth.verify');
     Route::post('verify-login', [AuthController::class, 'verify'])->name('auth.login');
 

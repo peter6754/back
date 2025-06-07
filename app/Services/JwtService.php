@@ -64,42 +64,42 @@ class JwtService
     {
         try {
             if (empty($token)) {
-                throw new Exception('Token cannot be empty');
+                throw new Exception('Token cannot be empty', 401);
             }
 
             $parts = explode('.', $token);
 
             if (count($parts) !== 3) {
-                throw new Exception('Invalid token format');
+                throw new Exception('Invalid token format', 401);
             }
 
             [$header, $payload, $signature] = $parts;
 
             // Проверка подписи
             if (!$this->verifySignature("$header.$payload", $signature)) {
-                throw new Exception('Invalid token signature');
+                throw new Exception('Invalid token signature', 401);
             }
 
             $decodedPayload = json_decode($this->base64UrlDecode($payload), true);
 
             if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new Exception('Malformed payload');
+                throw new Exception('Malformed payload', 401);
             }
 
             // Проверка срока действия
             $now = time();
             if (isset($decodedPayload['exp']) && $decodedPayload['exp'] < ($now - $this->leeway)) {
-                throw new Exception('Token expired');
+                throw new Exception('Token expired', 401);
             }
 
             // Проверка времени выдачи
             if (isset($decodedPayload['nbf']) && $decodedPayload['nbf'] > ($now + $this->leeway)) {
-                throw new Exception('Token not yet valid');
+                throw new Exception('Token not yet valid', 401);
             }
 
             return $decodedPayload;
         } catch (Exception $e) {
-            echo $e->getMessage();
+//            echo $e->getMessage();
             return [];
         }
     }

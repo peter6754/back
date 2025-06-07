@@ -37,20 +37,16 @@ class RecommendationsController extends Controller
      * @return JsonResponse
      * @throws \Exception
      */
-    public function getTopProfiles(): JsonResponse
+    public function getTopProfiles(Request $request): JsonResponse
     {
-        // Checking auth user
-        $customer = $this->checkingAuth();
-
-        // Logic
         try {
             // Checking  cache
-            $cache = 'top-profiles:' . $customer['id'];
+            $cache = 'top-profiles:' . $request->customer['id'];
             $getData = Cache::get($cache);
 
             // Cache not exist? run request!!!
             if (is_null($getData)) {
-                $getData = RecommendationService::getTopProfiles($customer)->toArray();
+                $getData = RecommendationService::getTopProfiles($request->customer)->toArray();
                 foreach ($getData as &$row) {
                     $row->blocked_me = (bool)$row->blocked_me;
                 }
