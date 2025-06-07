@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Recommendations;
 
+use Exception;
 use App\Services\RecommendationService;
 use Illuminate\Support\Facades\Cache;
 use App\Http\Traits\ApiResponseTrait;
@@ -41,21 +42,28 @@ class RecommendationsController extends Controller
         // Checking auth user
         $customer = $this->checkingAuth();
 
-        // Checking  cache
-        $cache = 'top-profiles:' . $customer['id'];
-        $getData = Cache::get($cache);
+        // Logic
+        try {
+            // Checking  cache
+            $cache = 'top-profiles:' . $customer['id'];
+            $getData = Cache::get($cache);
 
-        // Cache not exist? run request!!!
-        if (is_null($getData)) {
-            $getData = RecommendationService::getTopProfiles($customer)->toArray();
-            foreach ($getData as &$row) {
-                $row->blocked_me = (bool)$row->blocked_me;
+            // Cache not exist? run request!!!
+            if (is_null($getData)) {
+                $getData = RecommendationService::getTopProfiles($customer)->toArray();
+                foreach ($getData as &$row) {
+                    $row->blocked_me = (bool)$row->blocked_me;
+                }
+
+                Cache::set($cache, $getData, 15 * 60);
             }
 
-            Cache::set($cache, $getData, 15 * 60);
+            return $this->successResponse(["items" => $getData]);
+        } catch (Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage()
+            );
         }
-
-        return $this->successResponse(["items" => $getData]);
     }
 
 
