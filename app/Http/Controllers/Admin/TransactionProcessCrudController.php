@@ -20,10 +20,10 @@ class TransactionProcessCrudController extends CrudController
     use \Backpack\CRUD\app\Http\Controllers\Operations\UpdateOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\DeleteOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\ShowOperation;
+    use \Backpack\CRUD\app\Http\Controllers\Operations\InlineCreateOperation;
 
     /**
      * Configure the CrudPanel object. Apply settings to all operations.
-     *
      * @return void
      */
     public function setup()
@@ -52,8 +52,8 @@ class TransactionProcessCrudController extends CrudController
                 PaymentsService::ORDER_STATUS_PENDING => 'Ожидание',
                 PaymentsService::ORDER_STATUS_CANCEL => 'Закрыто',
             ])
-            ->whenActive(function($value) {
-                 CRUD::addClause('where', 'status', $value);
+            ->whenActive(function ($value) {
+                CRUD::addClause('where', 'status', $value);
             });
 
         CRUD::filter('Тип')
@@ -63,7 +63,7 @@ class TransactionProcessCrudController extends CrudController
                 PaymentsService::ORDER_PRODUCT_SERVICE => 'Регуляное списание',
                 PaymentsService::ORDER_PRODUCT_GIFT => 'Подарок',
             ])
-            ->whenActive(function($value) {
+            ->whenActive(function ($value) {
                 CRUD::addClause('where', 'type', $value);
             });
 
@@ -84,15 +84,43 @@ class TransactionProcessCrudController extends CrudController
 
         CRUD::filter('email')
             ->type('text')
-            ->whenActive(function($value) {
-                 CRUD::addClause('where', 'email', 'LIKE', "%$value%");
+            ->whenActive(function ($value) {
+                CRUD::addClause('where', 'email', 'LIKE', "%$value%");
             });
+
+        CRUD::button('')->stack('line')->view('crud::buttons.quick')->meta([
+            'icon' => 'la la-envelope',
+            'access' => true,
+            'wrapper' => [
+                'title' => 'Unsubscribe user',
+                'element' => 'a',
+
+//                'target' => function ($entry) {
+//                    if (empty($entry->subscription_id) || empty($entry->subscriber_id)) {
+//                        return '';
+//                    }
+//                    return '_blank';
+//                },
+
+                'href' => function ($entry) {
+                    if (empty($entry->subscription_id) || empty($entry->subscriber_id)) {
+                        return "javascript:alert('Это не подписка');";
+                    }
+                    $buildParams = http_build_query([
+                        "SubscriptionId" => $entry->subscription_id,
+                        "SubscriberId" => $entry->subscriber_id,
+                    ]);
+                    return url('https://auth.robokassa.ru/RecurringSubscriptionPage/Subscription/Unsubscribe?' . $buildParams);
+
+                },
+//                'href' => url('https://auth.robokassa.ru/RecurringSubscriptionPage/Subscription/Unsubscribe?SubscriptionId='.$entry->sub.'&SubscriberId=e5e44d67-0691-4432-8f03-6bab9424f552'),
+            ]
+        ]);
 
     }
 
     /**
      * Define what happens when the List operation is loaded.
-     *
      * @see  https://backpackforlaravel.com/docs/crud-operation-list-entries
      * @return void
      */
@@ -114,7 +142,7 @@ class TransactionProcessCrudController extends CrudController
             ->label('Статус')
             ->type('select_from_array')
             ->options(
-                [   PaymentsService::ORDER_STATUS_COMPLETE => 'Успешно',
+                [PaymentsService::ORDER_STATUS_COMPLETE => 'Успешно',
                     PaymentsService::ORDER_STATUS_PENDING => 'Ожидание',
                     PaymentsService::ORDER_STATUS_CANCEL => 'Закрыто',
                 ]
@@ -127,16 +155,16 @@ class TransactionProcessCrudController extends CrudController
             ->label('Тип')
             ->type('select_from_array')
             ->options(
-                [   PaymentsService::ORDER_PRODUCT_SUBSCRIPTION => 'Пакет',
+                [PaymentsService::ORDER_PRODUCT_SUBSCRIPTION => 'Пакет',
                     PaymentsService::ORDER_PRODUCT_SERVICE => 'Регуляное списание',
                     PaymentsService::ORDER_PRODUCT_GIFT => 'Подарок',
                 ]
             );
+
     }
 
     /**
      * Define what happens when the Create operation is loaded.
-     *
      * @see https://backpackforlaravel.com/docs/crud-operation-create
      * @return void
      */
@@ -153,12 +181,12 @@ class TransactionProcessCrudController extends CrudController
 
     /**
      * Define what happens when the Update operation is loaded.
-     *
      * @see https://backpackforlaravel.com/docs/crud-operation-update
      * @return void
      */
     protected function setupUpdateOperation()
     {
+        $this->setupCreateOperation();
         $this->setupCreateOperation();
     }
 }
