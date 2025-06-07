@@ -34,7 +34,7 @@ class PaymentsController extends Controller
      * @param string $provider
      * @OA\Post(
      *     path="/payment/service-package",
-     *     tags={"Payment"},
+     *     tags={"Платежи"},
      *     summary="Create service package payment",
      *     security={{"bearerAuth":{}}},
      *
@@ -94,7 +94,7 @@ class PaymentsController extends Controller
      * @param string $provider
      * @OA\Post(
      *     path="/payment/subscription",
-     *     tags={"Payment"},
+     *     tags={"Платежи"},
      *     summary="Create subscription payment",
      *     security={{"bearerAuth":{}}},
      *
@@ -155,7 +155,7 @@ class PaymentsController extends Controller
      * @param string $provider
      * @OA\Post(
      *      path="/payment/gift",
-     *      tags={"Payment"},
+     *      tags={"Платежи"},
      *      summary="Create gift payment",
      *      security={{"bearerAuth":{}}},
      *
@@ -222,7 +222,7 @@ class PaymentsController extends Controller
      * @param $id
      * @OA\Get(
      *     path="/payment/status/{id}",
-     *     tags={"Payment"},
+     *     tags={"Платежи"},
      *     summary="Get payment status by ID",
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
