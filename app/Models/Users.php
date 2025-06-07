@@ -47,19 +47,4 @@ class Users extends Authenticatable
             'password' => 'hashed',
         ];
     }
-
-    /**
-     * @return array|false
-     * @throws \Exception
-     */
-    protected static function getUser()
-    {
-        // Decode JWT token
-        if (!$payload = app(JwtService::class)->decode(request()->bearerToken())) {
-            return null;
-        }
-
-        // Get user
-        return self::select('*')->find($payload['id']);
-    }
 }

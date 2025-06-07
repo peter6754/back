@@ -154,30 +154,6 @@ class Secondaryuser extends Model
         });
     }
 
-
-    /**
-     * @return array|null
-     * @throws \Exception
-     */
-    protected function getUser(): array|null
-    {
-        // Get current token
-        $token = request()->bearerToken() ?? env("JWT_DEBUG", "");
-
-        // Decode JWT Token
-        if (!$payload = app(JwtService::class)->decode($token)) {
-            return null;
-        }
-
-        // Get user data
-        if (!$payload = self::find($payload['id'])) {
-            return null;
-        }
-
-        // User data
-        return $payload->toArray();
-    }
-
     /**
      * Get the user's gender options.
      * @return array
