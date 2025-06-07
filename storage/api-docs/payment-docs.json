@@ -103,7 +103,7 @@
         "/payment/service-package": {
             "post": {
                 "tags": [
-                    "Payment"
+                    "Платежи"
                 ],
                 "summary": "Create service package payment",
                 "operationId": "72b2a08f2ac2a087b58035affbd3d25c",
@@ -159,7 +159,7 @@
         "/payment/subscription": {
             "post": {
                 "tags": [
-                    "Payment"
+                    "Платежи"
                 ],
                 "summary": "Create subscription payment",
                 "operationId": "4668c7fe0308a8269e801f5d698a66ea",
@@ -215,7 +215,7 @@
         "/payment/gift": {
             "post": {
                 "tags": [
-                    "Payment"
+                    "Платежи"
                 ],
                 "summary": "Create gift payment",
                 "operationId": "188ba99f97935ce4934b166b8529baf5",
@@ -277,7 +277,7 @@
         "/payment/status/{id}": {
             "get": {
                 "tags": [
-                    "Payment"
+                    "Платежи"
                 ],
                 "summary": "Get payment status by ID",
                 "operationId": "9b4a64e8a17a2f4f9f3067a0fed12637",
@@ -479,8 +479,8 @@
             "description": "Списки рекомендаций и прочего"
         },
         {
-            "name": "Payment",
-            "description": "Payment"
+            "name": "Платежи",
+            "description": "Управление платежами"
         }
     ]
 }
