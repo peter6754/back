@@ -61,7 +61,7 @@ Route::prefix('payment')->group(function () {
 });
 
 // Auth routes
-Route::prefix('auth')->middleware('auth')->group(function () {
+Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login'])->name('auth.verify');
     Route::post('verify-login', [AuthController::class, 'verify'])->name('auth.login');
 
