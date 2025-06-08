@@ -124,6 +124,32 @@ class TransactionProcess extends Model
     }
 
     /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function boughtSubscription()
+    {
+        return $this->hasOne(BoughtSubscriptions::class, 'transaction_id', 'transaction_id');
+    }
+
+    /**
+     * @return array
+     */
+    public static function getTodaySubscriptionsStats(): array
+    {
+        $result = self::where('status', 'succeeded')
+            ->where('type', PaymentsService::ORDER_PRODUCT_SUBSCRIPTION)
+            ->where('price', '>', 0)
+            ->whereDate('purchased_at', now()->toDateString())
+            ->selectRaw('COUNT(*) as count, SUM(price) as total')
+            ->first();
+
+        return [
+            'count' => (int) $result->count,
+            'total' => (float) $result->total,
+        ];
+    }
+
+    /**
      * Генерация transaction_id при создании
      */
     protected static function boot()

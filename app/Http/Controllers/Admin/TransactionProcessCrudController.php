@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Requests\TransactionProcessRequest;
 
+use App\Models\TransactionProcess;
 use App\Services\Payments\PaymentsService;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
+use Backpack\CRUD\app\Library\Widget;
 
 /**
  * Class TransactionProcessCrudController
@@ -34,6 +36,21 @@ class TransactionProcessCrudController extends CrudController
         CRUD::denyAccess(['update', 'delete', 'create']);
         CRUD::orderBy('created_at', 'desc');
 
+        $today = TransactionProcess::getTodaySubscriptionsStats();
+
+        Widget::add()->to('before_content')->type('div')->class('row')->content([
+            Widget::make()
+                ->type('progress')
+                ->class('card mb-3')
+                ->statusBorder('start')
+                ->accentColor('green')
+                ->ribbon(['top', 'la-ruble-sign'])
+                ->progressClass('progressbar')
+                ->value("Куплено подписок: {$today['count']} <br>Сумма: {$today['total']} ₽")
+                ->description('Статистика подписок за сегодня'),
+        ]);
+
+
         CRUD::addColumn([
             'name' => 'user_profile',
             'label' => 'Профиль',
@@ -43,6 +60,27 @@ class TransactionProcessCrudController extends CrudController
                 $url = url('/admin/secondaryuser/' . $entry->user_id . '/show');
                 return '<a href="' . $url . '" target="_blank">Профиль</a>';
             },
+        ]);
+
+        CRUD::addColumn([
+            'name' => 'subscription_info',
+            'label' => 'Подписка',
+            'type' => 'closure',
+            'function' => function($entry) {
+                $package = optional($entry->boughtSubscription)->package;
+                $subscription = optional($package)->subscription;
+                $term = optional($package)->term;
+
+                if (!$subscription || !$term) return '—';
+
+                $termMap = [
+                    'one_month' => '1 мес',
+                    'six_months' => '6 мес',
+                    'year' => '12 мес',
+                ];
+
+                return $subscription->type . ' (' . ($termMap[$term] ?? $term) . ')';
+            }
         ]);
 
         CRUD::filter('Статус')
@@ -86,6 +124,34 @@ class TransactionProcessCrudController extends CrudController
             ->type('text')
             ->whenActive(function ($value) {
                 CRUD::addClause('where', 'email', 'LIKE', "%$value%");
+            });
+
+        CRUD::filter('term')
+            ->type('dropdown')
+            ->label('Длительность подписки')
+            ->values([
+                'one_month' => '1 мес',
+                'six_months' => '6 мес',
+                'year' => '12 мес',
+            ])
+            ->whenActive(function($value) {
+                CRUD::addClause('whereHas', 'boughtSubscription.package', function($q) use ($value) {
+                    $q->where('term', $value);
+                });
+            });
+
+        CRUD::filter('type')
+            ->type('dropdown')
+            ->label('Название пакета')
+            ->values([
+                'Tinderone Plus+' => 'Tinderone Plus+',
+                'Tinderone Gold' => 'Tinderone Gold',
+                'Tinderone Premium' => 'Tinderone Premium',
+            ])
+            ->whenActive(function($value) {
+                CRUD::addClause('whereHas', 'boughtSubscription.package.subscription', function($q) use ($value) {
+                    $q->where('type', $value);
+                });
             });
 
         CRUD::button('')->stack('line')->view('crud::buttons.quick')->meta([
