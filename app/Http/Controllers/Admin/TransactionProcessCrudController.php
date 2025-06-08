@@ -59,8 +59,8 @@ class TransactionProcessCrudController extends CrudController
         CRUD::filter('Тип')
             ->type('dropdown')
             ->values([
-                PaymentsService::ORDER_PRODUCT_SUBSCRIPTION => 'Пакет',
-                PaymentsService::ORDER_PRODUCT_SERVICE => 'Регуляное списание',
+                PaymentsService::ORDER_PRODUCT_SUBSCRIPTION => 'Подписка',
+                PaymentsService::ORDER_PRODUCT_SERVICE => 'Пакет сервис',
                 PaymentsService::ORDER_PRODUCT_GIFT => 'Подарок',
             ])
             ->whenActive(function ($value) {
@@ -149,8 +149,8 @@ class TransactionProcessCrudController extends CrudController
             ->label('Тип')
             ->type('select_from_array')
             ->options(
-                [PaymentsService::ORDER_PRODUCT_SUBSCRIPTION => 'Пакет',
-                    PaymentsService::ORDER_PRODUCT_SERVICE => 'Регуляное списание',
+                [PaymentsService::ORDER_PRODUCT_SUBSCRIPTION => 'Подписка',
+                    PaymentsService::ORDER_PRODUCT_SERVICE => 'Сервсис пакет',
                     PaymentsService::ORDER_PRODUCT_GIFT => 'Подарок',
                 ]
             );
