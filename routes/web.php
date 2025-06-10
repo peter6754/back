@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 use OpenApi\Generator;
 
 // Recommendations routes
-Route::prefix('recommendations')->middleware('auth')->group(function () {
+Route::prefix('recommendations')->middleware(['auth', 'cors'])->group(function () {
     // Get recommendations
     Route::get('/', [RecommendationsController::class, 'getRecommendations']);
 
@@ -33,7 +33,7 @@ Route::prefix('recommendations')->middleware('auth')->group(function () {
 });
 
 // Payments system routes
-Route::prefix('payment')->group(function () {
+Route::prefix('payment')->middleware(['cors'])->group(function () {
 
     // Services init payment
     Route::post('service-package', [PaymentsController::class, 'servicePackage'])
@@ -61,7 +61,7 @@ Route::prefix('payment')->group(function () {
 });
 
 // Auth routes
-Route::prefix('auth')->group(function () {
+Route::prefix('auth')->middleware(['cors'])->group(function () {
     Route::post('login', [AuthController::class, 'login'])->name('auth.verify');
     Route::post('verify-login', [AuthController::class, 'verify'])->name('auth.login');
 
