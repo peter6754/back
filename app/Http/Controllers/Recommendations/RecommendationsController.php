@@ -42,30 +42,17 @@ class RecommendationsController extends Controller
         try {
             // Checking  cache
             $cache = 'top-profiles:' . $request->customer['id'];
-//            $getData = Cache::get($cache);
+            $getData = Cache::get($cache);
 
             // Cache not exist? run request!!!
-//            if (is_null($getData)) {
-                switch ($request['aglo']){
-                    case '1':
-
-                        $getData = RecommendationService::getTopProfiles1($request->customer)->toArray();
-                        break;
-                        case '2':
-
-                            $getData = RecommendationService::getTopProfiles2($request->customer)->toArray();
-                        break;
-                    default:
-
-                        $getData = RecommendationService::getTopProfiles($request->customer)->toArray();
-                        break;
-                }
+            if (is_null($getData)) {
+                $getData = RecommendationService::getTopProfiles($request->customer)->toArray();
                 foreach ($getData as &$row) {
                     $row->blocked_me = (bool)$row->blocked_me;
                 }
 
-//                Cache::set($cache, $getData, 15 * 60);
-//            }
+                Cache::set($cache, $getData, 15 * 60);
+            }
 
             return $this->successResponse(["items" => $getData]);
         } catch (Exception $e) {
