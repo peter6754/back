@@ -22,13 +22,12 @@ return [
         'auth/*'
     ],
 
-    'allowed_methods' => ['*'],
+    'allowed_headers' => ['Content-Type, Authorization'],
+    'allowed_methods' => ['OPTIONS, POST, GET'],
 
     'allowed_origins' => ['*'],
 
     'allowed_origins_patterns' => [],
-
-    'allowed_headers' => ['*'],
 
     'exposed_headers' => [],
 
