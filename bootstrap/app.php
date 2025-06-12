@@ -13,10 +13,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Устанавливаем настройки cors (на всем проекте)
+        $middleware->use([
+            \Illuminate\Http\Middleware\HandleCors::class
+        ]);
+
         // Убираем csrf верификацию (на всем проекте)
         $middleware->validateCsrfTokens(except: [
-            'payment/*',
-            'auth/*',
             '*',
         ]);
 
