@@ -23,7 +23,7 @@ return [
     ],
     'allowed_headers' => ['Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN, cache-control'],
     'allowed_origins' => ['*.tinderone.app', '*.tinderone.ru'],
-    'allowed_methods' => ['GET, POST, PUT, DELETE, OPTIONS'],
+    'allowed_methods' => ['OPTIONS, DELETE, POST, GET'],
     'allowed_origins_patterns' => [],
     'supports_credentials' => false,
     'exposed_headers' => [],
