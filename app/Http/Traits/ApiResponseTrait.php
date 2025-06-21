@@ -71,7 +71,7 @@ trait ApiResponseTrait
         return response()->json([
             'meta' => [
                 'error' => [
-                    'code' => $errorCode,
+                    'code' => (empty($errorCode) ? 9999 : $errorCode),
                     'message' => $message
                 ],
                 'status' => $httpCode,
