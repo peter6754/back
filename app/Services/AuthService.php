@@ -66,6 +66,7 @@ class AuthService
                 // Отправка SMS зарегистрированному пользователю
                 Log::info("Login, send SMS, code {$code}, user: " . json_encode($user));
                 $this->greenSmsService->sendSMS($userPhone, "Ваш код подтверждения: {$code}");
+                $type = 'login';
             } else {
                 // Отправка push-уведомления новому пользователю
                 $this->expoService->sendPushNotification(
@@ -73,6 +74,7 @@ class AuthService
                     (string)$code,
                     "Ваш код подтверждения"
                 );
+                $type = 'register';
             }
         } catch (\Exception $e) {
             Log::error($e);
@@ -83,6 +85,7 @@ class AuthService
 
         return [
             'message' => 'Verification code was sent to your phone',
+            'type' => $type,
             'token' => app(JwtService::class)->encode([
                 'phone' => $userPhone,
                 'code' => $hashedCode
