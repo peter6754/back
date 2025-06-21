@@ -33,6 +33,22 @@ Route::group([
     Route::crud('verification-requests', 'VerificationRequestsCrudController');
     Route::crud('in-queue-for-delete-user', 'InQueueForDeleteUserCrudController');
     Route::crud('transaction-process', 'TransactionProcessCrudController');
+    Route::crud('mail-queue', 'MailQueueCrudController');
+    Route::crud('mail-template', 'MailTemplateCrudController');
+
+// Дополнительные маршруты
+    Route::get('mail-template/{id}/preview', 'MailTemplateCrudController@preview')
+        ->name('mail-template.preview');
+    Route::get('mail-queue/{id}/resend', 'MailQueueCrudController@resend')
+        ->name('mail-queue.resend');
+
+    // Отправка писем
+    Route::get('send-mail', 'SendMailController@showForm')
+        ->name('send-mail.form');
+    Route::post('send-mail', 'SendMailController@send')
+        ->name('send-mail.send');
+    Route::get('send-mail/template/{id}', 'SendMailController@getTemplate')
+        ->name('send-mail.template');
 }); // this should be the absolute last line of this file
 
 /**

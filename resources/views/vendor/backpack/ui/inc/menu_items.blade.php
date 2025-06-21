@@ -37,6 +37,12 @@
 <x-backpack::menu-item title="Статистика(временно)" icon="la la-question" :link="backpack_url('statistics')"/>
 <x-backpack::menu-item title="Транзакции" icon="la la-question" :link="backpack_url('transaction-process')" />
 
+<x-backpack::menu-dropdown title="Почтовая система" icon="la la-envelope">
+    <x-backpack::menu-dropdown-item title="Шаблоны писем" icon="la la-file-text-o" :link="backpack_url('mail-template')" />
+    <x-backpack::menu-dropdown-item title="Очередь писем" icon="la la-list" :link="backpack_url('mail-queue')" />
+    <x-backpack::menu-dropdown-item title="Отправить письмо" icon="la la-paper-plane" :link="backpack_url('send-mail')" />
+</x-backpack::menu-dropdown>
+
 <span class="nav-separator">Утилиты</span>
 <x-backpack::menu-item title='Log Manager' icon='la la-terminal' :link="backpack_url('log')" />
 <x-backpack::menu-item title='Backups' icon='la la-hdd-o' :link="backpack_url('backup')" />
