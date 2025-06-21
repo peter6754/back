@@ -109,8 +109,8 @@ class AuthService
             throw new \Exception("User is deactivated");
         }
 
-        // Проверяем код (7878 - тестовый код)
-        if ($body['code'] !== '7878' && md5($body['code']) === $tokenPayload['code']) {
+        // Проверяем код (1409 - тестовый код)
+        if ($body['code'] !== '7878' && md5($body['code']) !== $tokenPayload['code']) {
             Log::warning("verifyLogin is INVALID CODE", [
                 'body' => $body,
                 'tokenPayload' => $tokenPayload,
