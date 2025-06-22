@@ -30,21 +30,9 @@ return Application::configure(basePath: dirname(__DIR__))
     })
 
     ->withSchedule(function (Schedule $schedule) {
-        // Backpack backup system делаем резервную копию проекта!
-//        $schedule->command('backup:clean')->daily()->at('04:00');
-//        $schedule->command('backup:run')->daily()->at('05:00');
-
         // Обработка очереди писем каждые 5 минут
         $schedule->command('mail:process-queue')
-            ->everyFiveMinutes()
-            ->withoutOverlapping();
-
-        // Очистка старых писем каждый день в 2:00
-        //        $schedule->command('mail:clean-old --days=30')
-        //            ->dailyAt('02:00');
-    })
-
-    ->withExceptions(function (Exceptions $exceptions) {
-        //
+            ->withoutOverlapping(false)
+            ->everyFiveMinutes();
     })
     ->create();
