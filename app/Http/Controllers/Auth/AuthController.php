@@ -92,7 +92,16 @@ class AuthController extends Controller
      *     tags={"User Authorization"},
      *     path="/auth/verify-login",
      *     summary="Verify user by code (Don't forget to add the token from the login)",
-     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *          name="Login-Token",
+     *          in="header",
+     *          description="Login token",
+     *          required=true,
+     *          @OA\Schema(
+     *              example="LOGIN_JWT_TOKEN",
+     *              type="string",
+     *          )
+     *     ),
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
@@ -118,7 +127,10 @@ class AuthController extends Controller
         ]);
 
         try {
-            $tokenPayload = app(JwtService::class)->decode(request()->bearerToken() ?? "");
+            $tokenPayload = app(JwtService::class)->decode(
+                request()->header("Login-Token") ??
+                request()->bearerToken() ?? ""
+            );
             $response = $this->authService->verifyLogin($validatedData, $tokenPayload);
 
             return $this->successResponse($response,

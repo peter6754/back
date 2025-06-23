@@ -21,7 +21,7 @@ return [
         'payment/*',
         'auth/*'
     ],
-    'allowed_headers' => ['Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN, cache-control'],
+    'allowed_headers' => ['Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN, cache-control, Login-Token'],
     'allowed_origins' => ['*.tinderone.app', '*.tinderone.ru'],
     'allowed_methods' => ['OPTIONS, DELETE, POST, GET'],
     'allowed_origins_patterns' => [],
