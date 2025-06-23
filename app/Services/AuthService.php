@@ -81,7 +81,6 @@ class AuthService
             'message' => 'Verification code was sent to your phone',
             'type' => $type,
             'token' => app(JwtService::class)->encode([
-                'engine' => 'laravel',
                 'phone' => $userPhone,
                 'code' => $hashedCode
             ], 9 * 60)
