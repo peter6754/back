@@ -152,6 +152,7 @@ class AuthController extends Controller
                 $provider,
                 $profile
             );
+            Log::debug("Social authentication debug:", $data);
 
             // Set redirect url
             $redirectUrl = 'https://web.tinderone.ru/';
