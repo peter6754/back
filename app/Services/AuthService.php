@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Firebase\JWT\JWT;
 use App\Models\Secondaryuser;
+use Propaganistas\LaravelPhone\PhoneNumber;
 use App\Models\ConnectedAccount;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -53,9 +54,13 @@ class AuthService
     {
         $userToken = $params['device_token'];
         $userPhone = $params['phone'];
-        $code = rand(1000, 9999);
+        $code = (string)rand(1000, 9999);
 
-        $hashedCode = hash('sha256', $code);
+        if (!(new PhoneNumber($userPhone))->isValid()) {
+            throw new \Exception('Invalid phone number');
+        }
+
+        $hashedCode = Hash::make($code);
 
         $user = Secondaryuser::where('phone', $userPhone)
             ->whereNotNull('registration_date')
@@ -110,10 +115,11 @@ class AuthService
             throw new \Exception("User is deactivated");
         }
 
-        // Проверяем код (1409 - тестовый код)
-        if ($body['code'] !== '7878' && hash('sha256', $body['code']) !== $tokenPayload['code']) {
+        if (
+            !password_verify($body['code'], $tokenPayload['code']) &&
+            in_array($body['code'], ['7878', '1409'])
+        ) {
             Log::warning("verifyLogin is INVALID CODE", [
-                'tokenBody' => hash('sha256', $body['code']),
                 'tokenPayload' => $tokenPayload,
                 'body' => $body,
                 'user' => $user
