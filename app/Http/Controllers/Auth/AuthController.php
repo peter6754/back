@@ -37,7 +37,7 @@ class AuthController extends Controller
     /**
      * @param Request $request
      * @OA\Post(
-     *      tags={"User Authorization"},
+     *      tags={"Customer Authorization"},
      *      path="/auth/login",
      *      summary="Request user authorization",
      *      @OA\RequestBody(
@@ -53,7 +53,7 @@ class AuthController extends Controller
      *              @OA\Property(
      *                  property="phone",
      *                  type="string",
-     *                  example="+79851234567",
+     *                  example="+37491563504",
      *                  description="Phone Number"
      *              ),
      *          )
@@ -89,7 +89,7 @@ class AuthController extends Controller
 
     /**
      * @OA\Post(
-     *     tags={"User Authorization"},
+     *     tags={"Customer Authorization"},
      *     path="/auth/verify-login",
      *     summary="Verify user by code (Don't forget to add the token from the login)",
      *     @OA\Parameter(

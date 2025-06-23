@@ -27,6 +27,14 @@ class AuthService
     protected GreenSMSService $greenSmsService;
 
     /**
+     * Специальные номера для сервисов... На них не отправляются sms и подрезанный интерфейс
+     * @var string[]
+     */
+    public array $specialNumbers = [
+        "+37491563504"
+    ];
+
+    /**
      * @var int
      */
     protected int $codeExpiration = 9;
@@ -69,7 +77,9 @@ class AuthService
         if ($user) {
             // Отправка SMS зарегистрированному пользователю
             Log::info("Login, send SMS, code {$code}, user: " . json_encode($user));
-            $this->greenSmsService->sendSMS($userPhone, "Ваш код подтверждения: {$code}");
+            if (!in_array($userPhone, $this->specialNumbers)) {
+                $this->greenSmsService->sendSMS($userPhone, "Ваш код подтверждения: {$code}");
+            }
             $type = 'login';
         } else {
             // Отправка push-уведомления новому пользователю
@@ -146,9 +156,7 @@ class AuthService
         ]);
 
         // ToDo: Временный затык на ограничение платежек
-        $phone = preg_replace("/[^0-9]/", "", $tokenPayload['phone']);
-        $shortNumbers = ["37491563504"];
-        $mode = in_array($phone, $shortNumbers) ?
+        $mode = in_array($tokenPayload['phone'], $this->specialNumbers) ?
             "short" :
             "full";
 
