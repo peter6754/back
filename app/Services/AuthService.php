@@ -171,6 +171,7 @@ class AuthService
      * @param string $provider
      * @param object $user
      * @return array
+     * @throws \Exception
      */
     public function loginBySocial(string $provider, object $user): array
     {
@@ -245,9 +246,7 @@ class AuthService
     {
         return DB::transaction(function () use ($phone, $email, $provider, $name, $withSocialSettings) {
             // Создаем основную запись пользователя
-            $userData = [
-//                'registration_date' => now()
-            ];
+            $userData = [];
 
             if ($phone) {
                 $userData['phone'] = $phone;
