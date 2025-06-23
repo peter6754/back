@@ -124,7 +124,7 @@ class AuthService
 
         // Создаем пользователя, если не существует
         if (!$user) {
-            $this->createNewUser(phone: $tokenPayload['phone']);
+            $user = $this->createNewUser(phone: $tokenPayload['phone']);
             $type = 'register';
         } else {
             $type = $user->registration_date ? 'login' : 'register';
