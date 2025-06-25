@@ -11,16 +11,10 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use GuzzleHttp\Exception\GuzzleException;
 use App\Services\External\GreenSMSService;
-use App\Services\External\ExpoNotificationService;
-use Illuminate\Http\Exceptions\HttpResponseException;
+use App\Services\Notifications\NotificationService;
 
 class AuthService
 {
-    /**
-     * @var ExpoNotificationService
-     */
-    protected ExpoNotificationService $expoService;
-
     /**
      * @var GreenSMSService
      */
@@ -40,16 +34,13 @@ class AuthService
     protected int $codeExpiration = 9;
 
     /**
-     * @param ExpoNotificationService $expoService
      * @param GreenSMSService $greenSmsService
      */
     public function __construct(
-        ExpoNotificationService $expoService,
-        GreenSMSService         $greenSmsService
+        GreenSMSService $greenSmsService
     )
     {
         $this->greenSmsService = $greenSmsService;
-        $this->expoService = $expoService;
     }
 
     /**
@@ -84,10 +75,8 @@ class AuthService
         } else {
             // Отправка push-уведомления новому пользователю
             Log::info("Login, send push, code {$code}, user: " . json_encode($user));
-            $this->expoService->sendPushNotification(
-                [$userToken],
-                $code,
-                "Ваш код подтверждения"
+            (new NotificationService())->sendPushNotification($userToken,
+                $code, "Ваш код подтверждения"
             );
             $type = 'register';
         }
