@@ -178,9 +178,9 @@ class AuthService
 
             throw new \Exception("User is deactivated");
         }
-        if (!$account) {
+        if (empty($account)) {
             $getUser = Secondaryuser::where('email', $user->getEmail())->first();
-            if (!$getUser) {
+            if (!empty($getUser)) {
                 throw new \Exception("User already exists " . PHP_EOL .
                     "account: " . print_r($account, true) . PHP_EOL .
                     "getUser: " . print_r($getUser, true) . PHP_EOL .
