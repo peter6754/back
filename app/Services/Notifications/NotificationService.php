@@ -73,7 +73,7 @@ class NotificationService
     {
         if (preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i', $token)) {
             return 'onesignal';
-        } else if (preg_match('/^ExponentPushToken\[[a-zA-Z0-9]+\]$/', $token)) {
+        } else if (preg_match('/^ExponentPushToken\[[a-zA-Z0-9_-]+\]$/', $token)) {
             return 'expo';
         }
         return 'unknown';
