@@ -135,7 +135,7 @@ class AuthService
 
             // Если это первая регистрация, обновляем дату
             if (!$user->registration_date) {
-                $user->update(['registration_date' => now()]);
+//                $user->update(['registration_date' => now()]);
             }
         }
 
@@ -178,9 +178,9 @@ class AuthService
 
             throw new \Exception("User is deactivated");
         }
-        if (empty($account)) {
+        if (!$account) {
             $getUser = Secondaryuser::where('email', $user->getEmail())->first();
-            if (!empty($getUser)) {
+            if (!$getUser) {
                 throw new \Exception("User already exists " . PHP_EOL .
                     "account: " . print_r($account, true) . PHP_EOL .
                     "getUser: " . print_r($getUser, true) . PHP_EOL .
@@ -201,7 +201,7 @@ class AuthService
 
             // Если это первая регистрация, обновляем дату
             if (!$account->user->registration_date) {
-                $account->user->update(['registration_date' => now()]);
+//                $account->user->update(['registration_date' => now()]);
             }
         }
         DB::commit();
