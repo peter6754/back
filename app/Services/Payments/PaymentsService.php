@@ -143,7 +143,8 @@ class PaymentsService extends Manager
 
         // Calculate product price
         $price = $package['price'][$gender] * $package['count'];
-        $discount = ((100 - $package['stock']) / 100);
+//        $discount = ((100 - $package['stock']) / 100);
+        $discount = 1;
 
         // Create payment
         return $this->createPayment($provider, [
