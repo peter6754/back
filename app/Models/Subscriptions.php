@@ -11,6 +11,11 @@ class Subscriptions extends Model
     protected $table = 'subscriptions';
     protected $fillable = ['type'];
 
+    public function services()
+    {
+        return $this->hasMany(SubscriptionService::class, 'subscription_id');
+    }
+
     public function packages()
     {
         return $this->hasMany(SubscriptionPackages::class, 'subscription_id');

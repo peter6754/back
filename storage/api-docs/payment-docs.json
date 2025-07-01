@@ -9,6 +9,83 @@
         "version": "1.0.1"
     },
     "paths": {
+        "/application/prices/subscriptions/{id}": {
+            "get": {
+                "tags": [
+                    "App Settings"
+                ],
+                "summary": "Price for subscriptions",
+                "operationId": "2c6c11c897775d741d7018b3882b7147",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Type (на backend-е конвертируем в numeric, все лишнее удаляем)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "1 - Plus",
+                                "2 - Gold",
+                                "3 - Premium"
+                            ],
+                            "example": "2 - Gold"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                },
+                                "example": {
+                                    "meta": {
+                                        "error": null,
+                                        "status": 200
+                                    },
+                                    "data": {
+                                        "type": "Tinderone Plus+",
+                                        "subscription_services": [
+                                            {
+                                                "description": "Безлимит лайков! Ставь столько лайков, сколько захочешь!",
+                                                "image": "2,277103501936"
+                                            }
+                                        ],
+                                        "subscription_packages": [
+                                            {
+                                                "id": 1,
+                                                "is_bestseller": false,
+                                                "stock": 0,
+                                                "term": "one_month",
+                                                "price_per_month": "399"
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Unauthorized"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/application/prices/service-package": {
             "get": {
                 "tags": [
@@ -33,7 +110,7 @@
                     }
                 ],
                 "responses": {
-                    "201": {
+                    "200": {
                         "description": "Successful operation",
                         "content": {
                             "application/json": {
@@ -468,6 +545,42 @@
                     }
                 ]
             }
+        },
+        "/recommendations": {
+            "get": {
+                "tags": [
+                    "Recommendations"
+                ],
+                "summary": "Get profiles",
+                "operationId": "4ac6b891d60dfd6730b80c2e3f4fe988",
+                "responses": {
+                    "201": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Unauthorized"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -550,13 +663,13 @@
             "name": "Customer Authorization"
         },
         {
+            "name": "App Settings"
+        },
+        {
             "name": "Recommendations"
         },
         {
             "name": "Payments"
-        },
-        {
-            "name": "App Settings"
         }
     ]
 }
