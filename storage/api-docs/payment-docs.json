@@ -155,6 +155,62 @@
                 ]
             }
         },
+        "/application/prices/gifts/categories": {
+            "get": {
+                "tags": [
+                    "App Settings"
+                ],
+                "summary": "Get gift categories",
+                "operationId": "6ba1cae5692c963acfe685ceb185bd94",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                },
+                                "example": {
+                                    "meta": {
+                                        "error": null,
+                                        "status": 200
+                                    },
+                                    "data": {
+                                        "categories": [
+                                            {
+                                                "id": 1,
+                                                "name": "Цветы",
+                                                "image": "1,26f1bdaeb0c8"
+                                            }
+                                        ],
+                                        "popular_gifts": {
+                                            "image": "2,26f56d34ec55",
+                                            "category_id": 1,
+                                            "id": 1
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Unauthorized"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/auth/login": {
             "post": {
                 "tags": [
@@ -663,13 +719,13 @@
             "name": "Customer Authorization"
         },
         {
-            "name": "App Settings"
-        },
-        {
             "name": "Recommendations"
         },
         {
             "name": "Payments"
+        },
+        {
+            "name": "App Settings"
         }
     ]
 }

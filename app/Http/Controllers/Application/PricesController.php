@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Application;
 
 use Exception;
 use Illuminate\Http\Request;
+use App\Models\GiftCategory;
 use App\Models\Subscriptions;
 use App\Models\ServicePackages;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\ApiResponseTrait;
 
@@ -192,6 +194,83 @@ class PricesController extends Controller
 
             return $this->successResponse([
                 'items' => $packages
+            ]);
+        } catch (Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage(),
+                $e->getCode()
+            );
+        }
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/application/prices/gifts/categories",
+     *     tags={"App Settings"},
+     *     summary="Get gift categories",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Response(
+     *          response=200,
+     *          description="Successful operation",
+     *          @OA\JsonContent(
+     *              ref="#/components/schemas/SuccessResponse",
+     *              example={
+     *                  "meta": {
+     *                      "error": null,
+     *                      "status": 200
+     *                  },
+     *                  "data": {
+     *                      "categories": {
+     *                          {
+     *                              "id": 1,
+     *                              "name": "Цветы",
+     *                              "image": "1,26f1bdaeb0c8"
+     *                          }
+     *                      },
+     *                      "popular_gifts": {
+     *                          "image": "2,26f56d34ec55",
+     *                          "category_id": 1,
+     *                          "id": 1
+     *                      }
+     *                  }
+     *              }
+     *          )
+     *     ),
+     *
+     *     @OA\Response(
+     *         @OA\JsonContent(ref="#/components/schemas/Unauthorized"),
+     *         description="Unauthorized",
+     *         response=401
+     *     )
+     * )
+     * @return JsonResponse
+     * @throws Exception
+     */
+    public function getGiftCategories(): JsonResponse
+    {
+        try {
+            // Все категории подарков
+            $categories = GiftCategory::all();
+
+            // Популярные подарки (по количеству в user_gifts)
+            $popular_gifts = DB::table('user_gifts as ug')
+                ->leftJoin('gifts as g', 'g.id', '=', 'ug.gift_id')
+                ->select('g.image', 'g.category_id', 'g.id', DB::raw('COUNT(ug.gift_id) as count'))
+                ->groupBy('g.id', 'g.image', 'g.category_id')
+                ->orderByDesc('count')
+                ->limit(2)
+                ->get();
+
+            return $this->successResponse([
+                'categories' => $categories,
+                'popular_gifts' => $popular_gifts->map(function ($popular_gifts) {
+                    return [
+                        "image" => $popular_gifts->image,
+                        "category_id" => $popular_gifts->category_id,
+                        "id" => $popular_gifts->id
+                    ];
+                }),
             ]);
         } catch (Exception $e) {
             return $this->errorResponse(
