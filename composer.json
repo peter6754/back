@@ -88,7 +88,7 @@
     "prefer-stable": true,
     "repositories": [
         {
-            "url": "https://gitlab.tinderone.ru/libraries/backpack-pro.git",
+            "url": "git@gitlab.tinderone.ru:libraries/backpack-pro.git",
             "type": "git"
         }
     ]
