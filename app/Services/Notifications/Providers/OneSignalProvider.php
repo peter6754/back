@@ -57,7 +57,6 @@ class OneSignalProvider
             'app_id' => $this->appId
         ];
 
-//        print_r($params);
         // Merge default parameters with custom ones
         $requestParams = array_merge($defaultParams, [
             'contents' => [
@@ -66,8 +65,11 @@ class OneSignalProvider
             'headings' => [
                 'en' => $params['title'],
             ],
-            "include_aliases" => [
-                "onesignal_id" => [
+            'include_aliases' => [
+                'external_id' => [
+                    $params['to']
+                ],
+                'onesignal_id' => [
                     $params['to']
                 ]
             ]
