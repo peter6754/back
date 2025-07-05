@@ -8,13 +8,15 @@ use Illuminate\Database\Eloquent\Model;
 class UserActivity extends Model
 {
     protected $table = 'user_activity';
+
     public $timestamps = false;
+
     protected $fillable = [
         'user_id',
         'last_activity',
         'session_start',
         'session_end',
-        'id'
+        'id',
     ];
 
     public function user()
@@ -88,6 +90,7 @@ class UserActivity extends Model
         $yesterday = Carbon::now('Europe/Moscow')->subDay()->startOfDay()->setTimezone('UTC');
         $todayStart = Carbon::now('Europe/Moscow')->startOfDay()->setTimezone('UTC');
 
+        // add index on user_activity, add index on users.gender
         return self::join('users', 'user_activity.user_id', '=', 'users.id')
             ->whereBetween('user_activity.session_start', [$yesterday, $todayStart])
             ->distinct('user_id')
