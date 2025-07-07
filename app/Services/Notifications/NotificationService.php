@@ -37,6 +37,8 @@ class NotificationService
                     continue;
                 }
 
+                Log::info("[NotificationService] provider {$provider}, push token {$token}");
+
                 // Send message
                 app(NotificationManager::class)->sendMessage($provider, [
                     'data' => $additionalData,
