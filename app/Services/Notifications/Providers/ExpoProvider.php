@@ -11,11 +11,6 @@ class ExpoProvider
     /**
      * @var string
      */
-    protected string $receiptsUrl = 'https://exp.host/--/api/v2/push/getReceipts';
-
-    /**
-     * @var string
-     */
     protected string $apiUrl = 'https://exp.host/--/api/v2/push/send';
 
     /**
@@ -42,7 +37,7 @@ class ExpoProvider
      * @return bool
      * @throws GuzzleException
      */
-    public function sendMessage(array $params)
+    public function sendMessage(array $params): bool
     {
         // Formatted message
         if (isset($params['data'])) {
