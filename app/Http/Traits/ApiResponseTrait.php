@@ -2,6 +2,7 @@
 
 namespace App\Http\Traits;
 
+use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Http\JsonResponse;
 use App\Models\Secondaryuser;
@@ -43,16 +44,20 @@ trait ApiResponseTrait
      */
     protected function successResponse(
         mixed $data = null,
-        int   $httpCode = Response::HTTP_OK
+        int   $httpCode = Response::HTTP_OK,
+
     ): JsonResponse
     {
+        $jsonCallback = (!empty($_GET['callback'])) ? $_GET['callback'] : null;
         return response()->json([
             'meta' => [
                 'error' => null,
                 'status' => $httpCode
             ],
             'data' => $data
-        ], $httpCode);
+        ], $httpCode)->setCallback(
+            $jsonCallback
+        );
     }
 
     /**
