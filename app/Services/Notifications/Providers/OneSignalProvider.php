@@ -2,8 +2,8 @@
 
 namespace App\Services\Notifications\Providers;
 
-use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Support\Facades\Log;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Client;
 
 class OneSignalProvider
@@ -60,10 +60,12 @@ class OneSignalProvider
         // Merge default parameters with custom ones
         $requestParams = array_merge($defaultParams, [
             'contents' => [
-                'en' => $params['body'],
+                "en" => $params['body'],
+                "ru" => $params['body']
             ],
             'headings' => [
-                'en' => $params['title'],
+                "en" => $params['title'],
+                "ru" => $params['title'],
             ],
             'include_aliases' => [
                 'external_id' => [
@@ -75,16 +77,23 @@ class OneSignalProvider
             ]
         ]);
 
-        // Send request
-        $response = $this->client->post($this->apiUrl, [
-            'json' => $requestParams
-        ]);
+        try {
+            // Send request
+            $response = $this->client->post($this->apiUrl, [
+                'json' => $requestParams
+            ]);
 
-        // Response
-        $getResponse = json_decode(
-            $response->getBody(),
-            true
-        );
+            Log::debug("OneSignal send message response: " . json_encode($response));
+            // Response
+            $getResponse = json_decode(
+                $response->getBody(),
+                true
+            );
+            Log::debug("OneSignal decode response: ", $getResponse);
+        } catch (\Exception $e) {
+            echo $e->getMessage();
+            exit;
+        }
 
         // Return
         return isset($getResponse['id']) && !empty($getResponse['recipients']);
