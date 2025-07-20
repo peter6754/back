@@ -17,20 +17,20 @@ Route::prefix('recommendations')->middleware('auth')->group(function () {
     // Get top profiles
     Route::get('top-profiles', [RecommendationsController::class, 'getTopProfiles']);
 
-    // Delete matched user
-    Route::delete('match/{id}', [RecommendationsController::class, 'deleteMatchedUser']);
-
-    // Like action
-    Route::post('like', [RecommendationsController::class, 'like']);
-
-    // Dislike action
-    Route::post('dislike', [RecommendationsController::class, 'dislike']);
+    // Superlike action
+    Route::post('superlike', [RecommendationsController::class, 'superlike']);
 
     // Rollback action
     Route::post('rollback', [RecommendationsController::class, 'rollback']);
 
-    // Superlike action
-    Route::post('superlike', [RecommendationsController::class, 'superlike']);
+    // Delete matched
+    Route::delete('match/{id}', [RecommendationsController::class, 'match']);
+
+    // Dislike action
+    Route::post('dislike', [RecommendationsController::class, 'dislike']);
+
+    // Like action
+    Route::post('like', [RecommendationsController::class, 'like']);
 });
 
 // Payments system routes
