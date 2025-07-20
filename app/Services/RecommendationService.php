@@ -2,17 +2,14 @@
 
 namespace App\Services;
 
-use App\Models\Secondaryuser;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redis;
 use Illuminate\Redis\Connections\Connection;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 use Illuminate\Config\Repository;
+use App\Models\Secondaryuser;
 
 class RecommendationService
 {
@@ -32,19 +29,20 @@ class RecommendationService
     private mixed $recommendationsPageSize;
 
     /**
-     * @var Connection
+     *
      */
-    private Connection $redis;
-
     public function __construct()
     {
-        $this->redis = Redis::connection();
-
         $this->recommendationsCacheSize = config('recommendations.cache_size', 1000);
         $this->recommendationsCacheTTL = config('recommendations.cache_ttl', 14400);
         $this->recommendationsPageSize = config('recommendations.page_size', 10);
     }
 
+    /**
+     * @param string $userId
+     * @param array $query
+     * @return array|array[]|void
+     */
     public function getRecommendations(string $userId, array $query)
     {
         $user = Secondaryuser::with(['settings', 'preferences'])
@@ -62,7 +60,7 @@ class RecommendationService
         $key = "recommended:{$userId}:{$keyPart1}:{$keyPart2}:{$keyPart3}{$keyPart4}";
 
         try {
-            $forPage = $this->redis->lpop($key);
+            $forPage = Redis::lRange($key, 0, $this->recommendationsCacheSize - 1);
 
             if (empty($forPage)) {
                 $fromDb = $this->getRecommendationsForCache($userId, $query, $this->recommendationsCacheSize);
@@ -73,8 +71,8 @@ class RecommendationService
                 }
 
                 if (!empty($fromDb)) {
-                    $this->redis->rpush($key, ...$fromDb);
-                    $this->redis->expire($key, $this->recommendationsCacheTTL);
+                    Redis::rpush($key, ...$fromDb);
+                    Redis::expire($key, $this->recommendationsCacheTTL);
                 }
             }
 
@@ -87,162 +85,6 @@ class RecommendationService
 //            ];
         }
     }
-
-    private function getRecommendationsForCache(string $userId, array $query, int $cacheSize)
-    {
-        $user = Secondaryuser::with(['settings', 'preferences'])
-            ->select(['id', 'phone', 'lat', 'long'])
-            ->findOrFail($userId);
-
-        $preferences = $user->preferences->pluck('gender')->toArray();
-        $ageRange = $user->settings->age_range;
-
-        $query = DB::select("
-            WITH
-            users_in_my_radius AS (
-                SELECT
-                    u.id
-                FROM
-                    users u
-                WHERE
-                    ST_Distance_Sphere(
-                        point('?', '?'), point(u.long, u.lat)
-                    ) / 1000 <= '?'
-                    AND u.id != '?'
-            ),
-            my_matches AS (
-                SELECT
-                    ure.user_id
-                FROM
-                    user_reactions ure
-                LEFT JOIN user_reactions ur ON ur.reactor_id = ure.user_id
-                    AND ur.user_id = '?'
-                    AND ure.reactor_id = '?'
-            WHERE
-                ure.user_id != '?'
-                AND ure.type != 'dislike'
-                AND ur.type != 'dislike'
-            ),
-            users_blocked_by_me AS (
-                SELECT
-                    phone
-                FROM
-                    blocked_contacts
-                WHERE
-                    user_id = '?'
-            ),
-            users_who_blocked_me AS (
-                SELECT
-                    user_id
-                FROM
-                    blocked_contacts
-                WHERE
-                    phone = '?'
-            ) SELECT DISTINCT
-                u.id AS id
-            FROM
-                users u
-                LEFT JOIN user_settings us ON us.user_id = u.id
-            WHERE
-                u.id != '?'
-                AND u.lat
-                AND u.long
-                AND(u.id IN(
-                        SELECT
-                            * FROM users_in_my_radius)
-                        OR '?')
-                AND(u.age BETWEEN '?'
-                    AND '?')
-                AND u.id NOT IN(
-                    SELECT
-                        * FROM my_matches)
-                AND u.gender IN(" . (empty($preferences) ? 'NULL' : " '" . implode("', '", $preferences) . "' ") . ")
-                AND u.phone NOT IN(
-                    SELECT
-                        * FROM users_blocked_by_me)
-                AND u.id NOT IN(
-                    SELECT
-                        * FROM users_who_blocked_me)
-                AND u.registration_date IS NOT NULL
-                AND u.mode = 'authenticated'
-            GROUP BY
-                id
-            ORDER BY
-                u.is_online DESC,
-                (
-                    SELECT
-                        MAX(last_activity)
-                    FROM
-                        user_activity
-                    WHERE
-                        user_id = u.id)
-                    DESC, id ASC
-                LIMIT ?;
-        ", [
-            $user->long,
-            $user->lat,
-            $user->settings->search_radius,
-            $userId,
-            $userId,
-            $userId,
-            $userId,
-            $userId,
-            $user->phone,
-            $userId,
-            $user->settings->is_global_search ? 1 : 0,
-            $ageRange[0],
-            $ageRange[1],
-            $cacheSize
-        ]);
-
-        return array_map(fn($item) => $item->id, $query);
-    }
-
-    private function getRecommendationsPage(string $userId, array $usersIds)
-    {
-        $user = Secondaryuser::select(['lat', 'long'])->findOrFail($userId);
-
-        $recommendations = DB::select("
-            SELECT
-                u.id,
-                u.gender,
-                u.name,
-                ui.bio,
-                u.is_online,
-                CAST(IF(has_user_subscription(u.id) AND NOT us.show_my_age, null, u.age) AS age,
-                CAST(IF(has_user_subscription(u.id) AND NOT us.show_distance_from_me, null,
-                    ROUND((SELECT count_distance(u.id, ?, ?)), 0)) AS distance,
-                CAST(EXISTS(SELECT 1 FROM verification_requests WHERE user_id = u.id AND status = 'approved' LIMIT 1) AS CHAR) AS is_verified
-            FROM users u
-            LEFT JOIN user_information ui ON ui.user_id = u.id
-            LEFT JOIN user_settings us ON us.user_id = u.id
-            WHERE u.id in (" . implode(',', array_fill(0, count($usersIds), '?')) . ")
-                AND u.mode = 'authenticated'
-            ORDER BY u.is_online DESC;
-        ", array_merge([$user->lat, $user->long], $usersIds));
-
-        $response = array_map(function ($r) {
-            $photos = DB::table('user_images')
-                ->where('user_id', $r->id)
-                ->take(4)
-                ->pluck('image')
-                ->toArray();
-
-            return [
-                'id' => $r->id,
-                'name' => $r->name,
-                'bio' => $r->bio,
-                'is_verified' => (bool)$r->is_verified,
-                'is_online' => (bool)$r->is_online,
-                'photos' => $photos,
-                'age' => $r->age ? (int)$r->age : null,
-                'distance' => $r->distance ? (int)$r->distance : null
-            ];
-        }, $recommendations);
-
-        return ['items' => $response];
-    }
-
 
     /**
      * @param array $customer
@@ -350,5 +192,156 @@ class RecommendationService
             ->limit(15);
 
         return $query->get();
+    }
+
+    /**
+     * @param string $userId
+     * @param array $query
+     * @param int $cacheSize
+     * @return array
+     */
+    private function getRecommendationsForCache(string $userId, array $query, int $cacheSize)
+    {
+        $user = Secondaryuser::with(['settings', 'preferences'])
+            ->select(['id', 'phone', 'lat', 'long'])
+            ->findOrFail($userId);
+
+        $preferences = $user->preferences->pluck('gender')->toArray();
+        $ageRange = $user->settings->age_range;
+
+        $query = DB::select("
+            WITH
+            users_in_my_radius AS (
+                SELECT u.id
+                FROM users u
+                WHERE ST_Distance_Sphere(point(?, ?), point(u.long, u.lat)) / 1000 <= ?
+                    AND u.id != ?
+            ),
+            my_matches AS (
+                SELECT ure.user_id
+                FROM user_reactions ure
+                LEFT JOIN user_reactions ur ON ur.reactor_id = ure.user_id
+                    AND ur.user_id = ?
+                    AND ure.reactor_id = ?
+                WHERE ure.user_id != ?
+                    AND ure.type != 'dislike'
+                    AND ur.type != 'dislike'
+            ),
+            users_blocked_by_me AS (
+                SELECT phone
+                FROM blocked_contacts
+                WHERE user_id = ?
+            ),
+            users_who_blocked_me AS (
+                SELECT user_id
+                FROM blocked_contacts
+                WHERE phone = ?
+            )
+            SELECT DISTINCT u.id AS id
+            FROM users u
+            LEFT JOIN user_settings us ON us.user_id = u.id
+            WHERE u.id != ?
+                AND u.lat IS NOT NULL
+                AND u.long IS NOT NULL
+                AND (
+                    u.id IN (SELECT id FROM users_in_my_radius)
+                    OR ?
+                )
+                AND u.age BETWEEN ? AND ?
+                AND u.id NOT IN (SELECT user_id FROM my_matches)
+                AND u.gender IN(" . (empty($preferences) ? 'NULL' : " '" . implode("', '", $preferences) . "' ") . ")
+                AND u.phone NOT IN (SELECT phone FROM users_blocked_by_me)
+                AND u.id NOT IN (SELECT user_id FROM users_who_blocked_me)
+                AND u.registration_date IS NOT NULL
+                AND u.mode = 'authenticated'
+            GROUP BY u.id
+            ORDER BY u.is_online DESC,
+                (
+                    SELECT MAX(last_activity)
+                    FROM user_activity
+                    WHERE user_id = u.id
+                ) DESC, u.id ASC
+            LIMIT ?
+        ", [
+            $user->long,
+            $user->lat,
+            $user->settings->search_radius,
+            $userId,
+            $userId,
+            $userId,
+            $userId,
+            $userId,
+            $user->phone,
+            $userId,
+            $user->settings->is_global_search ? 1 : 0,
+            $ageRange[0],
+            $ageRange[1],
+            $cacheSize
+        ]);
+
+        return array_map(fn($item) => $item->id, $query);
+    }
+
+    /**
+     * @param string $userId
+     * @param $usersIds
+     * @return array
+     */
+    private function getRecommendationsPage(string $userId, $usersIds)
+    {
+        $user = Secondaryuser::select(['lat', 'long'])->findOrFail($userId);
+
+        $recommendations = DB::select("
+            SELECT
+                u.id,
+                u.gender,
+                u.name,
+                ui.bio,
+                u.is_online,
+                CAST(
+                    IF(has_user_subscription(u.id) AND NOT us.show_my_age, NULL, u.age)
+                    AS UNSIGNED
+                ) AS age,
+                CAST(
+                    IF(has_user_subscription(u.id) AND NOT us.show_distance_from_me, NULL,
+                        ROUND((SELECT count_distance(u.id, ?, ?)), 0)
+                    )
+                    AS UNSIGNED
+                ) AS distance,
+                CAST(
+                    EXISTS(SELECT 1 FROM verification_requests WHERE user_id = u.id AND status = 'approved' LIMIT 1)
+                    AS CHAR
+                ) AS is_verified
+            FROM users u
+            LEFT JOIN user_information ui ON ui.user_id = u.id
+            LEFT JOIN user_settings us ON us.user_id = u.id
+            WHERE u.id IN (" . implode(',', array_fill(0, count($usersIds), '?')) . ")
+                AND u.mode = 'authenticated'
+            ORDER BY u.is_online DESC;
+        ", array_merge([
+            $user->lat,
+            $user->long
+        ], $usersIds));
+
+        $response = array_map(function ($r) {
+            $photos = DB::table('user_images')
+                ->where('user_id', $r->id)
+                ->take(4)
+                ->pluck('image')
+                ->toArray();
+
+            return [
+                'id' => $r->id,
+                'name' => $r->name,
+                'bio' => $r->bio,
+                'is_verified' => (bool)$r->is_verified,
+                'is_online' => (bool)$r->is_online,
+                'photos' => $photos,
+                'age' => $r->age ? (int)$r->age : null,
+                'distance' => $r->distance ? (int)$r->distance : null
+            ];
+        }, $recommendations);
+
+        return ['items' => $response];
     }
 }
