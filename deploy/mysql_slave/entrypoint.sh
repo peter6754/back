@@ -191,15 +191,26 @@ fi
 log_message "Enabling super_read_only mode..."
 mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SET GLOBAL super_read_only=1;"
 
-# Переключаем на основной процесс MySQL с read-only
+# Останавливаем временный сервер перед запуском основного
+log_message "Stopping temporary MySQL instance..."
+mysqladmin -uroot -p"$MYSQL_ROOT_PASSWORD" shutdown
+
+# Ждем полной остановки
+while [ -S /var/run/mysqld/mysqld.sock ]; do
+  sleep 1
+done
+
+# Запускаем финальный сервер в read-only режиме
 log_message "Starting final MySQL process in read-only mode..."
 exec /usr/local/bin/docker-entrypoint.sh mysqld \
-  --server-id=${SERVER_ID:-$(date +%s%N | cut -b1-9)} \
+  --server-id=${SERVER_ID:-2} \
   --gtid-mode=ON \
   --enforce-gtid-consistency=ON \
   --read-only=ON \
   --super-read-only=ON \
   --pid-file=/var/run/mysql/mysqld.pid \
-  --log-slave-updates=ON \
+  --log-replica-updates=ON \
   --relay-log=relay-bin \
-  --relay-log-index=relay-bin.index
+  --relay-log-index=relay-bin.index \
+  --skip-name-resolve \
+  --host-cache-size=0
