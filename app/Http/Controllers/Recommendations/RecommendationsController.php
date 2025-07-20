@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Recommendations;
 
 use Exception;
+use App\DTO\GetRecommendationsDto;
 use App\Services\RecommendationService;
 use Illuminate\Support\Facades\Cache;
 use App\Http\Traits\ApiResponseTrait;
@@ -83,6 +84,38 @@ class RecommendationsController extends Controller
      *       summary="Get profiles",
      *       security={{"bearerAuth":{}}},
      *
+     *       @OA\Parameter(
+     *          name="interest_id",
+     *          in="query",
+     *          description="Filter by interest ID",
+     *          required=false,
+     *          @OA\Schema(type="string", example="123")
+     *       ),
+     *
+     *       @OA\Parameter(
+     *          name="min_photo_count",
+     *          in="query",
+     *          description="Minimum number of photos required",
+     *          required=false,
+     *          @OA\Schema(type="string", example="3")
+     *       ),
+     *
+     *       @OA\Parameter(
+     *          name="is_verified",
+     *          in="query",
+     *          description="Filter verified profiles (true/false)",
+     *          required=false,
+     *          @OA\Schema(type="string", example="true")
+     *       ),
+     *
+     *       @OA\Parameter(
+     *          name="has_info",
+     *          in="query",
+     *          description="Filter profiles with complete info",
+     *          required=false,
+     *          @OA\Schema(type="string", example="false")
+     *       ),
+     *
      *       @OA\Response(
      *           @OA\JsonContent(ref="#/components/schemas/SuccessResponse"),
      *           description="Successful operation",
@@ -99,14 +132,18 @@ class RecommendationsController extends Controller
      */
     public function getRecommendations(Request $request): JsonResponse
     {
-//        try {
+        // Get queries
+        $query = GetRecommendationsDto::fromRequest($request)->toArray();
+
+
+        try {
             return $this->successResponse(
-                $this->recommendations->getRecommendations($request->customer['id'], [])
+                $this->recommendations->getRecommendations($request->customer['id'], $query)
             );
-//        } catch (Exception $e) {
-//            return $this->errorResponse(
-//                $e->getMessage()
-//            );
-//        }
+        } catch (Exception $e) {
+            return $this->errorResponse(
+                $e->getMessage()
+            );
+        }
     }
 }

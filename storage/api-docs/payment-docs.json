@@ -683,6 +683,48 @@
                 ],
                 "summary": "Get profiles",
                 "operationId": "4ac6b891d60dfd6730b80c2e3f4fe988",
+                "parameters": [
+                    {
+                        "name": "interest_id",
+                        "in": "query",
+                        "description": "Filter by interest ID",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "123"
+                        }
+                    },
+                    {
+                        "name": "min_photo_count",
+                        "in": "query",
+                        "description": "Minimum number of photos required",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "3"
+                        }
+                    },
+                    {
+                        "name": "is_verified",
+                        "in": "query",
+                        "description": "Filter verified profiles (true/false)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "true"
+                        }
+                    },
+                    {
+                        "name": "has_info",
+                        "in": "query",
+                        "description": "Filter profiles with complete info",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "false"
+                        }
+                    }
+                ],
                 "responses": {
                     "201": {
                         "description": "Successful operation",
