@@ -53,15 +53,21 @@ class RecommendationService
             return ['items' => []];
         }
 
+        // Configure cache params
         $keyPart1 = implode('-', $user->settings->age_range);
         $keyPart2 = $user->settings->is_global_search ? 'global' : $user->settings->search_radius;
         $keyPart3 = implode(',', $user->preferences->pluck('gender')->toArray());
         $keyPart4 = isset($query['interest_id']) ? ':' . $query['interest_id'] : '';
+
+        // Configure cache
         $key = "recommended:{$userId}:{$keyPart1}:{$keyPart2}:{$keyPart3}{$keyPart4}";
+        $recommendationsCacheSize = $this->recommendationsPageSize;
 
         try {
-            $forPage = Redis::lRange($key, 0, $this->recommendationsPageSize - 1);
-            Redis::lTrim($key, $this->recommendationsPageSize, -1);
+            $forPage = Redis::transaction(function ($redis) use ($key, $recommendationsCacheSize) {
+                $redis->lRange($key, 0, $recommendationsCacheSize - 1);
+                $redis->lTrim($key, $recommendationsCacheSize, -1);
+            })[0];
 
             if (empty($forPage)) {
                 $fromDb = $this->getRecommendationsForCache($userId, $query, $this->recommendationsCacheSize);
