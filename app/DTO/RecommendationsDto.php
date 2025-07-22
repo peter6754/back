@@ -3,7 +3,6 @@
 namespace App\DTO;
 
 use Spatie\LaravelData\Data;
-use Illuminate\Support\Facades\Request;
 
 class RecommendationsDto extends Data
 {
