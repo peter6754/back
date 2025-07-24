@@ -35,11 +35,11 @@ class AuthController extends Controller
             'provider' => 'apple',
             'title' => 'Apple'
         ],
-        [
-            'icon' => 'fab fa-telegram',
-            'provider' => 'telegram',
-            'title' => 'Telegram'
-        ]
+//        [
+//            'icon' => 'fab fa-telegram',
+//            'provider' => 'telegram',
+//            'title' => 'Telegram'
+//        ]
     ];
 
     /**
