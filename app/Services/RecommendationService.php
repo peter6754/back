@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\UserReaction;
+use App\Models\UserInformation;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Log;
@@ -28,6 +30,16 @@ class RecommendationService
      * @var mixed|Repository|Application|object|null
      */
     private mixed $recommendationsPageSize;
+
+    /**
+     * @var mixed
+     */
+    protected mixed $notificationService;
+
+    /**
+     * @var mixed
+     */
+    protected mixed $emailService;
 
     /**
      *
@@ -224,6 +236,192 @@ class RecommendationService
             Log::channel('recommendations')->error('getRecommendations_v2 error: ' . $e->getMessage(), [
                 'user_id' => $userId,
                 'error' => $e
+            ]);
+        }
+    }
+
+
+    /**
+     * @param string $userId
+     * @param array $params
+     * @return array
+     */
+    public function like(string $userId, array $params)
+    {
+        $user = Secondaryuser::with(['deviceTokens', 'userInformation', 'userSettings'])
+            ->select(['id', 'email'])
+            ->findOrFail($params['user_id'])->toArray();
+
+        $reaction = UserReaction::where('reactor_id', $params['user_id'])
+            ->where('user_id', $userId)
+            ->whereIn('type', ['like', 'superlike'])
+            ->first();
+
+        DB::transaction(function () use ($params, $userId, $user, $reaction) {
+            $superboom = $user->userInformation->superboom_due_date >= now();
+
+            UserReaction::updateOrCreate(
+                [
+                    'reactor_id' => $userId,
+                    'user_id' => $params['user_id']
+                ],
+                [
+                    'type' => 'like',
+                    'date' => now(),
+                    'superboom' => $superboom,
+                    'from_top' => $params['from_top']
+                ]
+            );
+
+//                $this->handleLikeNotification(
+//                    $params['from_top'],
+//                    (bool)$reaction,
+//                    $user->deviceTokens->pluck('token')->toArray(),
+//                    $user->userSettings,
+//                    $user->email
+//                );
+        });
+
+        return ['is_match' => (bool)$reaction];
+    }
+
+    /**
+     * @param string $userId
+     * @param array $params
+     * @return array|null
+     */
+    public function dislike(string $userId, array $params)
+    {
+        UserReaction::updateOrCreate(
+            [
+                'reactor_id' => $userId,
+                'user_id' => $params['user_id']
+            ],
+            [
+                'type' => 'dislike',
+                'date' => now()
+            ]
+        );
+
+        return [
+            'message' => 'Reaction sent successfully'
+        ];
+    }
+
+    /**
+     * @param string $userId
+     * @param array $params
+     * @return string[]|void
+     */
+    public function rollback(string $userId, array $params)
+    {
+        $lastReacted = UserReaction::where('reactor_id', $userId)
+            ->latest('date')
+            ->first(['user_id']);
+
+        if (!$lastReacted || $lastReacted->user_id != $params['user_id']) {
+            throw new \Exception('Your last reaction doesn\'t match to the given user_id');
+        }
+
+        DB::table('user_reactions')
+            ->where('reactor_id', $userId)
+            ->where('user_id', $params['user_id'])
+            ->orderBy('date', 'desc')
+            ->limit(1)
+            ->delete();
+
+        return [
+            'message' => 'Rollbacked successfully'
+        ];
+    }
+
+    /**
+     * @param string $userId
+     * @param array $params
+     * @return bool[]|void
+     */
+    public function superlike(string $userId, array $params)
+    {
+        $user = Secondaryuser::with(['deviceTokens', 'userInformation', 'userSettings'])
+            ->select(['id', 'email'])
+            ->findOrFail($params['user_id']);
+
+        $reaction = UserReaction::where('reactor_id', $params['user_id'])
+            ->where('user_id', $userId)
+            ->whereIn('type', ['like', 'superlike'])
+            ->first();
+
+        DB::transaction(function () use ($params, $userId, $user, $reaction) {
+            $superboom = $user->userInformation->superboom_due_date >= now();
+
+            UserReaction::updateOrCreate(
+                [
+                    'reactor_id' => $userId,
+                    'user_id' => $params['user_id']
+                ],
+                [
+                    'type' => 'superlike',
+                    'date' => now(),
+                    'superboom' => $superboom,
+                    'from_top' => $params['from_top']
+                ]
+            );
+
+            UserInformation::where('user_id', $userId)->decrement('superlikes');
+
+            if (!empty($params['comment'])) {
+                $this->leaveComment($params['comment'], $userId, $params['user_id']);
+            }
+
+//                if ($reaction && $user->userSettings->new_couples_push) {
+//                    $this->notificationService->sendPushNotification(
+//                        $user->deviceTokens->pluck('token')->toArray(),
+//                        'У вас совпала новая пара! Зайдите, чтобы посмотреть и начать общение.',
+//                        'Новая пара!'
+//                    );
+//                } else if (!$reaction && $user->userSettings->new_super_likes_push) {
+//                    $this->notificationService->sendPushNotification(
+//                        $user->deviceTokens->pluck('token')->toArray(),
+//                        'Вам поставили суперлайк! Заходите в TinderOne, чтобы найти свою пару!',
+//                        'Вы кому-то нравитесь!'
+//                    );
+//                }
+        });
+
+//            if ($user->email) {
+//                $this->emailService->sendMatchEmail($user->email);
+//            }
+
+        return [
+            'is_match' => (bool)$reaction
+        ];
+//        } catch (\Exception $err) {
+//            Log::error('RecommendationsService > superlike error:', [
+//                'user_id' => $userId,
+//                'error' => $err->getMessage()
+//            ]);
+//        }
+    }
+
+    /**
+     * @param string $matchedId
+     * @param string $userId
+     * @return void
+     */
+    public function deleteMatchedUser(string $matchedId, string $userId)
+    {
+        try {
+            UserReaction::where(function ($query) use ($userId, $matchedId) {
+                $query->where('user_id', $userId)
+                    ->where('reactor_id', $matchedId);
+            })->orWhere(function ($query) use ($userId, $matchedId) {
+                $query->where('user_id', $matchedId)
+                    ->where('reactor_id', $userId);
+            })->delete();
+        } catch (\Exception $err) {
+            Log::error('RecommendationsService > deleteMatchedUser error:', [
+                'user_id' => $userId,
+                'error' => $err->getMessage()
             ]);
         }
     }
