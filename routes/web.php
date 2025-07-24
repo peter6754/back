@@ -85,7 +85,9 @@ Route::prefix('auth')->group(function () {
     Route::any('social/{provider}/callback', [AuthController::class, 'socialCallback']);
     Route::get('social/{provider}', function ($provider) {
         if (!empty(config("services.{$provider}.client_id"))) {
-            return Socialite::driver($provider)->redirect();
+            return Socialite::driver($provider)->redirectUrl(
+                url(config("services.{$provider}.client_id"))
+            )->redirect();
         }
         abort(404);
     });
