@@ -84,9 +84,12 @@ Route::prefix('auth')->group(function () {
     Route::get('social/list', [AuthController::class, 'socialLinks'])->name('auth.social.list');
     Route::any('social/{provider}/callback', [AuthController::class, 'socialCallback']);
     Route::get('social/{provider}', function ($provider) {
-        if (!empty(config("services.{$provider}.client_id"))) {
+        if (
+            !empty(config("services.{$provider}.client_id")) ||
+            !empty(config("services.{$provider}.redirect"))
+        ) {
             return Socialite::driver($provider)->redirectUrl(
-                url(config("services.{$provider}.client_id"))
+                url(config("services.{$provider}.redirect"))
             )->redirect();
         }
         abort(404);
