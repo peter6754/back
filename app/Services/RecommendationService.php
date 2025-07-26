@@ -257,21 +257,21 @@ class RecommendationService
             ->whereIn('type', ['like', 'superlike'])
             ->first();
 
-        DB::transaction(function () use ($params, $userId, $user, $reaction) {
-            $superboom = $user->userInformation->superboom_due_date >= now();
+//        DB::transaction(function () use ($params, $userId, $user, $reaction) {
+        $superboom = $user->userInformation->superboom_due_date >= now();
 
-            UserReaction::updateOrCreate(
-                [
-                    'reactor_id' => $userId,
-                    'user_id' => $params['user_id']
-                ],
-                [
-                    'type' => 'like',
-                    'date' => now(),
-                    'superboom' => $superboom,
-                    'from_top' => $params['from_top']
-                ]
-            );
+        UserReaction::updateOrCreate(
+            [
+                'reactor_id' => $userId,
+                'user_id' => $params['user_id']
+            ],
+            [
+                'type' => 'like',
+                'date' => now(),
+                'superboom' => $superboom,
+                'from_top' => $params['from_top']
+            ]
+        );
 
 //                $this->handleLikeNotification(
 //                    $params['from_top'],
@@ -280,7 +280,7 @@ class RecommendationService
 //                    $user->userSettings,
 //                    $user->email
 //                );
-        });
+//        });
 
         return ['is_match' => (bool)$reaction];
     }
@@ -351,7 +351,7 @@ class RecommendationService
             ->whereIn('type', ['like', 'superlike'])
             ->first();
 
-        DB::transaction(function () use ($params, $userId, $user, $reaction) {
+//        DB::transaction(function () use ($params, $userId, $user, $reaction) {
             $superboom = $user->userInformation->superboom_due_date >= now();
 
             UserReaction::updateOrCreate(
@@ -386,7 +386,7 @@ class RecommendationService
 //                        'Вы кому-то нравитесь!'
 //                    );
 //                }
-        });
+//        });
 
 //            if ($user->email) {
 //                $this->emailService->sendMatchEmail($user->email);
