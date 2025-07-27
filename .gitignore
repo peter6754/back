@@ -23,3 +23,5 @@ package-lock.json
 public/storage
 public/build
 /composer.lock
+/storage/debugbar/
+CLAUDE.MD
