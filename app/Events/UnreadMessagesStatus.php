@@ -2,11 +2,11 @@
 
 namespace App\Events;
 
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Broadcasting\Channel;
 
 class UnreadMessagesStatus implements ShouldBroadcast
 {
@@ -24,6 +24,14 @@ class UnreadMessagesStatus implements ShouldBroadcast
 
     public function broadcastAs()
     {
-        return 'unread-messages-status';
+        return 'unread.messages.status';
+    }
+
+    public function broadcastWith()
+    {
+        return [
+            'has_unread' => $this->hasUnread,
+            'timestamp' => now()->toISOString(),
+        ];
     }
 }
