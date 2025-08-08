@@ -81,6 +81,15 @@ Route::prefix('api/conversations')->middleware('auth')->group(function () {
     // получить все чаты текущего юзера
     Route::get('/', [ChatController::class, 'getConversations']);
 
+    // Получить сообщения в чате
+    Route::get('/messages/{chat_id}', [ChatController::class, 'getMessages']);
+
+    // Загрузить медиа файл в чат
+    Route::post('/{chat_id}/media', [ChatController::class, 'uploadMedia']);
+
+    // Отметить все сообщения в чате как прочитанные
+    Route::post('/read-messages/{chat_id}', [ChatController::class, 'markMessagesAsRead']);
+
     // Получить непрочитанные сообщения в чате
     Route::get('/{chat_id}/unread-messages-status', [ChatController::class, 'getUnreadMessagesStatus']);
     // Создать чат с пользователем
