@@ -102,13 +102,6 @@ Route::prefix('api/conversations')->middleware('auth')->group(function () {
     Route::post('/pin/{chat_id}', [ChatController::class, 'togglePinConversation']);
 });
 
-// Chat message routes (WebSocket-enabled)
-Route::prefix('chat')->middleware('auth')->group(function () {
-    Route::post('/send-message', [ChatController::class, 'sendMessage']);
-    Route::post('/send-media', [ChatController::class, 'sendMedia']);
-    Route::post('/send-gift', [ChatController::class, 'sendGift']);
-});
-
 // Auth routes
 Route::prefix('auth')->group(function () {
     // Phone login
@@ -145,3 +138,4 @@ Route::get('swagger', function () {
 Route::get('/', function () {
     return view('welcome');
 });
+

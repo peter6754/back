@@ -8,9 +8,13 @@ use App\Models\Conversation;
 use App\Events\MessageSent;
 use App\Models\ChatMessage;
 use App\Models\Gifts;
+use App\Services\WebSocketService;
 
 class ChatService
 {
+    public function __construct(
+        private WebSocketService $webSocketService
+    ) {}
     /**
      * @param array $payload
      * @return void
@@ -107,7 +111,23 @@ class ChatService
                 'contact_type' => $contactType
             ]);
 
-            // Broadcast events
+            // Broadcast events via WebSocket
+            $this->webSocketService->sendMessageToUser($receiverId, [
+                'conversation_id' => $conversationId,
+                'data' => [
+                    'type' => $type,
+                    'message' => $message,
+                    'gift' => $gift,
+                    'contact_type' => $contactType,
+                    'sender_info' => [
+                        'id' => $senderId,
+                        'name' => $senderInfo->name,
+                        'age' => $senderInfo->age
+                    ]
+                ]
+            ]);
+
+            // Also send via traditional broadcasting for backward compatibility
             broadcast(new MessageSent($receiverId, [
                 'conversation_id' => $conversationId,
                 'data' => [
