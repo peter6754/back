@@ -7,6 +7,7 @@ use App\Models\Conversation;
 use App\Events\MessageSent;
 use App\Models\ChatMessage;
 use App\Models\Gifts;
+use App\Models\UserReaction;
 use App\Services\WebSocketService;
 
 class ChatService
@@ -49,6 +50,11 @@ class ChatService
         $gift = Gifts::findOrFail($payload['gift_id']);
 
         if (!$conversation) {
+            // Check for mutual likes before creating conversation
+            if (!UserReaction::haveMutualLikes($payload['sender_id'], $payload['user_id'])) {
+                throw new \Exception('Conversation can only be created after mutual likes');
+            }
+            
             $conversation = Conversation::create([
                 'user1_id' => $payload['sender_id'],
                 'user2_id' => $payload['user_id']
