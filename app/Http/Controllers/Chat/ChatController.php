@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Chat;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\ApiResponseTrait;
 use App\Models\ChatMessage;
+use App\Models\ConnectedAccount;
 use App\Models\Conversation;
 use App\Models\Secondaryuser as User;
 use App\Models\UserReaction;
@@ -643,6 +644,117 @@ class ChatController extends Controller
 
         } catch (\Exception $e) {
             return $this->error('Failed to get online status', 500);
+        }
+    }
+
+    /**
+     * Get current user's connected social accounts
+     */
+    public function getUserSocialAccounts(Request $request): JsonResponse
+    {
+        try {
+            $currentUserId = $request->user()->id;
+
+            // Get current user's connected social accounts
+            $socialAccounts = ConnectedAccount::where('user_id', $currentUserId)
+                ->get()
+                ->map(function ($account) {
+                    return [
+                        'provider' => $account->provider,
+                        'name' => $account->name,
+                        'email' => $account->email
+                    ];
+                });
+
+            return $this->success([
+                'user_id' => $currentUserId,
+                'social_accounts' => $socialAccounts
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to get user social accounts: ' . $e->getMessage());
+            return $this->error('Failed to get social accounts', 500);
+        }
+    }
+
+    /**
+     * Test method
+     */
+    public function testMethod(Request $request): JsonResponse
+    {
+        \Log::info('testMethod - Called successfully');
+        return $this->success(['test' => 'OK']);
+    }
+
+    /**
+     * Send user's social contacts to chat
+     */
+    public function sendSocialContacts(Request $request): JsonResponse
+    {
+        \Log::info('ChatController - sendSocialContacts called');
+        
+        try {
+            // Получаем параметры из query string для GET запроса
+            $conversationId = $request->get('conversation_id');
+            $provider = $request->get('provider');
+            
+            if (!$conversationId || !$provider) {
+                return $this->error('Required parameters: conversation_id and provider', 400);
+            }
+
+            if (!in_array($provider, ConnectedAccount::getSupportedProviders())) {
+                return $this->error('Invalid provider', 400);
+            }
+
+            $userId = $request->user()->id;
+
+            // Verify user has access to conversation
+            $conversation = Conversation::where('id', $conversationId)
+                ->where(function ($query) use ($userId) {
+                    $query->where('user1_id', $userId)
+                        ->orWhere('user2_id', $userId);
+                })
+                ->first();
+
+            if (!$conversation) {
+                return $this->error('Conversation not found or access denied', 404);
+            }
+
+            // Check if user has this social account connected
+            $connectedAccount = ConnectedAccount::where('user_id', $userId)
+                ->where('provider', $provider)
+                ->first();
+
+            if (!$connectedAccount) {
+                return $this->error('You do not have a connected account for this provider', 404);
+            }
+
+            // Send contact via existing chat system
+            $result = $this->chatService->emitMessage(
+                $userId,
+                $conversationId,
+                $connectedAccount->name ?? $connectedAccount->email,
+                'contact',
+                null,
+                $provider,
+                false,
+                null,
+                null
+            );
+
+            if ($result['error']) {
+                return $this->error($result['error']['message'], $result['error']['status']);
+            }
+
+            return $this->success([
+                'message' => 'Social contact sent successfully',
+                'provider' => $provider,
+                'contact' => $connectedAccount->name ?? $connectedAccount->email
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to send social contact: ' . $e->getMessage());
+            return $this->error('Failed to send social contact', 500);
         }
     }
 }

@@ -103,6 +103,12 @@ Route::prefix('api/conversations')->middleware('auth')->group(function () {
 
     // Закрепить/открепить чат
     Route::post('/pin/{chat_id}', [ChatController::class, 'togglePinConversation']);
+
+    // Получить социальные сети пользователя
+    Route::get('/social-accounts', action: [ChatController::class, 'getUserSocialAccounts']);
+
+    // Отправить социальные контакты в чат
+    Route::get('/send-social-contacts', [ChatController::class, 'sendSocialContacts']);
 });
 
 // Auth routes

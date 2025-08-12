@@ -19,7 +19,8 @@
       "Bash(ls:*)",
       "Bash(ss:*)",
       "Bash(kill:*)",
-      "WebFetch(domain:dev.to)"
+      "WebFetch(domain:dev.to)",
+      "Bash(composer:*)"
     ],
     "deny": []
   }
